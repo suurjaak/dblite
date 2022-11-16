@@ -268,9 +268,9 @@ class Queryable(object):
 class Database(Queryable):
     """Database instance."""
 
-    CACHE   = collections.OrderedDict()     # {(engine name, opts json): Database}
-    TXS     = collections.defaultdict(list) # {Database: [Transaction, ], }
-    ENGINES = None                          # {"sqlite": sqlite submodule, }
+    CACHE   = collections.OrderedDict()      # {(engine name, opts json): Database}
+    TXS     = collections.defaultdict(list)  # {Database: [Transaction, ], }
+    ENGINES = None                           # {"sqlite": sqlite submodule, }
 
 
     @classmethod
@@ -283,8 +283,7 @@ class Database(Queryable):
         if key in cls.CACHE: cls.CACHE[key].open()
         else:
             if cls.ENGINES is None:
-                basefile = os.path.realpath(__file__)
-                cls.ENGINES = load_modules(__package__, basefile)
+                cls.ENGINES = load_modules()
 
             db = cls.ENGINES[engine].Database(opts, **kwargs)
             db.engine = cls.ENGINES[engine]
@@ -428,15 +427,16 @@ def parse_datetime(s):
 
 
 
-def load_modules(basepackage, basefile):
-    """Returns db engines loaded from under package and file, as {name: module}."""
+def load_modules():
+    """Returns db engines loaded from file directory, as {name: module}."""
     result = {}
-    myname = os.path.realpath(basefile)
-    for f in glob.glob(os.path.join(os.path.dirname(myname), "*.py*")):
-        if f == myname or os.path.isdir(f): continue # for f
+    for f in glob.glob(os.path.join(os.path.dirname(__file__), "*")):
+        if f.startswith("__") or os.path.isfile(f) and not re.match(".*pyc?$", f) \
+        or os.path.isdir(f) and not any(glob.glob(os.path.join(f, x)) for x in ("*.py", "*.pyc")):
+            continue # for f
 
         name = os.path.splitext(os.path.split(f)[-1])[0]
-        modulename = "%s.%s" % (basepackage, name)
+        modulename = "%s.%s" % (__package__, name)
         module = importlib.import_module(modulename)
         result[name] = module
     return result
