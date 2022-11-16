@@ -98,5 +98,9 @@ db2.insert("bars", val="bar")
 Dependencies
 ------------
 
+Python 3 or Python 2.7.
+
+- six (https://pypi.org/project/six)
+
 If using Postgres:
 - psycopg2 (https://pypi.org/project/psycopg2)

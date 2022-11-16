@@ -84,13 +84,13 @@ import base64
 import datetime
 import decimal
 import glob
-import imghdr
 import importlib
 import json
 import logging
 import os
 import re
 
+import six
 import pytz
 
 logger = logging.getLogger(__name__)
@@ -338,7 +338,7 @@ class Transaction(Queryable):
     def rollback(self):           raise NotImplementedError()
         
 
-class Rollback(StandardError):
+class Rollback(Exception):
     """
     Raising in transaction context manager will roll back the transaction
     and exit the context manager cleanly, without rising further.
@@ -355,7 +355,7 @@ def json_loads(s):
         rgx = r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?(([+-]\d{2}:?\d{2})|Z)?$"
         for k, v in pairs:
             if isinstance(v, (dict, list)): v = convert_recursive(v)
-            elif isinstance(v, basestring) and len(v) > 18 and re.match(rgx, v):
+            elif isinstance(v, six.string_types) and len(v) > 18 and re.match(rgx, v):
                 v = parse_datetime(v)
             result.append((k, v))
         return [x for _, x in result] if isinstance(data, list) \
@@ -365,7 +365,7 @@ def json_loads(s):
     except Exception:
         fails = getattr(json_loads, "__fails", set())
         if hash(s) not in fails: # Avoid spamming logs
-            logger.warn("Failed to parse JSON from %r.", s, exc_info=True)
+            logger.warning("Failed to parse JSON from %r.", s, exc_info=True)
             setattr(json_loads, "__fails", fails | set([hash(s)]))
         return s
 
@@ -374,28 +374,18 @@ def json_dumps(data, indent=2, sort_keys=True):
     '''
     Returns JSON string, with datetime types converted to ISO8601 strings
     (in UTC if no timezone set), sets converted to lists,
-    buffers converted to 'data:MEDIATYPE/SUBTYPE,base64,B64DATA',
     and Decimal objects converted to float or int. Returns None if data is None.
     '''
     if data is None: return None
     def encoder(x):
-        if isinstance(x, buffer): return encode_b64_mime(x)
         if isinstance(x,    set): return list(x)
         if isinstance(x, (datetime.datetime, datetime.date, datetime.time)):
             if x.tzinfo is None: x = pytz.utc.localize(x)
             return x.isoformat()
         if isinstance(x, decimal.Decimal):
             return float(x) if x.as_tuple().exponent else int(x)
+        return None
     return json.dumps(data, default=encoder, indent=indent, sort_keys=sort_keys)
-
-
-def encode_b64_mime(buf):
-    """Returns the buffer/string data like 'data:image/png,base64,iVBOR..'."""
-    subtype = imghdr.what(file=None, h=buf)
-    media = "image" if subtype else "application"
-    subtype = subtype or "octet-stream"
-    result = "data:%s/%s;base64,%s" % (media, subtype, base64.b64encode(buf))
-    return result
 
 
 def parse_datetime(s):

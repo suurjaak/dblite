@@ -83,6 +83,9 @@ import logging
 import os
 import re
 import sqlite3
+import sys
+
+from six import integer_types, string_types
 
 from . import Database as DB, Queryable as QQ, Rollback, Transaction as TX
 from . import json_dumps, json_loads, parse_datetime
@@ -115,7 +118,7 @@ class Queryable(QQ):
                 # ("any SQL with ? placeholders", val)
                 op, val, key = "EXPR", listify(val), "EXPRW%s" % i
             elif isinstance(val, (list, tuple)) and len(val) == 2 \
-            and isinstance(val[0], basestring):
+            and isinstance(val[0], string_types):
                 tmp = val[0].strip().upper()
                 if tmp in self.OPS: # ("col", ("binary op like >=", val))
                     op, val = tmp, val[1]
@@ -127,13 +130,13 @@ class Queryable(QQ):
         def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
 
         action = action.upper()
-        cols   =    cols if isinstance(cols,  basestring) else ", ".join(cols)
-        where  = [where] if isinstance(where, basestring) else where
-        group  =   group if isinstance(group, basestring) else ", ".join(map(str, listify(group)))
-        order  = [order] if isinstance(order, basestring) else order
+        cols   =    cols if isinstance(cols,  string_types) else ", ".join(cols)
+        where  = [where] if isinstance(where, string_types) else where
+        group  =   group if isinstance(group, string_types) else ", ".join(map(str, listify(group)))
+        order  = [order] if isinstance(order, string_types) else order
         order  = [order] if isinstance(order, (list, tuple)) \
                  and len(order) == 2 and isinstance(order[1], bool) else order
-        limit  = [limit] if isinstance(limit, (basestring, int, long)) else limit
+        limit  = [limit] if isinstance(limit, string_types + integer_types) else limit
         values = values if not isinstance(values, dict) else values.items()
         where  =  where if not isinstance(where,  dict)  else where.items()
         sql = "SELECT %s FROM %s" % (cols, table) if "SELECT" == action else ""
@@ -154,7 +157,7 @@ class Queryable(QQ):
         if where:
             sql += " WHERE "
             for i, clause in enumerate(where):
-                if isinstance(clause, basestring): # "raw SQL with no arguments"
+                if isinstance(clause, string_types): # "raw SQL with no arguments"
                     clause = (clause, )
 
                 if len(clause) == 1: # ("raw SQL with no arguments", )
@@ -185,9 +188,9 @@ class Queryable(QQ):
         if order:
             sql += " ORDER BY "
             for i, col in enumerate(order):
-                name = col if isinstance(col, basestring) else col[0]
+                name = col if isinstance(col, string_types) else col[0]
                 sort = col[1] if name != col and len(col) > 1 else ""
-                if not isinstance(sort, basestring): sort = "DESC" if sort else ""
+                if not isinstance(sort, string_types): sort = "DESC" if sort else ""
                 sql += (", " if i else "") + name + (" " if sort else "") + sort
         for k, v in zip(("limit", "offset"), limit or ()):
             if v is None: continue # for k, v
@@ -322,7 +325,8 @@ except Exception: logger.exception("Error configuring sqlite.")
 
 if "__main__" == __name__:
     def test():
-        from .. import db
+        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+        import dblite as db
         db.init("sqlite", ":memory:")
         db.execute("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
 

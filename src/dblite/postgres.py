@@ -74,6 +74,8 @@ from contextlib import contextmanager
 import logging
 import re
 
+from six import integer_types, string_types
+
 try:
     import psycopg2
     import psycopg2.extensions
@@ -128,7 +130,7 @@ class Queryable(QQ):
                 # ("any SQL with ? placeholders", val)
                 op, val, key = "EXPR", listify(val), "EXPRW%s" % i
             elif isinstance(val, (list, tuple)) and len(val) == 2 \
-            and isinstance(val[0], basestring):
+            and isinstance(val[0], string_types):
                 tmp = val[0].strip().upper()
                 if tmp in self.OPS: # ("col", ("binary op like >=", val))
                     op, val = tmp, val[1]
@@ -143,13 +145,13 @@ class Queryable(QQ):
         def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
 
         action = action.upper()
-        cols   =    cols if isinstance(cols,  basestring) else ", ".join(cols)
-        where  = [where] if isinstance(where, basestring) else where
-        group  =   group if isinstance(group, basestring) else ", ".join(map(str, listify(group)))
-        order  = [order] if isinstance(order, basestring) else order
+        cols   =    cols if isinstance(cols,  string_types) else ", ".join(cols)
+        where  = [where] if isinstance(where, string_types) else where
+        group  =   group if isinstance(group, string_types) else ", ".join(map(str, listify(group)))
+        order  = [order] if isinstance(order, string_types) else order
         order  = [order] if isinstance(order, (list, tuple)) \
                  and len(order) == 2 and isinstance(order[1], bool) else order
-        limit  = [limit] if isinstance(limit, (basestring, int, long)) else limit
+        limit  = [limit] if isinstance(limit, string_types + integer_types) else limit
         values = values if not isinstance(values, dict) else values.items()
         where  =  where if not isinstance(where,  dict)  else where.items()
         sql = "SELECT %s FROM %s" % (cols, table) if "SELECT" == action else ""
@@ -172,7 +174,7 @@ class Queryable(QQ):
         if where:
             sql += " WHERE "
             for i, clause in enumerate(where):
-                if isinstance(clause, basestring): # "raw SQL with no arguments"
+                if isinstance(clause, string_types): # "raw SQL with no arguments"
                     clause = (clause, )
 
                 if len(clause) == 1: # ("raw SQL with no arguments", )
@@ -198,9 +200,9 @@ class Queryable(QQ):
         if order:
             sql += " ORDER BY "
             for i, col in enumerate(order):
-                name = col if isinstance(col, basestring) else col[0]
+                name = col if isinstance(col, string_types) else col[0]
                 sort = col[1] if name != col and len(col) > 1 else ""
-                if not isinstance(sort, basestring): sort = "DESC" if sort else ""
+                if not isinstance(sort, string_types): sort = "DESC" if sort else ""
                 sql += (", " if i else "") + name + (" " if sort else "") + sort
         for k, v in zip(("limit", "offset"), limit or ()):
             if v is None: continue # for k, v
@@ -325,13 +327,13 @@ class Database(DB, Queryable):
                 yield namedcursor or cursor
                 if commit: connection.commit()
             except GeneratorExit: pass # Caller consumed nothing
-            except StandardError:
+            except Exception:
                 logger.exception("SQL error on %s:", (namedcursor or cursor).query)
                 raise
             finally:
                 connection.rollback() # If not already committed, must rollback here
                 try: namedcursor and namedcursor.close()
-                except StandardError: pass
+                except Exception: pass
                 if schema: # Restore default search path on this connection
                     cursor.execute("SET search_path TO public")
                     connection.commit()
