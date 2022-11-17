@@ -106,7 +106,9 @@ class Queryable(QQ):
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
         key = self._key if isinstance(self, Database) else self._db._key
-        if key not in self.TABLES: self.init_tables(key)
+        if key not in self.TABLES:
+            self.TABLES[key] = {}  # To skip later if querying fails
+            self.TABLES[key].update(self.query_schema(keys=True))
         TABLES = self.TABLES[key]
 
         def cast(col, val):
@@ -212,9 +214,31 @@ class Queryable(QQ):
         return sql, args
 
 
-    def init_tables(self, key):
-        """Returns database table structure."""
-        result = self.TABLES[key] = {}
+    def query_schema(self, keys=False, views=False, inheritance=False):
+        """
+        Returns database table structure populated from current connection.
+
+        @param   views        whether to include views
+        @param   keys         whether to include primary and foreign key information
+        @param   inheritance  whether to include parent-child table information
+                              and populate inherited foreign keys
+        @return  ```{table or view name: {
+                         "fields": OrderedDict({
+                             column name: {
+                                 "name": column name,
+                                 "type": column type name,
+                                 ?"pk":  True,
+                                 ?"fk":  foreign table name,
+                             }
+                         }),
+                         ?"key":      primary key column name,
+                         ?"parent":   parent table name,
+                         ?"children": [child table name, ],
+                         "type":      "table" or "view",
+                     }
+                 }```
+        """
+        result = {}
 
         db = self if isinstance(self, DB) else self._db
         with Transaction(db, schema="information_schema") as tx:
@@ -222,7 +246,7 @@ class Queryable(QQ):
             for v in tx.fetchall("columns", table_schema="public",
                                  order="table_name, dtd_identifier"):
                 t, c, d = v["table_name"], v["column_name"], v["data_type"]
-                if t not in result: result[t] = {"fields": OrderedDict()}
+                if t not in result: result[t] = {"type": "table", "fields": OrderedDict()}
                 result[t]["fields"][c] = {"name": c, "type": d.lower()}
 
             # Retrieve primary and foreign keys
@@ -233,16 +257,11 @@ class Queryable(QQ):
                   "ON ccu.constraint_name = tc.constraint_name ",
                 cols="DISTINCT tc.table_name, kcu.column_name, tc.constraint_type, "
                 "ccu.table_name AS table_name2", where={"tc.table_schema": "public"}
-            ):
+            ) if keys else ():
                 t, c, t2 = v["table_name"], v["column_name"], v["table_name2"]
-                if "PRIMARY KEY" == v["constraint_type"]: result[t]["key"] = c
+                if "PRIMARY KEY" == v["constraint_type"]:
+                    result[t]["fields"][c]["pk"], result[t]["key"] = True, c
                 else: result[t]["fields"][c]["fk"] = t2
-            # Retrieve inherited foreign key constraints implemented via triggers
-            rgx = r"EXECUTE PROCEDURE constrain_outref\('(.+)', '(.+)', '.+'\)"
-            for v in tx.fetchall("triggers", trigger_name=("ILIKE", "%constrain_outref")):
-                t, stmt = v["event_object_table"], v["action_statement"]
-                m = re.match(rgx, stmt, re.I)
-                if m: result[t]["fields"][m.group(1)]["fk"] = m.group(2)
 
             # Retrieve inheritance information, copy foreign key flags from parent
             for v in tx.fetchall(
@@ -253,10 +272,10 @@ class Queryable(QQ):
                   "ON cn.oid = c.relnamespace AND cn.nspname = pn.nspname",
                 cols="c.relname AS child, p.relname AS parent",
                 where={"pn.nspname": "public"}
-            ):
+            ) if inheritance else ():
                 result[v["parent"]].setdefault("children", []).append(v["child"])
                 result[v["child"]]["parent"] = v["parent"]
-                for f, opts in result[v["parent"]]["fields"].items():
+                for f, opts in result[v["parent"]]["fields"].items() if keys else ():
                     if not opts.get("fk"): continue # for f, opts
                     result[v["child"]]["fields"][f]["fk"] = opts["fk"]
 
@@ -270,7 +289,7 @@ class Queryable(QQ):
                 cols="DISTINCT c.relname, a.attname, pg_get_function_result(p.oid) AS data_type",
                 where={"a.attnum": (">", 0), "a.attisdropped": False,
                        "s.nspname": "public", "c.relkind": ("IN", ("v", "m"))}
-            ):
+            ) if views else ():
                 t, c, d = v["relname"], v["attname"], v["data_type"]
                 if t not in result: result[t] = {"fields": OrderedDict(), "type": "view"}
                 result[t]["fields"][c] = {"name": c, "type": d.lower()}
