@@ -192,6 +192,37 @@ def transaction(commit=True, **kwargs):
     return init().transaction(commit, **kwargs)
 
 
+def register_adapter(transformer, typeclasses, engine=None):
+    """
+    Registers function to auto-adapt given Python types to database types in query parameters.
+
+    Registration is global per engine.
+
+    @param   transformer  function(Python value) returning adapted value
+    @param   typeclasses  one or more Python classes to adapt
+    @param   engine       database engine to adapt for, defaults to first initialized
+    """
+    if not isinstance(typeclasses, (list, set, tuple)): typeclasses = [typeclasses]
+    engine = engine.lower() if engine else next(Database.ENGINES)
+    Database.ENGINES[engine].register_adapter(transformer, typeclasses)
+    #for t in typeclasses: sqlite3.register_adapter(t, transformer)
+
+
+def register_converter(transformer, typenames, engine=None):
+    """
+    Registers function to auto-convert given SQL types to Python in query results.
+
+    Registration is global per engine.
+
+    @param   transformer  function(raw database value) returning Python value
+    @param   typenames    one or more database column types to adapt
+    @param   engine       database engine to convert for, defaults to first initialized
+    """
+    if isinstance(typenames, str): typenames = [typenames]
+    engine = engine.lower() if engine else next(Database.ENGINES)
+    Database.ENGINES[engine].register_converter(transformer, typenames)
+
+
 
 class Queryable(object):
     """Abstract base for Database and Transaction."""
@@ -279,8 +310,11 @@ class Queryable(object):
 class Database(Queryable):
     """Database instance. Usable as an auto-closing context manager."""
 
-    CACHE   = collections.OrderedDict()      # {(engine name, opts+kwargs str): Database}
-    ENGINES = None                           # {"sqlite": sqlite submodule, }
+    ## Database engine modules, as {"sqlite": sqlite submodule, ..}
+    ENGINES = load_modules()
+
+    ## Created instances as {(engine name, opts+kwargs str): Database}
+    INSTANCES = collections.OrderedDict()
 
 
     @classmethod
@@ -301,23 +335,20 @@ class Database(Queryable):
                          e.g. `detect_types=sqlite3.PARSE_COLNAMES` for SQLite,
                          or `minconn=1, maxconn=4` for Postgres connection pool
         """
-        if cls.ENGINES is None:
-            cls.ENGINES = load_modules()
-
         key, engine = None, engine.lower() if engine else None
         if opts is None and engine is None:  # Return first database, or raise
-            key = next(iter(cls.CACHE))
+            key = next(iter(cls.INSTANCES))
         elif opts is None:  # Return first database from engine, or raise
-            key = next((n, o) for n, o in cls.CACHE if n == engine)
+            key = next((n, o) for n, o in cls.INSTANCES if n == engine)
         elif engine is None:  # Auto-detect engine from options, or raise
             engine = next(n for n, m in cls.ENGINES.items() if m.autodetect(opts))
 
         key = key or (engine, str(opts) + str(kwargs))
-        if key in cls.CACHE: cls.CACHE[key].open()
+        if key in cls.INSTANCES: cls.INSTANCES[key].open()
         else:
             db = cls.ENGINES[engine].Database(opts, **kwargs)
-            cls.CACHE[key] = db
-        return cls.CACHE[key]
+            cls.INSTANCES[key] = db
+        return cls.INSTANCES[key]
 
 
     def __enter__(self):
@@ -338,7 +369,7 @@ class Database(Queryable):
 
         @param   commit  whether transaction autocommits at exit
         """
-        engine = next(n for (n, _), d in self.CACHE.items() if d is self)
+        engine = next(n for (n, _), d in self.INSTANCES.items() if d is self)
         return self.ENGINES[engine].Transaction(self, commit)
 
 

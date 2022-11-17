@@ -89,7 +89,6 @@ import sys
 from six import integer_types, string_types
 
 from . import Database as DB, Queryable as QQ, Rollback, Transaction as TX
-from . import json_dumps, json_loads, parse_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -322,12 +321,14 @@ def autodetect(opts):
     return False
 
 
+def register_adapter(transformer, typeclasses):
+    """Registers function to auto-adapt given Python types to SQLite in query parameters."""
+    for t in typeclasses: sqlite3.register_adapter(t, transformer)
 
-try:
-    [sqlite3.register_adapter(x, json_dumps) for x in (dict, list, tuple)]
-    sqlite3.register_converter("JSON", json_loads)
-    sqlite3.register_converter("timestamp", parse_datetime)
-except Exception: logger.exception("Error configuring sqlite.")
+
+def register_converter(transformer, typenames):
+    """Registers function to auto-convert given SQL types to Python in query results."""
+    for n in typenames: sqlite3.register_converter(n, transformer)
 
 
 

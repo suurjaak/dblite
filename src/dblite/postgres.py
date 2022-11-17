@@ -74,7 +74,7 @@ from contextlib import contextmanager
 import logging
 import re
 
-from six import integer_types, string_types
+from six import binary_type, integer_types, string_types, text_type
 
 try:
     import psycopg2
@@ -84,14 +84,14 @@ try:
 except ImportError: psycopg2 = None
 
 from . import Database as DB, Queryable as QQ, Rollback, Transaction as TX
-from . import json_dumps, json_loads
+from . import json_dumps
 
 logger = logging.getLogger(__name__)
 
 
 class Queryable(QQ):
 
-    TABLES = {}  # {opts json: table structure filled on first access}
+    TABLES = {}  # {opts+kwargs str: table structure filled on first access}
     # {name: {key: "pk", fields: {col: {name, type, ?fk: "t2"}},
     #         ?parent: "t3", ?children: ("t4", ), ?type: "view"}}
 
@@ -114,8 +114,8 @@ class Queryable(QQ):
             field = table in TABLES and TABLES[table]["fields"].get(col)
             if field and "array" == field["type"]:
                 return list(listify(val)) # Values for array fields must be lists
-            elif field and field["type"] in ("json", "jsonb") and val is not None:
-                return psycopg2.extras.Json(val, dumps=json_dumps)
+            elif field and val is not None:
+                return self.adapt_value(val, field["type"])
             if isinstance(val, (list, set)):
                 return tuple(val) # Sequence parameters for IN etc must be tuples
             return val
@@ -277,12 +277,28 @@ class Queryable(QQ):
         return result
 
 
+    def adapt_value(self, value, typename):
+        """
+        Returns value as JSON if field is a JSON type and no adapter registered for value type,
+        or original value.
+        """
+        if typename in ("json", "jsonb") and type(value) not in self.ADAPTERS.values():
+            return psycopg2.extras.Json(value, dumps=json_dumps)
+        return value
+
+
 
 class Database(DB, Queryable):
     """Convenience wrapper around psycopg2.ConnectionPool and Cursor."""
 
     ## Connection pools, as {opts+kwargs str: psycopg2.pool.ConnectionPool}
     POOLS = {}
+
+    ## Registered adapters for Python->SQL, as {typeclass: converter}
+    ADAPTERS = {}
+
+    ## Registered converters for SQL->Python pending application, as {typename: converter}
+    CONVERTERS = {}
 
 
     @classmethod
@@ -334,7 +350,7 @@ class Database(DB, Queryable):
         connection = self.POOLS[self._key].getconn()
         try:
             cursor, namedcursor = None, None
-            if "public" == schema: schema = None # Default, no need to set
+            if "public" == schema: schema = None  # Default, no need to set
 
             # If using schema, schema tables are queried first, fallback to public.
             # Need two cursors if schema+lazy, as named cursor only does one query.
@@ -345,15 +361,15 @@ class Database(DB, Queryable):
             try:
                 yield namedcursor or cursor
                 if commit: connection.commit()
-            except GeneratorExit: pass # Caller consumed nothing
+            except GeneratorExit: pass  # Caller consumed nothing
             except Exception:
                 logger.exception("SQL error on %s:", (namedcursor or cursor).query)
                 raise
             finally:
-                connection.rollback() # If not already committed, must rollback here
+                connection.rollback()  # If not already committed, must rollback here
                 try: namedcursor and namedcursor.close()
                 except Exception: pass
-                if schema: # Restore default search path on this connection
+                if schema:  # Restore default search path on this connection
                     cursor.execute("SET search_path TO public")
                     connection.commit()
                 if cursor: cursor.close()
@@ -394,6 +410,7 @@ class Database(DB, Queryable):
         """Opens database connection if not already open."""
         if self._cursorctx: return
         self.init_pool(self._key, self._opts, **self._kwargs)
+        self.apply_converters()
         self._cursorctx = self.get_cursor(commit=True)
 
 
@@ -405,6 +422,30 @@ class Database(DB, Queryable):
         self._cursorctx = None
         pool = self.POOLS.pop(self._key, None)
         if pool: pool.close_all()
+
+
+    @classmethod
+    def register_converter(cls, transformer, typenames):
+        """
+        Registers function to auto-convert given SQL types to Python in query results.
+
+        Will be applied as soon as a cursor is created, as type OIDS need lookup.
+        """
+        cls.CONVERTERS.update({n: transformer for n in typenames})
+
+
+    def apply_converters(self):
+        """Applies registered converters, if any, looking up type OIDs on cursor."""
+        if not self.CONVERTERS: return
+
+        regs, self.CONVERTERS = dict(self.CONVERTERS), {}
+        with self.get_cursor() as cursor:
+            for typename, transformer in regs.items():
+                cursor.execute("SELECT NULL::%s" % typename)
+                oid = cursor.description[0][1]  # description is [(name, type_code, ..)]
+                wrap = lambda x, c, f=transformer: f(x)  # psycopg invokes callback(value, cursor)
+                TYPE = psycopg2.extensions.new_type((oid, ), typename, wrap)
+                psycopg2.extensions.register_type(TYPE)
 
 
 class Transaction(TX, Queryable):
@@ -501,11 +542,31 @@ def autodetect(opts):
     return False
 
 
+def register_adapter(transformer, typeclasses):
+    """Registers function to auto-adapt given Python types to Postgres types in query parameters."""
+    def adapt(x):
+        """Wraps transformed value in psycopg protocol object."""
+        v = transformer(x)
+        return psycopg2.extensions.AsIs(v if isinstance(v, binary_type) else text_type(v).encode())
+
+    for t in typeclasses:
+        psycopg2.extensions.register_adapter(t, adapt)
+        Database.ADAPTERS[t] = transformer
+
+
+def register_converter(transformer, typenames):
+    """Registers function to auto-convert given SQL types to Python in query results."""
+    typenames = [n.upper() for n in typenames]
+    if "JSON" in typenames:
+        psycopg2.extras.register_default_json(globally=True, loads=transformer)
+    if "JSONB" in typenames:
+        psycopg2.extras.register_default_jsonb(globally=True, loads=transformer)
+    Database.CONVERTERS.update({n: transformer for n in typenames if n not in ("JSON", "JSONB")})
+
+
 
 if psycopg2:
     try:
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
-        psycopg2.extensions.register_adapter(dict, lambda x: psycopg2.extras.Json(x, json_dumps))
-        psycopg2.extras.register_default_jsonb(globally=True, loads=json_loads)
     except Exception: logger.exception("Error configuring psycopg.")
