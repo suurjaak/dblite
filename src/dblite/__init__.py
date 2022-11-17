@@ -176,12 +176,11 @@ def executescript(sql):
     return init().executescript(sql)
 
 
-def close(cascade=False):
+def close():
     """
     Closes the default database connection, if any.
-    If cascade, closes all database Transactions as well.
     """
-    init().close(cascade)
+    init().close()
 
 
 def transaction(commit=True, **kwargs):
@@ -209,7 +208,7 @@ class Queryable(object):
 
 
     def fetchone(self, table, cols="*", where=(), group=(), order=(), limit=(),
-              **kwargs):
+                 **kwargs):
         """
         Convenience wrapper for database SELECT and fetch one.
         Keyword arguments are added to WHERE.
@@ -282,7 +281,6 @@ class Database(Queryable):
     """Database instance."""
 
     CACHE   = collections.OrderedDict()      # {(engine name, opts+kwargs str): Database}
-    TXS     = collections.defaultdict(list)  # {Database: [Transaction, ], }
     ENGINES = None                           # {"sqlite": sqlite submodule, }
 
 
@@ -331,9 +329,7 @@ class Database(Queryable):
         @param   commit  whether transaction autocommits at exit
         """
         engine = next(n for (n, _), d in self.CACHE.items() if d is self)
-        tx = self.ENGINES[engine].Transaction(self, commit)
-        self.TXS[self].append(tx)
-        return tx
+        return self.ENGINES[engine].Transaction(self, commit)
 
 
     def open(self):
@@ -341,12 +337,9 @@ class Database(Queryable):
         raise NotImplementedError()
 
 
-    def close(self, cascade=False):
-        """Closes connection. If cascade, closes all transactions also."""
-        if not cascade or self not in self.TXS: return
-        for tx in self.TXS[self]: tx.close()
-        self.TXS.pop(self, None)
-
+    def close(self):
+        """Closes connection."""
+        pass
 
 
 class Transaction(Queryable):

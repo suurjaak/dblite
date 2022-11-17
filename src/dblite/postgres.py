@@ -401,12 +401,12 @@ class Database(DB, Queryable):
         pass # Connection pool is always open
 
 
-    def close(self, cascade=False):
-        """Closes connection. If cascade, closes all transactions also."""
+    def close(self):
+        """Closes connection."""
         if self._cursor:
             self._cursorctx.__exit__(None, None, None)
             self._cursorctx = self._cursor = None
-        super(Database, self).close(cascade)
+        super(Database, self).close()
 
 
 class Transaction(TX, Queryable):

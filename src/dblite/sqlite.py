@@ -256,12 +256,12 @@ class Database(DB, Queryable):
         self.connection = conn
 
 
-    def close(self, cascade=False):
+    def close(self):
         """Closes the database connection."""
         try: self.connection.close()
         except Exception: pass
         self.connection = None
-        super(Database, self).close(cascade)
+        super(Database, self).close()
 
 
 
