@@ -91,7 +91,6 @@ import os
 import re
 
 import six
-import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -379,6 +378,28 @@ class Rollback(Exception):
     pass
 
 
+
+class StaticTzInfo(datetime.tzinfo):
+    """datetime.tzinfo class representing a constant offset from UTC."""
+    ZERO = datetime.timedelta(0)
+
+    def __init__(self, name, delta):
+        """Constructs a new static zone info, with specified name and time delta."""
+        self._name    = name
+        self._offset = delta
+
+    def utcoffset(self, dt): return self._offset
+    def dst(self, dt):       return self.ZERO
+    def tzname(self, dt):    return self._name
+    def __ne__(self, other): return not self.__eq__(other)
+    def __repr__(self):      return "%s(%s)" % (self.__class__.__name__, self._name)
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self._offset == other._offset
+## UTC timezone singleton
+UTC = StaticTzInfo("UTC", StaticTzInfo.ZERO)
+
+
+
 def json_loads(s):
     """
     Returns deserialized JSON, with datetime/date strings converted to objects.
@@ -418,7 +439,7 @@ def json_dumps(data, indent=2, sort_keys=True):
     def encoder(x):
         if isinstance(x,    set): return list(x)
         if isinstance(x, (datetime.datetime, datetime.date, datetime.time)):
-            if x.tzinfo is None: x = pytz.utc.localize(x)
+            if x.tzinfo is None: x = x.replace(tzinfo=UTC)
             return x.isoformat()
         if isinstance(x, decimal.Decimal):
             return float(x) if x.as_tuple().exponent else int(x)
@@ -445,12 +466,10 @@ def parse_datetime(s):
                 hh, mm = map(int, [offset[1:3], offset[4:]])
                 delta = datetime.timedelta(hours=hh, minutes=mm)
                 if offset.startswith("-"): delta = -delta
-                z = pytz.tzinfo.StaticTzInfo()
-                z._utcoffset, z._tzname, z.zone = delta, offset, offset
-                result = z.localize(result)
+                result = result.replace(tzinfo=StaticTzInfo(offset, delta))
         except ValueError: pass
     if isinstance(result, datetime.datetime) and result.tzinfo is None:
-        result = pytz.utc.localize(result) # Force UTC timezone on unaware values
+        result = result.replace(tzinfo=UTC) # Force UTC timezone on unaware values
     return result
 
 
