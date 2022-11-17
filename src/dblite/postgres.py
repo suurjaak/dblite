@@ -91,9 +91,9 @@ logger = logging.getLogger(__name__)
 
 class Queryable(QQ):
 
-    TABLES = {}  # {opts+kwargs str: table structure filled on first access}
-    # {name: {key: "pk", fields: {col: {name, type, ?fk: "t2"}},
-    #         ?parent: "t3", ?children: ("t4", ), ?type: "view"}}
+    ## Database schemas as {Database key: {structure filled on first access}}
+    TABLES = {}
+    # {name: {?"key": pk, "fields": {col: {"name", "type", ?"fk": ftable}}, "type": "table"}}
 
     # Recognized binary operators for makeSQL
     OPS = ("!=", "!~", "!~*", "#", "%", "&", "*", "+", "-", "/", "<", "<<",
@@ -321,13 +321,11 @@ class Database(DB, Queryable):
 
 
     @classmethod
-    def init_pool(cls, key, opts, minconn=1, maxconn=4, **kwargs):
+    def init_pool(cls, key, dsn, minconn=1, maxconn=4, **kwargs):
         """Initializes connection pool if not already initialized."""
         if key in cls.POOLS: return
 
-        args = dict(minconn=minconn, maxconn=maxconn)
-        dsn = opts if isinstance(opts, string_types) else None
-        args.update(opts if isinstance(opts, dict) else {}, **kwargs)
+        args = dict(minconn=minconn, maxconn=maxconn, **kwargs)
         cls.POOLS[key] = psycopg2.pool.ThreadedConnectionPool(dsn, **args)
 
 
@@ -346,8 +344,9 @@ class Database(DB, Queryable):
         @param   kwargs   additional arguments given to engine constructor,
                           e.g. `minconn=1, maxconn=4`
         """
+        dsn = opts if isinstance(opts, string_types) else psycopg2.extensions.make_dsn(**opts)
         self._key       = str(opts) + str(kwargs)
-        self._opts      = opts
+        self._dsn       = dsn
         self._kwargs    = kwargs
         self._cursor    = None
         self._cursorctx = None
@@ -428,7 +427,7 @@ class Database(DB, Queryable):
     def open(self):
         """Opens database connection if not already open."""
         if self._cursorctx: return
-        self.init_pool(self._key, self._opts, **self._kwargs)
+        self.init_pool(self._key, self._dsn, **self._kwargs)
         self.apply_converters()
         self._cursorctx = self.get_cursor(commit=True)
 
@@ -554,11 +553,10 @@ def autodetect(opts):
                      or keyword=value format string like `"host=localhost dbname=.."`
                      or a dictionary of `dict(host="localhost", dbname=..)`
     """
-    if isinstance(opts, dict):
-        return bool(opts.get("dbname"))
-    elif isinstance(opts, string_types):
-        return opts.startswith("postgresql://") or bool(re.match(r"\w+=\S*", opts))
-    return False
+    if not opts: return False
+    if isinstance(opts, dict): return True
+    try: return bool(psycopg2.extensions.parse_dsn(opts) or True) # "postgresql://" returns {}
+    except Exception: return False
 
 
 def register_adapter(transformer, typeclasses):
