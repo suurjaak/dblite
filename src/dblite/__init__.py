@@ -77,7 +77,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    16.11.2022
+@modified    17.11.2022
 """
 import collections
 import base64
@@ -96,13 +96,26 @@ import pytz
 logger = logging.getLogger(__name__)
 
 
-def init(engine=None, opts=None, **kwargs):
+def init(opts=None, engine=None, **kwargs):
     """
     Returns a Database object, creating one if not already open with these opts.
-    If engine and opts is None, returns the default database - the very first initialized.
+    If opts is None, returns the default database - the very first initialized.
     Module level functions use the default database.
+
+    @param   opts    database connection options, engine-specific;
+                     SQLite takes a file path or path-like object or `":memory:"`,
+                     Postgres takes a Postgres URI scheme like `"postgresql://user@localhost/mydb"`
+                     or a Postgres keyword=value format string like
+                     `"host=localhost username=user dbname=mydb"`
+                     or a dictionary of connection options like `dict(host="localhost", dbname=..)`
+    @param   engine  database engine if not auto-detecting from connection options,
+                     "sqlite" for SQLite3 and "postgres" for PostgreSQL (case-insensitive)
+    @param   kwargs  additional arguments given to engine constructor,
+                     e.g. `detect_types=sqlite3.PARSE_COLNAMES` for SQLite,
+                     or `minconn=1, maxconn=4` for Postgres connection pool
     """
-    return Database.factory(engine, opts, **kwargs)
+    return Database.factory(opts, engine, **kwargs)
+
 
 
 def fetchall(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
@@ -268,25 +281,44 @@ class Queryable(object):
 class Database(Queryable):
     """Database instance."""
 
-    CACHE   = collections.OrderedDict()      # {(engine name, opts json): Database}
+    CACHE   = collections.OrderedDict()      # {(engine name, opts+kwargs str): Database}
     TXS     = collections.defaultdict(list)  # {Database: [Transaction, ], }
     ENGINES = None                           # {"sqlite": sqlite submodule, }
 
 
     @classmethod
-    def factory(cls, engine, opts, **kwargs):
+    def factory(cls, opts, engine=None, **kwargs):
         """
         Returns a new or cached Database, or first created if opts is None.
-        """
-        key = next(iter(cls.CACHE)) if opts is None else (engine, json_dumps(opts))
 
+        @param   opts    database connection options, engine-specific;
+                         SQLite takes a file path or path-like object or `":memory:"`,
+                         Postgres takes a Postgres URI scheme
+                         like `"postgresql://user@localhost/mydb"`
+                         or a Postgres keyword=value format
+                         like `"host=localhost username=user dbname=mydb"`
+                         or a dictionary of connection options like `dict(host="localhost", ..)`
+        @param   engine  database engine if not auto-detecting from connection options,
+                         "sqlite" for SQLite3 and "postgres" for PostgreSQL (case-insensitive)
+        @param   kwargs  additional arguments given to engine constructor,
+                         e.g. `detect_types=sqlite3.PARSE_COLNAMES` for SQLite,
+                         or `minconn=1, maxconn=4` for Postgres connection pool
+        """
+        if cls.ENGINES is None:
+            cls.ENGINES = load_modules()
+
+        key, engine = None, engine.lower() if engine else None
+        if opts is None and engine is None:  # Return first database, or raise
+            key = next(iter(cls.CACHE))
+        elif opts is None:  # Return first database from engine, or raise
+            key = next((n, o) for n, o in cls.CACHE if n == engine)
+        elif engine is None:  # Auto-detect engine from options, or raise
+            engine = next(n for n, m in cls.ENGINES.items() if m.autodetect(opts))
+
+        key = key or (engine, str(opts) + str(kwargs))
         if key in cls.CACHE: cls.CACHE[key].open()
         else:
-            if cls.ENGINES is None:
-                cls.ENGINES = load_modules()
-
             db = cls.ENGINES[engine].Database(opts, **kwargs)
-            db.engine = cls.ENGINES[engine]
             cls.CACHE[key] = db
         return cls.CACHE[key]
 
@@ -298,7 +330,8 @@ class Database(Queryable):
 
         @param   commit  whether transaction autocommits at exit
         """
-        tx = self.engine.Transaction(self, commit)
+        engine = next(n for (n, _), d in self.CACHE.items() if d is self)
+        tx = self.ENGINES[engine].Transaction(self, commit)
         self.TXS[self].append(tx)
         return tx
 
@@ -334,8 +367,8 @@ class Transaction(Queryable):
         if self in Database.TXS.get(self._db, []):
             Database.TXS[self._db].remove(self)
 
-    def commit(self):             raise NotImplementedError()
-    def rollback(self):           raise NotImplementedError()
+    def commit(self):   raise NotImplementedError()
+    def rollback(self): raise NotImplementedError()
         
 
 class Rollback(Exception):
@@ -343,12 +376,17 @@ class Rollback(Exception):
     Raising in transaction context manager will roll back the transaction
     and exit the context manager cleanly, without rising further.
     """
+    pass
 
 
 def json_loads(s):
-    '''Returns deserialized JSON, with datetime/date strings converted to objects.'''
+    """
+    Returns deserialized JSON, with datetime/date strings converted to objects.
+
+    Returns original input if loading as JSON failed.
+    """
     def convert_recursive(data):
-        '''Converts ISO datetime strings to objects in nested dicts or lists.'''
+        """Converts ISO datetime strings to objects in nested dicts or lists."""
         result = []
         pairs = enumerate(data) if isinstance(data, list) \
                 else data.items() if isinstance(data, dict) else []
@@ -371,11 +409,11 @@ def json_loads(s):
 
 
 def json_dumps(data, indent=2, sort_keys=True):
-    '''
-    Returns JSON string, with datetime types converted to ISO8601 strings
+    """
+    Returns JSON string, with datetime types converted to ISO-8601 strings
     (in UTC if no timezone set), sets converted to lists,
     and Decimal objects converted to float or int. Returns None if data is None.
-    '''
+    """
     if data is None: return None
     def encoder(x):
         if isinstance(x,    set): return list(x)
@@ -420,12 +458,12 @@ def parse_datetime(s):
 def load_modules():
     """Returns db engines loaded from file directory, as {name: module}."""
     result = {}
-    for f in glob.glob(os.path.join(os.path.dirname(__file__), "*")):
-        if f.startswith("__") or os.path.isfile(f) and not re.match(".*pyc?$", f) \
+    for f in sorted(glob.glob(os.path.join(os.path.dirname(__file__), "*"))):
+        name = os.path.splitext(os.path.basename(f))[0]
+        if name.startswith("__") or os.path.isfile(f) and not re.match(".*pyc?$", f) \
         or os.path.isdir(f) and not any(glob.glob(os.path.join(f, x)) for x in ("*.py", "*.pyc")):
             continue # for f
 
-        name = os.path.splitext(os.path.split(f)[-1])[0]
         modulename = "%s.%s" % (__package__, name)
         module = importlib.import_module(modulename)
         result[name] = module

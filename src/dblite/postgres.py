@@ -67,7 +67,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    16.11.2022
+@modified    17.11.2022
 """
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -281,22 +281,40 @@ class Queryable(QQ):
 class Database(DB, Queryable):
     """Convenience wrapper around psycopg2.ConnectionPool and Cursor."""
 
-    POOL   = {}  # {opts json: psycopg2.pool.ConnectionPool}
+    ## Connection pools, as {opts+kwargs str: psycopg2.pool.ConnectionPool}
+    POOL = {}
 
 
     @classmethod
-    def init_pool(cls, key, database=None, username=None, password=None,
-              host=None, port=None, minconn=1, maxconn=4, **kwargs):
+    def init_pool(cls, key, opts, minconn=1, maxconn=4, **kwargs):
+        """Initializes connection pool if not already initialized."""
+        if key in cls.POOL: return
+
+        args = dict(minconn=minconn, maxconn=maxconn)
+        dsn = opts if isinstance(opts, string_types) else None
+        args.update(opts if isinstance(opts, dict) else {}, **kwargs)
+        cls.POOL[key] = psycopg2.pool.ThreadedConnectionPool(dsn, **args)
+
+
+    def __init__(self, opts, **kwargs):
         """
-        Context manager for psycopg connection.
-        Acquires a connection from the pool and releases it when exiting context.
+        Creates a new Database instance for Postgres.
+
+        By default uses a pool of 1..4 connections.
+
+        Connection parameters can also be specified in OS environment,
+        standard Postgres environment variables like `PGUSER` and `PGPASSWORD`.
+
+        @param   opts     Postgres connection string, or options dictionary as
+                          `dict(dbname=None, username=None, password=None,
+                                host=None, port=None, minconn=1, maxconn=4, ..)`
+        @param   kwargs   additional arguments given to engine constructor,
+                          e.g. `minconn=1, maxconn=4`
         """
-        if key not in cls.POOL: cls.POOL[key] = \
-        psycopg2.pool.ThreadedConnectionPool(
-            minconn=minconn, maxconn=maxconn, dbname=database,
-            user=username, password=password, host=host, port=port,
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
+        self._key = str(opts) + str(kwargs)
+        self.init_pool(self._key, opts, **kwargs)
+        self._cursor = None
+        self._cursorctx = self.get_cursor(commit=True)
 
 
     @contextmanager
@@ -340,19 +358,6 @@ class Database(DB, Queryable):
                 if cursor: cursor.close()
         finally: self.POOL[self._key].putconn(connection)
 
-
-
-    def __init__(self, opts, **kwargs):
-        """
-        Creates a new Postgres connection.
-
-        @param   opts     dict(database=None, username=None, password=None,
-                               host=None, port=None, minconn=1, maxconn=4)
-        """
-        self._key = json_dumps(opts)
-        self.init_pool(self._key, **opts)
-        self._cursor = None
-        self._cursorctx = self.get_cursor(commit=True)
 
 
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
@@ -488,6 +493,21 @@ class Transaction(TX, Queryable):
     def rollback(self):
         """Rolls back current transaction, if any."""
         if self._cursor: self._cursor.connection.rollback()
+
+
+def autodetect(opts):
+    """
+    Returns true if inputs are recognizable as Postgres connection options.
+
+    @param   opts    expected as URL string `"postgresql://user@localhost/mydb"`
+                     or keyword=value format string like `"host=localhost dbname=.."`
+                     or a dictionary of `dict(host="localhost", dbname=..)`
+    """
+    if isinstance(opts, dict):
+        return bool(opts.get("dbname"))
+    elif isinstance(opts, string_types):
+        return opts.startswith("postgresql://") or bool(re.match(r"\w+=\S*", opts))
+    return False
 
 
 

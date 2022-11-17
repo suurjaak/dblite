@@ -77,8 +77,9 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    16.11.2022
+@modified    17.11.2022
 """
+import copy
 import logging
 import os
 import re
@@ -208,9 +209,10 @@ class Database(DB, Queryable):
         """Creates a new SQLite connection."""
         super(Database, self).__init__()
         self.path, self.connection = path, None
+        self._kwargs = copy.deepcopy(kwargs)
         if ":memory:" != path and not os.path.exists(path):
             try: os.makedirs(os.path.dirname(path))
-            except OSError: pass
+            except Exception: pass
         self.open()
 
 
@@ -244,8 +246,12 @@ class Database(DB, Queryable):
     def open(self):
         """Opens the database connection, if not already open."""
         if self.connection: return
-        conn = sqlite3.connect(self.path, detect_types=sqlite3.PARSE_DECLTYPES,
-               isolation_level=None, check_same_thread=False)
+        KWS = ("timeout", "detect_types", "isolation_level", "check_same_thread",
+               "factory", "cached_statements", "uri")
+        args = dict(detect_types=sqlite3.PARSE_DECLTYPES,
+                    isolation_level=None, check_same_thread=False)
+        args.update({k: v for k, v in self._kwargs.items() if k in KWS})
+        conn = sqlite3.connect(self.path, **args)
         conn.row_factory = lambda cursor, row: dict(sqlite3.Row(cursor, row))
         self.connection = conn
 
@@ -315,6 +321,21 @@ class Transaction(TX, Queryable):
         
 
 
+def autodetect(opts):
+    """
+    Returns true if inputs are recognizable as SQLite connection options.
+
+    @param   opts    expected as a path string or path-like object
+    """
+    if isinstance(opts, string_types):  # E.g. not "postgresql://"
+        return opts.startswith("file:") or not re.match(r"^\w+\:\/\/", opts)
+    elif sys.version_info >= (3, 4):
+        import pathlib
+        return isinstance(opts, pathlib.Path)
+    return False
+
+
+
 try:
     [sqlite3.register_adapter(x, json_dumps) for x in (dict, list, tuple)]
     sqlite3.register_converter("JSON", json_loads)
@@ -327,7 +348,7 @@ if "__main__" == __name__:
     def test():
         sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
         import dblite as db
-        db.init("sqlite", ":memory:")
+        db.init(":memory:")
         db.execute("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
 
         print("Inserted ID %s." % db.insert("test", val=None))
