@@ -386,15 +386,24 @@ class Database(Queryable):
 class Transaction(Queryable):
     """Transaction context manager, breakable by raising Rollback."""
 
-    def __init__(self, db, commit=True, **kwargs):
+    def __init__(self, db, commit=True, exclusive=False, **kwargs):
+        """
+        @param   commit     if true, transaction auto-commits at the end
+        @param   exclusive  whether entering a with-block is exclusive over other
+                            Transaction instances entering an exclusive with-block
+                            on this connection
+        @param   kwargs     engine-specific args, like `schema="backup", lazy=True` for Postgres
+        """
         super(Transaction, self).__init__()
         self._db, self._autocommit = db, commit
 
     def __enter__(self):
+        """Context manager entry, returns Transaction object."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_trace):
-        return exc_type in (None, Rollback) # Do not propagate raised Rollback
+        """Context manager exit, propagates raised errors except Rollback."""
+        return exc_type in (None, Rollback)
 
     def close(self, commit=None): raise NotImplementedError()
     def commit(self):             raise NotImplementedError()

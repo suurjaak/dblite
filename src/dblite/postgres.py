@@ -69,10 +69,11 @@ Released under the MIT License.
 @created     08.05.2020
 @modified    17.11.2022
 """
-from collections import OrderedDict
+import collections
 from contextlib import contextmanager
 import logging
 import re
+import threading
 
 from six import binary_type, integer_types, string_types, text_type
 
@@ -246,7 +247,8 @@ class Queryable(QQ):
             for v in tx.fetchall("columns", table_schema="public",
                                  order="table_name, dtd_identifier"):
                 t, c, d = v["table_name"], v["column_name"], v["data_type"]
-                if t not in result: result[t] = {"type": "table", "fields": OrderedDict()}
+                if t not in result: result[t] = {"type": "table",
+                                                 "fields": collections.OrderedDict()}
                 result[t]["fields"][c] = {"name": c, "type": d.lower()}
 
             # Retrieve primary and foreign keys
@@ -291,7 +293,8 @@ class Queryable(QQ):
                        "s.nspname": "public", "c.relkind": ("IN", ("v", "m"))}
             ) if views else ():
                 t, c, d = v["relname"], v["attname"], v["data_type"]
-                if t not in result: result[t] = {"fields": OrderedDict(), "type": "view"}
+                if t not in result: result[t] = {"type": "view",
+                                                 "fields": collections.OrderedDict()}
                 result[t]["fields"][c] = {"name": c, "type": d.lower()}
         return result
 
@@ -318,6 +321,9 @@ class Database(DB, Queryable):
 
     ## Registered converters for SQL->Python pending application, as {typename: converter}
     CONVERTERS = {}
+
+    ## Mutexes for exclusive transactions, as {Database instance: lock}
+    MUTEX = collections.defaultdict(threading.RLock)
 
 
     @classmethod
@@ -438,6 +444,7 @@ class Database(DB, Queryable):
             self._cursorctx.__exit__(None, None, None)
             self._cursor = None
         self._cursorctx = None
+        self.MUTEX.pop(self, None)
         pool = self.POOLS.pop(self._key, None)
         if pool: pool.close_all()
 
@@ -474,27 +481,39 @@ class Transaction(TX, Queryable):
     Block can be exited early by raising Rollback.
     """
 
-    def __init__(self, db, commit=True, schema=None, lazy=False):
+    def __init__(self, db, commit=True, exclusive=False, schema=None, lazy=False):
         """
-        @param   commit   if true, transaction auto-commits at the end
-        @param   schema   search_path to use in this transaction
-        @param   lazy     if true, fetches results from server iteratively
-                          instead of all at once, supports single query only
+        @param   commit     if true, transaction auto-commits at the end
+        @param   exclusive  whether entering a with-block is exclusive over other
+                            Transaction instances entering an exclusive with-block
+                            on this connection
+        @param   schema     search_path to use in this transaction
+        @param   lazy       if true, fetches results from server iteratively
+                            instead of all at once, supports single query only
         """
         super(Transaction, self).__init__(db, commit)
         self._cursor = None
         self._cursorctx = db.get_cursor(commit, schema, lazy)
+        self._exclusive = exclusive
 
     def __enter__(self):
         """Context manager entry, returns Transaction object."""
-        self._cursor = self._cursorctx.__enter__()
-        return self
+        if self._exclusive: Database.MUTEX[self._db].acquire()
+        try:
+            self._cursor = self._cursorctx.__enter__()
+            return self
+        except Exception:
+            if self._exclusive: Database.MUTEX[self._db].release()
+            raise
 
     def __exit__(self, exc_type, exc_val, exc_trace):
         """Context manager exit, propagates raised errors except Rollback."""
-        self._cursorctx.__exit__(exc_type, exc_val, exc_trace)
-        self._cursor = None
-        return exc_type in (None, Rollback)
+        try:
+            self._cursorctx.__exit__(exc_type, exc_val, exc_trace)
+            self._cursor = None
+            return exc_type in (None, Rollback)
+        finally:
+            if self._exclusive: Database.MUTEX[self._db].release()
 
     def close(self, commit=None):
         """

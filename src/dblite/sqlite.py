@@ -79,12 +79,14 @@ Released under the MIT License.
 @created     05.03.2014
 @modified    17.11.2022
 """
+import collections
 import copy
 import logging
 import os
 import re
 import sqlite3
 import sys
+import threading
 
 from six import integer_types, string_types
 
@@ -204,6 +206,10 @@ class Queryable(QQ):
 class Database(DB, Queryable):
     """Convenience wrapper around sqlite3.Connection."""
 
+    ## Mutexes for exclusive transactions, as {Database instance: lock}
+    MUTEX = collections.defaultdict(threading.RLock)
+
+
     def __init__(self, path=":memory:", **kwargs):
         """Creates a new SQLite connection."""
         super(Database, self).__init__()
@@ -260,20 +266,31 @@ class Database(DB, Queryable):
 class Transaction(TX, Queryable):
     """Transaction context manager, breakable by raising Rollback."""
 
-    def __init__(self, db, commit=True, **kwargs):
-        super(Transaction, self).__init__(db, commit, **kwargs)
+    def __init__(self, db, commit=True, exclusive=False, **__):
+        """
+        @param   commit     if true, transaction auto-commits at the end
+        @param   exclusive  whether entering a with-block is exclusive over other
+                            Transaction instances entering an exclusive with-block
+                            on this connection
+        """
+        super(Transaction, self).__init__(db, commit)
         self._isolevel0 = None
+        self._exclusive = exclusive
 
     def __enter__(self):
+        if self._exclusive: Database.MUTEX[self._db].acquire()
         self._isolevel0 = self._db.connection.isolation_level
         self._db.connection.isolation_level = "DEFERRED"
         return self
 
     def __exit__(self, exc_type, exc_val, exc_trace):
-        if self._autocommit and exc_type is None: self._db.connection.commit()
-        else: self._db.connection.rollback()
-        self._db.connection.isolation_level = self._isolevel0
-        return exc_type in (None, Rollback) # Do not propagate raised Rollback
+        try:
+            if self._autocommit and exc_type is None: self._db.connection.commit()
+            else: self._db.connection.rollback()
+            self._db.connection.isolation_level = self._isolevel0
+            return exc_type in (None, Rollback) # Do not propagate raised Rollback
+        finally:
+            if self._exclusive: Database.MUTEX[self._db].release()
 
     def close(self, commit=None):
         """
