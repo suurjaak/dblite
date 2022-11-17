@@ -360,13 +360,6 @@ class Database(DB, Queryable):
         finally: self.POOLS[self._key].putconn(connection)
 
 
-
-    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
-                limit=(), values=()):
-        """Returns (SQL statement string, parameter dict)."""
-        return super(Database, self).makeSQL(action, table, cols, where, group, order, limit, values)
-
-
     def insert(self, table, values=(), **kwargs):
         """
         Convenience wrapper for database INSERT, returns inserted row ID.
@@ -457,12 +450,6 @@ class Transaction(TX, Queryable):
             if commit is False: self.rollback()
             elif commit:        self.commit()
             self.__exit__(None, None, None)
-
-    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
-                limit=(), values=()):
-        """Returns (SQL statement string, parameter dict)."""
-        return super(Transaction, self).makeSQL(action, table, cols, where, group, order, limit, values)
-
 
     def insert(self, table, values=(), **kwargs):
         """
