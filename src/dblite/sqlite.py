@@ -261,7 +261,6 @@ class Database(DB, Queryable):
         try: self.connection.close()
         except Exception: pass
         self.connection = None
-        super(Database, self).close()
 
 
 
@@ -296,7 +295,6 @@ class Transaction(TX, Queryable):
         """
         if commit is False: self.rollback()
         elif commit:        self.commit()
-        super(Transaction, self).close(commit)
 
     def insert(self, table, values=(), **kwargs):
         """

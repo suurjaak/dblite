@@ -278,7 +278,7 @@ class Queryable(object):
 
 
 class Database(Queryable):
-    """Database instance."""
+    """Database instance. Usable as an auto-closing context manager."""
 
     CACHE   = collections.OrderedDict()      # {(engine name, opts+kwargs str): Database}
     ENGINES = None                           # {"sqlite": sqlite submodule, }
@@ -321,6 +321,17 @@ class Database(Queryable):
         return cls.CACHE[key]
 
 
+    def __enter__(self):
+        """Context manager entry, opens database if not already open, returns Database object."""
+        self.open()
+        return self
+
+
+    def __exit__(self, exc_type, exc_val, exc_trace):
+        """Context manager exit, closes database."""
+        self.close()
+
+
     def transaction(self, commit=True):
         """
         Returns a transaction context manager, breakable by raising Rollback,
@@ -338,8 +349,8 @@ class Database(Queryable):
 
 
     def close(self):
-        """Closes connection."""
-        pass
+        """Closes the database."""
+        raise NotImplementedError()
 
 
 class Transaction(Queryable):
@@ -355,13 +366,9 @@ class Transaction(Queryable):
     def __exit__(self, exc_type, exc_val, exc_trace):
         return exc_type in (None, Rollback) # Do not propagate raised Rollback
 
-    def close(self, commit=None):
-        """Removes transaction from Database cache."""
-        if self in Database.TXS.get(self._db, []):
-            Database.TXS[self._db].remove(self)
-
-    def commit(self):   raise NotImplementedError()
-    def rollback(self): raise NotImplementedError()
+    def close(self, commit=None): raise NotImplementedError()
+    def commit(self):             raise NotImplementedError()
+    def rollback(self):           raise NotImplementedError()
         
 
 class Rollback(Exception):

@@ -282,18 +282,18 @@ class Database(DB, Queryable):
     """Convenience wrapper around psycopg2.ConnectionPool and Cursor."""
 
     ## Connection pools, as {opts+kwargs str: psycopg2.pool.ConnectionPool}
-    POOL = {}
+    POOLS = {}
 
 
     @classmethod
     def init_pool(cls, key, opts, minconn=1, maxconn=4, **kwargs):
         """Initializes connection pool if not already initialized."""
-        if key in cls.POOL: return
+        if key in cls.POOLS: return
 
         args = dict(minconn=minconn, maxconn=maxconn)
         dsn = opts if isinstance(opts, string_types) else None
         args.update(opts if isinstance(opts, dict) else {}, **kwargs)
-        cls.POOL[key] = psycopg2.pool.ThreadedConnectionPool(dsn, **args)
+        cls.POOLS[key] = psycopg2.pool.ThreadedConnectionPool(dsn, **args)
 
 
     def __init__(self, opts, **kwargs):
@@ -311,10 +311,11 @@ class Database(DB, Queryable):
         @param   kwargs   additional arguments given to engine constructor,
                           e.g. `minconn=1, maxconn=4`
         """
-        self._key = str(opts) + str(kwargs)
-        self.init_pool(self._key, opts, **kwargs)
-        self._cursor = None
-        self._cursorctx = self.get_cursor(commit=True)
+        self._key       = str(opts) + str(kwargs)
+        self._opts      = opts
+        self._kwargs    = kwargs
+        self._cursor    = None
+        self._cursorctx = None
 
 
     @contextmanager
@@ -330,7 +331,7 @@ class Database(DB, Queryable):
                          iteratively; only supports making a single query
         @return          psycopg2.extras.RealDictCursor
         """
-        connection = self.POOL[self._key].getconn()
+        connection = self.POOLS[self._key].getconn()
         try:
             cursor, namedcursor = None, None
             if "public" == schema: schema = None # Default, no need to set
@@ -356,7 +357,7 @@ class Database(DB, Queryable):
                     cursor.execute("SET search_path TO public")
                     connection.commit()
                 if cursor: cursor.close()
-        finally: self.POOL[self._key].putconn(connection)
+        finally: self.POOLS[self._key].putconn(connection)
 
 
 
@@ -398,15 +399,19 @@ class Database(DB, Queryable):
 
     def open(self):
         """Opens database connection if not already open."""
-        pass # Connection pool is always open
+        if self._cursorctx: return
+        self.init_pool(self._key, self._opts, **self._kwargs)
+        self._cursorctx = self.get_cursor(commit=True)
 
 
     def close(self):
         """Closes connection."""
         if self._cursor:
             self._cursorctx.__exit__(None, None, None)
-            self._cursorctx = self._cursor = None
-        super(Database, self).close()
+            self._cursor = None
+        self._cursorctx = None
+        pool = self.POOLS.pop(self._key, None)
+        if pool: pool.close_all()
 
 
 class Transaction(TX, Queryable):
@@ -452,7 +457,6 @@ class Transaction(TX, Queryable):
             if commit is False: self.rollback()
             elif commit:        self.commit()
             self.__exit__(None, None, None)
-        super(Transaction, self).close(commit)
 
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
