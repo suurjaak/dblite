@@ -202,6 +202,7 @@ def register_adapter(transformer, typeclasses, engine=None):
     @param   typeclasses  one or more Python classes to adapt
     @param   engine       database engine to adapt for, defaults to first initialized
     """
+    populate_engines()
     if not isinstance(typeclasses, (list, set, tuple)): typeclasses = [typeclasses]
     engine = engine.lower() if engine else next(Database.ENGINES)
     Database.ENGINES[engine].register_adapter(transformer, typeclasses)
@@ -218,6 +219,7 @@ def register_converter(transformer, typenames, engine=None):
     @param   typenames    one or more database column types to adapt
     @param   engine       database engine to convert for, defaults to first initialized
     """
+    populate_engines()
     if isinstance(typenames, str): typenames = [typenames]
     engine = engine.lower() if engine else next(Database.ENGINES)
     Database.ENGINES[engine].register_converter(transformer, typenames)
@@ -321,7 +323,7 @@ class Database(Queryable):
     """Database instance. Usable as an auto-closing context manager."""
 
     ## Database engine modules, as {"sqlite": sqlite submodule, ..}
-    ENGINES = load_modules()
+    ENGINES = None
 
     ## Created instances as {(engine name, opts+kwargs str): Database}
     INSTANCES = collections.OrderedDict()
@@ -345,6 +347,7 @@ class Database(Queryable):
                          e.g. `detect_types=sqlite3.PARSE_COLNAMES` for SQLite,
                          or `minconn=1, maxconn=4` for Postgres connection pool
         """
+        populate_engines()
         key, engine = None, engine.lower() if engine else None
         if opts is None and engine is None:  # Return first database, or raise
             key = next(iter(cls.INSTANCES))
@@ -533,7 +536,13 @@ def load_modules():
         or os.path.isdir(n) and not any(glob.glob(os.path.join(n, x)) for x in ("*.py", "*.pyc")):
             continue  # for n
 
-        modulename = "%s.%s" % (__package__, name)
+        modulename = "%s.%s.%s" % (__package__, "engines", name)
         module = importlib.import_module(modulename)
         result[name] = module
     return result
+
+
+def populate_engines():
+    """Populates Database engines, if not already populated."""
+    if Database.ENGINES is None:
+        Database.ENGINES = load_modules()
