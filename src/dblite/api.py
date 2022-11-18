@@ -439,6 +439,11 @@ class Transaction(Queryable):
     def commit(self):             raise NotImplementedError()
     def rollback(self):           raise NotImplementedError()
 
+    @property
+    def database(self):
+        """Returns transaction Database instance."""
+        raise NotImplementedError()
+
 
 class Rollback(Exception):
     """

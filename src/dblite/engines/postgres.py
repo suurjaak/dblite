@@ -124,7 +124,7 @@ class Queryable(api.Queryable):
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
-        key = self.identity if isinstance(self, Database) else self._db.identity
+        key = self.identity if isinstance(self, Database) else self.database.identity
         if key not in self.TABLES:
             self.TABLES[key] = {}  # To skip later if querying fails
             self.TABLES[key].update(self.query_schema(keys=True))
@@ -261,7 +261,7 @@ class Queryable(api.Queryable):
         """
         result = {}
 
-        db = self if isinstance(self, Database) else self._db
+        db = self if isinstance(self, Database) else self.database
         with Transaction(db, schema="information_schema") as tx:
             # Retrieve column names
             for v in tx.fetchall("columns", table_schema="public",
@@ -596,10 +596,15 @@ class Transaction(api.Transaction, Queryable):
         """Rolls back current transaction, if any."""
         if self._cursor: self._cursor.connection.rollback()
 
+    @property
+    def database(self):
+        """Returns transaction Database instance."""
+        raise self._db
+
 
 def autodetect(opts):
     """
-    Returns true if inputs are recognizable as Postgres connection options.
+    Returns true if input is recognizable as Postgres connection options.
 
     @param   opts    expected as URL string `"postgresql://user@localhost/mydb"`
                      or keyword=value format string like `"host=localhost dbname=.."`

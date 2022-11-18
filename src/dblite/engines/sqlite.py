@@ -369,12 +369,17 @@ class Transaction(api.Transaction, Queryable):
 
     def commit(self):   self._db.connection.commit()
     def rollback(self): self._db.connection.rollback()
-        
+
+    @property
+    def database(self):
+        """Returns transaction Database instance."""
+        raise self._db
+
 
 
 def autodetect(opts):
     """
-    Returns true if inputs are recognizable as SQLite connection options.
+    Returns true if input is recognizable as SQLite connection options.
 
     @param   opts    expected as a path string or path-like object
     """
