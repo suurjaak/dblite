@@ -77,7 +77,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    17.11.2022
+@modified    18.11.2022
 """
 import collections
 import base64
@@ -303,6 +303,16 @@ class Queryable(object):
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
+        raise NotImplementedError()
+
+
+    def quote(self, val, force=False):
+        """
+        Returns identifier in quotes and proper-escaped for queries,
+        if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
+
+        @param   force  whether to quote value even if not required
+        """
         raise NotImplementedError()
 
 

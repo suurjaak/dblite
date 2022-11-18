@@ -67,7 +67,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    17.11.2022
+@modified    18.11.2022
 """
 import collections
 from contextlib import contextmanager
@@ -88,6 +88,23 @@ from . import Database as DB, Queryable as QQ, Rollback, Transaction as TX
 from . import json_dumps
 
 logger = logging.getLogger(__name__)
+
+
+## Postgres reserved keywords, needing quotes in SQL queries
+RESERVED_KEYWORDS = [
+    "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ASC", "ASYMMETRIC", "BOTH", "CASE", "CAST", "CHECK",
+    "COLLATE", "COLUMN", "CONSTRAINT", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE",
+    "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC",
+    "DISTINCT", "DO", "ELSE", "END", "FALSE", "FOREIGN", "IN", "INITIALLY", "LATERAL", "LEADING",
+    "LOCALTIME", "LOCALTIMESTAMP", "NOT", "NULL", "ONLY", "OR", "PLACING", "PRIMARY", "REFERENCES",
+    "SELECT", "SESSION_USER", "SOME", "SYMMETRIC", "TABLE", "THEN", "TRAILING", "TRUE", "UNIQUE",
+    "USER", "USING", "VARIADIC", "WHEN", "AUTHORIZATION", "BINARY", "COLLATION", "CONCURRENTLY",
+    "CROSS", "CURRENT_SCHEMA", "FREEZE", "FULL", "ILIKE", "INNER", "IS", "JOIN", "LEFT", "LIKE",
+    "NATURAL", "OUTER", "RIGHT", "SIMILAR", "TABLESAMPLE", "VERBOSE", "ISNULL", "NOTNULL",
+    "OVERLAPS", "ARRAY", "AS", "CREATE", "EXCEPT", "FETCH", "FOR", "FROM", "GRANT", "GROUP",
+    "HAVING", "INTERSECT", "INTO", "LIMIT", "OFFSET", "ON", "ORDER", "RETURNING", "TO", "UNION",
+    "WHERE", "WINDOW", "WITH"
+]
 
 
 class Queryable(QQ):
@@ -307,6 +324,16 @@ class Queryable(QQ):
         if typename in ("json", "jsonb") and type(value) not in self.ADAPTERS.values():
             return psycopg2.extras.Json(value, dumps=json_dumps)
         return value
+
+
+    def quote(self, val, force=False):
+        """
+        Returns identifier in quotes and proper-escaped for queries,
+        if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
+
+        @param   force  whether to quote value even if not required
+        """
+        return quote(val, force)
 
 
 
@@ -576,6 +603,26 @@ def autodetect(opts):
     if isinstance(opts, dict): return True
     try: return bool(psycopg2.extensions.parse_dsn(opts) or True) # "postgresql://" returns {}
     except Exception: return False
+
+
+def quote(val, force=False):
+    """
+    Returns identifier in quotes and proper-escaped for queries,
+    if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
+
+    @param   force  whether to quote value even if not required
+    """
+    if not isinstance(val, string_types):
+        return val
+    RGX_INVALID, RGX_UNICODE = r"(^[\W\d])|(?=\W)", r"[^\x01-\x7E]"
+    result = val.decode() if isinstance(val, binary_type) else val
+    if force or result.upper() in RESERVED_KEYWORDS or re.search(RGX_INVALID, result):
+        if re.search(RGX_UNICODE, val):  # Unicode escape U&"\+ABCDEF"
+            result = result.replace("\\", r"\\").replace('"', '""')
+            result = 'U&"%s"' % re.sub(RGX_UNICODE, lambda m: r"\+%06X" % ord(m.group(0)), val)
+        else:
+            result = '"%s"' % result.replace('"', '""')
+    return result
 
 
 def register_adapter(transformer, typeclasses):

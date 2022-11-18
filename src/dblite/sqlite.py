@@ -77,7 +77,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    17.11.2022
+@modified    18.11.2022
 """
 import collections
 import copy
@@ -88,11 +88,28 @@ import sqlite3
 import sys
 import threading
 
-from six import integer_types, string_types
+from six import binary_type, integer_types, string_types
 
 from . import Database as DB, Queryable as QQ, Rollback, Transaction as TX
 
 logger = logging.getLogger(__name__)
+
+
+## SQLite reserved keywords, needing quotes in SQL queries
+RESERVED_KEYWORDS = [
+    "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ALWAYS", "ANALYZE", "AND", "AS", "ASC", "ATTACH",
+    "AUTOINCREMENT", "BEFORE", "BEGIN", "BETWEEN", "BY", "CASE", "CAST", "CHECK", "COLLATE",
+    "COMMIT", "CONSTRAINT", "CREATE", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP",
+    "DEFAULT", "DEFERRABLE", "DEFERRED", "DELETE", "DESC", "DETACH", "DISTINCT", "DO", "DROP",
+    "EACH", "ELSE", "END", "ESCAPE", "EXCEPT", "EXISTS", "EXPLAIN", "FOR", "FOREIGN", "FROM",
+    "GENERATED", "GROUP", "HAVING", "IF", "IMMEDIATE", "IN", "INDEX", "INITIALLY", "INSERT",
+    "INSTEAD", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "KEY", "LIKE", "LIMIT", "MATCH",
+    "NO", "NOT", "NOTHING", "NOTNULL", "NULL", "OF", "ON", "OR", "ORDER", "OVER", "PRAGMA",
+    "PRECEDING", "PRIMARY", "RAISE", "RECURSIVE", "REFERENCES", "REGEXP", "REINDEX", "RELEASE",
+    "RENAME", "REPLACE", "RESTRICT", "ROLLBACK", "SAVEPOINT", "SELECT", "SET", "TABLE",
+    "TEMPORARY", "THEN", "TIES", "TO", "TRANSACTION", "TRIGGER", "UNBOUNDED", "UNION",
+    "UNIQUE", "UPDATE", "USING", "VACUUM", "VALUES", "VIEW", "WHEN", "WHERE", "WITHOUT"
+]
 
 
 class Queryable(QQ):
@@ -200,6 +217,16 @@ class Queryable(QQ):
             args[k] = v
 
         return sql, args
+
+
+    def quote(self, val, force=False):
+        """
+        Returns identifier in quotes and proper-escaped for queries,
+        if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
+
+        @param   force  whether to quote value even if not required
+        """
+        return quote(val, force)
 
 
 
@@ -336,6 +363,22 @@ def autodetect(opts):
         import pathlib
         return isinstance(opts, pathlib.Path)
     return False
+
+
+def quote(val, force=False):
+    """
+    Returns identifier in quotes and proper-escaped for queries,
+    if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
+
+    @param   force  whether to quote value even if not required
+    """
+    if not isinstance(val, string_types):
+        return val
+    RGX_INVALID = r"(^[\W\d])|(?=\W)"
+    result = val.decode() if isinstance(val, binary_type) else val
+    if force or result.upper() in RESERVED_KEYWORDS or re.search(RGX_INVALID, result, re.U):
+        result = u'"%s"' % result.replace('"', '""')
+    return result
 
 
 def register_adapter(transformer, typeclasses):
