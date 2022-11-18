@@ -526,12 +526,10 @@ def parse_datetime(s):
 def load_modules():
     """Returns db engines loaded from file directory, as {name: module}."""
     result = {}
-    curfile = os.path.abspath(__file__)
-    for n in sorted(glob.glob(os.path.join(os.path.dirname(curfile), "*"))):
+    for n in sorted(glob.glob(os.path.join(os.path.dirname(__file__), "engines", "*"))):
         name = os.path.splitext(os.path.basename(n))[0]
-        if n == curfile or os.path.isfile(n) and not re.match(".*pyc?$", n) \
-        or os.path.isdir(n) and not any(glob.glob(os.path.join(n, x)) for x in ("*.py", "*.pyc")) \
-        or name.startswith("__"):
+        if name.startswith("__") or os.path.isfile(n) and not re.match(".*pyc?$", n) \
+        or os.path.isdir(n) and not any(glob.glob(os.path.join(n, x)) for x in ("*.py", "*.pyc")):
             continue  # for n
 
         modulename = "%s.%s" % (__package__, name)
