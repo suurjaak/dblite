@@ -142,7 +142,7 @@ class Queryable(QQ):
 
         def parse_members(i, col, op, val):
             """Returns (col, op, val, argkey)."""
-            key = "%sW%s" % (re.sub("\\W+", "_", col), i)
+            key = "%sW%s" % (re.sub(r"\W+", "_", col), i)
             if "EXPR" == col.upper():
                 # ("EXPR", ("SQL", val))
                 col, op, val, key = val[0], "EXPR", val[1], "EXPRW%s" % i
@@ -181,16 +181,18 @@ class Queryable(QQ):
         args = {}
 
         if "INSERT" == action:
-            args.update((k, cast(k, v)) for k, v in values)
-            cols, vals = (", ".join(x % k for k, v in values) for x in ("%s", "%%(%s)s"))
+            keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, _) in enumerate(values)]
+            args.update((n, cast(k, v)) for n, (k, v) in zip(keys, values))
+            cols, vals = ", ".join(k for k, _ in values), ", ".join("%%(%s)s" % n for n in keys)
             sql += " (%s) VALUES (%s)" % (cols, vals)
             if TABLES and table in TABLES and TABLES[table].get("key"):
                 sql += " RETURNING %s AS id" % (TABLES[table]["key"])
         if "UPDATE" == action:
             sql += " SET "
             for i, (col, val) in enumerate(values):
-                sql += (", " if i else "") + "%s = %%(%sU%s)s" % (col, col, i)
-                args["%sU%s" % (col, i)] = cast(col, val)
+                key = "%sU%s" % (re.sub(r"\W+", "_", col), i)
+                sql += (", " if i else "") + "%s = %%(%s)s" % (col, key)
+                args[key] = cast(col, val)
         if where:
             sql += " WHERE "
             for i, clause in enumerate(where):

@@ -129,7 +129,7 @@ class Queryable(QQ):
 
         def parse_members(i, col, op, val):
             """Returns (col, op, val, argkey)."""
-            key = "%sW%s" % (re.sub("\\W+", "_", col), i)
+            key = "%sW%s" % (re.sub(r"\W+", "_", col), i)
             if "EXPR" == col.upper():
                 # ("EXPR", ("SQL", val))
                 col, op, val, key = val[0], "EXPR", val[1], "EXPRW%s" % i
@@ -165,14 +165,16 @@ class Queryable(QQ):
         args = {}
 
         if "INSERT" == action:
-            args.update((k, cast(k, v)) for k, v in values)
-            cols, vals = (", ".join(x + k for k, v in values) for x in ("", ":"))
+            keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, _) in enumerate(values)]
+            args.update((n, cast(k, v)) for n, (k, v) in zip(keys, values))
+            cols, vals = ", ".join(k for k, _ in values), ", ".join(":%s" % n for n in keys)
             sql += " (%s) VALUES (%s)" % (cols, vals)
         if "UPDATE" == action:
             sql += " SET "
             for i, (col, val) in enumerate(values):
-                sql += (", " if i else "") + "%s = :%sU%s" % (col, col, i)
-                args["%sU%s" % (col, i)] = val
+                key = "%sU%s" % (re.sub(r"\W+", "_", col), i)
+                sql += (", " if i else "") + "%s = :%s" % (col, key)
+                args[key] = cast(col, val)
         if where:
             sql += " WHERE "
             for i, clause in enumerate(where):
@@ -213,7 +215,7 @@ class Queryable(QQ):
                 sql += (", " if i else "") + name + (" " if sort else "") + sort
         for k, v in zip(("limit", "offset"), limit or ()):
             if v is None: continue # for k, v
-            sql += " %s %s" % (k.upper(), v)
+            sql += " %s :%s" % (k.upper(), k)
             args[k] = v
 
         return sql, args
