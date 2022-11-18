@@ -1,68 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Database connectivity. Transaction usage:
-
-    with Transaction() as tx:
-        tx.execute("CREATE TABLE test (id BIGSERIAL PRIMARY KEY, val TEXT)")
-
-        # Keyword arguments are added to WHERE clause,
-        # or to VALUES clause for INSERT:
-
-        tx.insert("test", val=None)
-        for i in range(5):
-            tx.insert("test", {"val": i})
-        tx.fetchone("test", id=1)
-        tx.fetchall("test", order="val", limit=3)
-        tx.update("test", {"val": "ohyes"}, id=5)
-        tx.fetchone("test", val="ohyes")
-        tx.delete("test", val="ohyes")
-
-        # WHERE clause supports simple equality match, binary operators,
-        # collection lookups ("IN", "NOT IN"), or arbitrary SQL strings.
-        # Arbitrary SQL parameters expect "?" placeholders.
-        # Argument for key-value parameters, like WHERE or VALUES,
-        # can be a dict, or a sequence of key-value pairs:
-
-        tx.fetchall("test", val="ciao")
-        tx.fetchall("test", where={"id": ("<", 10)})
-        tx.fetchall("test", id=("IN", range(5)))
-        tx.fetchall("test", val=("IS NOT", None))
-        tx.update("test", values={"val": "ohyes"}, where=[("id", 1)])
-        tx.fetchall("test", where=[("LENGTH(val)", ">", 4), ])
-        tx.fetchall("test", where=[("LENGTH(val) < ?", 4), ])
-
-        # WHERE arguments are ANDed together, OR needs subexpressions:
-
-        tx.fetchall("test", where=[("id < ? OR id > ?", [2, 3]), ("val", 3)])
-
-        # Argument for sequence parameters, like GROUP BY, ORDER BY, or LIMIT,
-        # can be an iterable sequence like list or tuple, or a single value:
-
-        tx.fetchall("test", group="val", order=["id", ("val", False)], limit=3)
-        tx.fetchall("test", limit=(10, 100)) # LIMIT 10 OFFSET 100
-
-        tx.execute("DROP TABLE test")
-
-
-    # Supports server-side cursors for iterative data access,
-    # not fetching and materializing all rows at once:
-
-    with Transaction(lazy=True) as tx:
-        for i, row in enumerate(tx.select("some really huge table")):
-            print "Processing row #%s" % i
-
-
-    # Raising Rollback will exit the context manager without raising upward:
-
-    with Transaction(commit=True) as tx:
-        if not tx.fetchone("fafafa", "1"):
-            raise Rollback
-        tx.delete("fafafa")  # Will not be reached if table is empty
-    print "great success"    # Will print, raised Rollback only breaks with-block
-
+Simple convenience wrapper for Postgres, via psycopg2.
 
 ------------------------------------------------------------------------------
-This file is part of dblite - simple query interface to SQL databases.
+This file is part of dblite - simple query interface for SQL databases.
 Released under the MIT License.
 
 @author      Erki Suurjaak
@@ -669,7 +610,7 @@ def register_adapter(transformer, typeclasses):
 
 
 def register_converter(transformer, typenames):
-    """Registers function to auto-convert given SQL types to Python in query results."""
+    """Registers function to auto-convert given Postgres types to Python types in query results."""
     typenames = [n.upper() for n in typenames]
     if "JSON" in typenames:
         psycopg2.extras.register_default_json(globally=True, loads=transformer)

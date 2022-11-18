@@ -1,78 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Simple convenience wrapper for database operations.
+Simple convenience wrapper for database connections and queries.
 
-    # db.init("sqlite path" or {..postgres opts..})
-    db.execute("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
-    db.insert("test", val=None)
-    for i in range(5): db.insert("test", {"val": i})
-    db.fetchone("test", id=1)
-    db.fetchall("test", order="val", limit=3)
-    db.update("test", {"val": "new"}, val=None)
-    db.fetchall("test", val=("IN", range(3)))
-    db.delete("test", id=5)
-    db.execute("DROP TABLE test")
-
-
-Keyword arguments are added to WHERE clause, or to VALUES clause for INSERT:
-
-    myid = db.insert("test", val="oh")
-    db.update("test", {"val": "ohyes"}, id=myid)
-    db.fetchone("test", val="ohyes")
-    db.delete("test", val="ohyes")
-
-
-WHERE clause supports simple equality match, binary operators,
-collection lookups ("IN", "NOT IN"), raw SQL strings, or
-arbitrary SQL expressions.
-
-    db.fetchall("test", val="ciao")
-    db.fetchall("test", where={"id": ("<", 10)})
-    db.fetchall("test", id=("IN", range(5)))
-    db.fetchall("test", val=("IS NOT", None))
-    db.fetchall("test", where=[("LENGTH(val)", (">", 4)), ])
-    db.fetchall("test", where=[("EXPR", ("id = ? OR id > ? or id < ?", [0, 1, 2]))])
-
-
-Function argument for key-value parameters, like WHERE or VALUES,
-can be a dict, or a sequence of key-value pairs:
-
-    db.update("test", values={"val": "ohyes"}, where=[("id", 1)])
-
-
-Function argument for sequence parameters, like GROUP BY, ORDER BY, or LIMIT,
-can be an iterable sequence like list or tuple, or a single value.
-
-    db.fetchall("test", group="val", order=["id", ("val", False)], limit=3)
-
-
-Provides a simple context manager for transactions:
-
-    with db.transaction() as tx:
-        db.insert("test", val="will be rolled back")
-        db.update("test", {"val": "will be rolled back"}, id=0)
-        raise db.Rollback     # Rolls back uncommitted actions and exits
-        db.insert("test", val="this will never be reached")
-
-    with db.transaction(commit=False) as tx:
-        db.insert("test", val="will be committed")
-        tx.commit()           # Commits uncommitted actions
-        db.insert("test", val="will be rolled back")
-        tx.rollback()         # Rolls back uncommitted actions
-        db.insert("test", val="will roll back automatically: no autocommit")
-
-
-Module-level functions work on the first initialized connection, multiple databases
-can be used by keeping a reference to the connection:
-
-    d1 = db.init("file1.db", "CREATE TABLE foos (val text)")
-    d2 = db.init("file2.db", "CREATE TABLE bars (val text)")
-    d1.insert("foos", val="foo")
-    d2.insert("bars", val="bar")
-
+Provides shorthand functions for operating on a single database connection,
+and similar interface to multiple databases via returned Database and Transaction objects.
 
 ------------------------------------------------------------------------------
-This file is part of dblite - simple query interface to SQL databases.
+This file is part of dblite - simple query interface for SQL databases.
 Released under the MIT License.
 
 @author      Erki Suurjaak
@@ -97,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 def init(opts=None, engine=None, **kwargs):
     """
-    Returns a Database object, creating one if not already open with these opts.
-    If opts is None, returns the default database - the very first initialized.
+    Returns a Database object, creating one if not already open with these parameters.
+    If opts is `None`, returns the default database - the very first initialized.
     Module level functions use the default database.
 
     @param   opts    database connection options, engine-specific;
@@ -211,7 +145,7 @@ def register_adapter(transformer, typeclasses, engine=None):
 
 def register_converter(transformer, typenames, engine=None):
     """
-    Registers function to auto-convert given SQL types to Python in query results.
+    Registers function to auto-convert given database types to Python in query results.
 
     Registration is global per engine.
 
@@ -452,6 +386,9 @@ class Rollback(Exception):
     """
     pass
 
+
+
+# ---------------------------------- detail ----------------------------------
 
 
 class StaticTzInfo(datetime.tzinfo):

@@ -62,8 +62,15 @@ Argument for sequence parameters, like `GROUP BY`, `ORDER BY`, or `LIMIT`,
 can be an iterable sequence like list or tuple, or a single value.
 
 ```python
-  dblite.fetchall("test", group="val", order=["id", ("val", False)], limit=3)
+dblite.fetchall("test", group="val", order=["id", ("val", False)], limit=3)
 ```
+
+`WHERE` arguments are `AND`ed together, `OR` needs subexpressions:
+
+```python
+dblite.fetchall("test", where=[("id < ? OR id > ?", [2, 3]), ("val", 3)])
+```
+
 
 
 Provides a simple context manager for transactions:
@@ -74,6 +81,7 @@ with dblite.transaction() as tx:
     dblite.update("test", {"val": "will be rolled back"}, id=0)
     raise dblite.Rollback     # Rolls back uncommitted actions and exits block
     dblite.insert("test", val="this will never be reached")
+print("continuing, Rollback does not propagate out of managed context")
 
 with dblite.transaction(commit=False) as tx:
     dblite.insert("test", val="will be committed")
@@ -92,6 +100,36 @@ db1 = dblite.init("file1.db", "CREATE TABLE foos (val text)")
 db2 = dblite.init("file2.db", "CREATE TABLE bars (val text)")
 db1.insert("foos", val="foo")
 db2.insert("bars", val="bar")
+```
+
+Database instances are usable as context managers:
+
+with dblite.init("my.sqlite") as db:  # File will be closed on exiting block
+    db.executescript("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
+    db.insert("test", id=1, val="value")
+
+
+
+Postgres
+--------
+
+Postgres transactions can specify database schema name up front:
+
+```python
+dblite.init("host=localhost user=postgres dbname=bigdata")
+with dblite.transaction(schema="information_schema") as tx:
+    for row in tx.fetchall("columns", table_schema="public",
+                           order="table_name, dtd_identifier"):
+        print(row["table_name"], row["column_name"], row["data_type"])
+```
+
+Postgres transactions support server-side cursors for iterative data access,
+not fetching and materializing all rows at once:
+
+```python
+with dblite.init("host=localhost user=postgres dbname=bigdata") as db:
+    for i, row in enumerate(db.select("some really huge table")):
+        print("Processing row #%s" % i)
 ```
 
 
