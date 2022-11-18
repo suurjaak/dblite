@@ -80,7 +80,6 @@ Released under the MIT License.
 @modified    18.11.2022
 """
 import collections
-import base64
 import datetime
 import decimal
 import glob
