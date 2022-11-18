@@ -325,7 +325,7 @@ class Database(Queryable):
     ## Database engine modules, as {"sqlite": sqlite submodule, ..}
     ENGINES = None
 
-    ## Created instances as {(engine name, opts+kwargs str): Database}
+    ## Created instances as {(engine name, Database.identity): Database}
     INSTANCES = collections.OrderedDict()
 
 
@@ -356,12 +356,24 @@ class Database(Queryable):
         elif engine is None:  # Auto-detect engine from options, or raise
             engine = next(n for n, m in cls.ENGINES.items() if m.autodetect(opts))
 
-        key = key or (engine, str(opts) + str(kwargs))
-        if key in cls.INSTANCES: cls.INSTANCES[key].open()
-        else:
+        key = key or (engine, cls.ENGINES[engine].Database.make_identity(opts, **kwargs))
+        if key not in cls.INSTANCES:
             db = cls.ENGINES[engine].Database(opts, **kwargs)
             cls.INSTANCES[key] = db
+        cls.INSTANCES[key].open()
         return cls.INSTANCES[key]
+
+
+    @classmethod
+    def make_identity(cls, opts, **kwargs):
+        """Returns a tuple of (connection options as string, engine arguments as string)."""
+        raise NotImplementedError()
+
+
+    @property
+    def identity(self):
+        """Tuple of (connection options as string, engine arguments as string)."""
+        raise NotImplementedError()
 
 
     def __enter__(self):
@@ -392,7 +404,7 @@ class Database(Queryable):
 
 
     def close(self):
-        """Closes the database."""
+        """Closes the database, if open."""
         raise NotImplementedError()
 
 
@@ -426,7 +438,7 @@ class Transaction(Queryable):
     def close(self, commit=None): raise NotImplementedError()
     def commit(self):             raise NotImplementedError()
     def rollback(self):           raise NotImplementedError()
-        
+
 
 class Rollback(Exception):
     """

@@ -81,7 +81,6 @@ Released under the MIT License.
 ------------------------------------------------------------------------------
 """
 import collections
-import copy
 import logging
 import os
 import re
@@ -241,14 +240,20 @@ class Database(api.Database, Queryable):
 
 
     def __init__(self, path=":memory:", **kwargs):
-        """Creates a new SQLite connection."""
+        """
+        Creates a new SQLite connection.
+
+        @param   kwargs  suitable arguments are passed to sqlite3.connect()
+        """
         super(Database, self).__init__()
-        self.path, self.connection = path, None
-        self._kwargs = copy.deepcopy(kwargs)
-        if ":memory:" != path and not os.path.exists(path):
-            try: os.makedirs(os.path.dirname(path))
-            except Exception: pass
-        self.open()
+        self.connection = None
+        self.path       = path
+        self._kwargs    = kwargs
+        self._identity  = (self.path, (str(kwargs) if kwargs else ""))
+
+
+    @property
+    def identity(self): return self._identity
 
 
     def insert(self, table, values=(), **kwargs):
@@ -280,16 +285,25 @@ class Database(api.Database, Queryable):
         args = dict(detect_types=sqlite3.PARSE_DECLTYPES,
                     isolation_level=None, check_same_thread=False)
         args.update({k: v for k, v in self._kwargs.items() if k in KWS})
+        if ":memory:" != self.path and not os.path.exists(self.path):
+            try: os.makedirs(os.path.dirname(self.path))
+            except Exception: pass
         conn = sqlite3.connect(self.path, **args)
         conn.row_factory = lambda cursor, row: dict(sqlite3.Row(cursor, row))
         self.connection = conn
 
 
     def close(self):
-        """Closes the database connection."""
+        """Closes the database connection, if open."""
         try: self.connection.close()
         except Exception: pass
         self.connection = None
+
+
+    @classmethod
+    def make_identity(cls, opts, **kwargs):
+        """Returns a tuple of (connection options as string, engine arguments as string)."""
+        return (opts, str(kwargs) if kwargs else "")
 
 
 

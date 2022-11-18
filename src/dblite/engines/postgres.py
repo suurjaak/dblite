@@ -76,6 +76,7 @@ import logging
 import re
 import threading
 
+from six.moves import urllib_parse
 from six import binary_type, integer_types, string_types, text_type
 
 try:
@@ -109,7 +110,7 @@ RESERVED_KEYWORDS = [
 
 class Queryable(api.Queryable):
 
-    ## Database schemas as {Database key: {structure filled on first access}}
+    ## Database schemas as {Database identity: {structure filled on first access}}
     TABLES = {}
     # {name: {?"key": pk, "fields": {col: {"name", "type", ?"fk": ftable}}, "type": "table"}}
 
@@ -123,7 +124,7 @@ class Queryable(api.Queryable):
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
-        key = self._key if isinstance(self, Database) else self._db._key
+        key = self.identity if isinstance(self, Database) else self._db.identity
         if key not in self.TABLES:
             self.TABLES[key] = {}  # To skip later if querying fails
             self.TABLES[key].update(self.query_schema(keys=True))
@@ -260,7 +261,7 @@ class Queryable(api.Queryable):
         """
         result = {}
 
-        db = self if isinstance(self, DB) else self._db
+        db = self if isinstance(self, Database) else self._db
         with Transaction(db, schema="information_schema") as tx:
             # Retrieve column names
             for v in tx.fetchall("columns", table_schema="public",
@@ -324,7 +325,7 @@ class Queryable(api.Queryable):
         or original value.
         """
         if typename in ("json", "jsonb") and type(value) not in self.ADAPTERS.values():
-            return psycopg2.extras.Json(value, dumps=json_dumps)
+            return psycopg2.extras.Json(value, dumps=api.json_dumps)
         return value
 
 
@@ -342,8 +343,11 @@ class Queryable(api.Queryable):
 class Database(api.Database, Queryable):
     """Convenience wrapper around psycopg2.ConnectionPool and Cursor."""
 
-    ## Connection pools, as {opts+kwargs str: psycopg2.pool.ConnectionPool}
+    ## Connection pools, as {Database identity: psycopg2.pool.ConnectionPool}
     POOLS = {}
+
+    ## Connection pool default size per Database
+    POOL_SIZE = (1, 4)
 
     ## Registered adapters for Python->SQL, as {typeclass: converter}
     ADAPTERS = {}
@@ -353,15 +357,6 @@ class Database(api.Database, Queryable):
 
     ## Mutexes for exclusive transactions, as {Database instance: lock}
     MUTEX = collections.defaultdict(threading.RLock)
-
-
-    @classmethod
-    def init_pool(cls, key, dsn, minconn=1, maxconn=4, **kwargs):
-        """Initializes connection pool if not already initialized."""
-        if key in cls.POOLS: return
-
-        args = dict(minconn=minconn, maxconn=maxconn, **kwargs)
-        cls.POOLS[key] = psycopg2.pool.ThreadedConnectionPool(dsn, **args)
 
 
     def __init__(self, opts, **kwargs):
@@ -374,59 +369,21 @@ class Database(api.Database, Queryable):
         standard Postgres environment variables like `PGUSER` and `PGPASSWORD`.
 
         @param   opts     Postgres connection string, or options dictionary as
-                          `dict(dbname=None, username=None, password=None,
-                                host=None, port=None, minconn=1, maxconn=4, ..)`
+                          `dict(dbname=.., user=.., password=.., host=.., port=.., ..)`
         @param   kwargs   additional arguments given to engine constructor,
                           e.g. `minconn=1, maxconn=4`
         """
-        dsn = opts if isinstance(opts, string_types) else psycopg2.extensions.make_dsn(**opts)
-        self._key       = str(opts) + str(kwargs)
-        self._dsn       = dsn
+
+        ## Data Source Name, as URL like `"postgresql://user@host/dbname"`
+        self.dsn       = make_db_url(opts)
         self._kwargs    = kwargs
+        self._identity  = (self.dsn, (str(kwargs) if kwargs else ""))
         self._cursor    = None
         self._cursorctx = None
 
 
-    @contextmanager
-    def get_cursor(self, commit=True, schema=None, lazy=False):
-        """
-        Context manager for psycopg connection cursor.
-        Creates a new cursor on an unused connection and closes it when exiting
-        context, committing changes if specified.
-
-        @param   commit  auto-commit at the end on success
-        @param   schema  name of Postgres schema to use, if not using default public
-        @param   lazy    if true, returns a named cursor that fetches rows
-                         iteratively; only supports making a single query
-        @return          psycopg2.extras.RealDictCursor
-        """
-        connection = self.POOLS[self._key].getconn()
-        try:
-            cursor, namedcursor = None, None
-            if "public" == schema: schema = None  # Default, no need to set
-
-            # If using schema, schema tables are queried first, fallback to public.
-            # Need two cursors if schema+lazy, as named cursor only does one query.
-            if schema or not lazy: cursor = connection.cursor()
-            if schema: cursor.execute('SET search_path TO "%s",public' % schema)
-            if lazy: namedcursor = connection.cursor("name_%s" % id(connection))
-
-            try:
-                yield namedcursor or cursor
-                if commit: connection.commit()
-            except GeneratorExit: pass  # Caller consumed nothing
-            except Exception:
-                logger.exception("SQL error on %s:", (namedcursor or cursor).query)
-                raise
-            finally:
-                connection.rollback()  # If not already committed, must rollback here
-                try: namedcursor and namedcursor.close()
-                except Exception: pass
-                if schema:  # Restore default search path on this connection
-                    cursor.execute("SET search_path TO public")
-                    connection.commit()
-                if cursor: cursor.close()
-        finally: self.POOLS[self._key].putconn(connection)
+    @property
+    def identity(self): return self._identity
 
 
     def insert(self, table, values=(), **kwargs):
@@ -462,33 +419,80 @@ class Database(api.Database, Queryable):
     def open(self):
         """Opens database connection if not already open."""
         if self._cursorctx: return
-        self.init_pool(self._key, self._dsn, **self._kwargs)
-        self.apply_converters()
+        self.init_pool(self._identity, self.dsn, **self._kwargs)
+        self._apply_converters()
         self._cursorctx = self.get_cursor(commit=True)
 
 
     def close(self):
-        """Closes connection."""
+        """Closes connection, if open."""
         if self._cursor:
             self._cursorctx.__exit__(None, None, None)
             self._cursor = None
         self._cursorctx = None
         self.MUTEX.pop(self, None)
-        pool = self.POOLS.pop(self._key, None)
+        pool = self.POOLS.pop(self._identity, None)
         if pool: pool.close_all()
 
 
+    @contextmanager
+    def get_cursor(self, commit=True, schema=None, lazy=False):
+        """
+        Context manager for psycopg connection cursor.
+        Creates a new cursor on an unused connection and closes it when exiting
+        context, committing changes if specified.
+
+        @param   commit  auto-commit at the end on success
+        @param   schema  name of Postgres schema to use, if not using default public
+        @param   lazy    if true, returns a named cursor that fetches rows iteratively;
+                         only supports making a single query
+        @return          psycopg2.extras.RealDictCursor
+        """
+        connection = self.POOLS[self._identity].getconn()
+        try:
+            cursor, namedcursor = None, None
+            if "public" == schema: schema = None  # Default, no need to set
+
+            # If using schema, schema tables are queried first, fallback to public.
+            # Need two cursors if schema+lazy, as named cursor only does one query.
+            if schema or not lazy: cursor = connection.cursor()
+            if schema: cursor.execute('SET search_path TO "%s",public' % schema)
+            if lazy: namedcursor = connection.cursor("name_%s" % id(connection))
+
+            try:
+                yield namedcursor or cursor
+                if commit: connection.commit()
+            except GeneratorExit: pass  # Caller consumed nothing
+            except Exception:
+                logger.exception("SQL error on %s:", (namedcursor or cursor).query)
+                raise
+            finally:
+                connection.rollback()  # If not already committed, must rollback here
+                try: namedcursor and namedcursor.close()
+                except Exception: pass
+                if schema:  # Restore default search path on this connection
+                    cursor.execute("SET search_path TO public")
+                    connection.commit()
+                if cursor: cursor.close()
+        finally: self.POOLS[self._identity].putconn(connection)
+
+
     @classmethod
-    def register_converter(cls, transformer, typenames):
-        """
-        Registers function to auto-convert given SQL types to Python in query results.
+    def init_pool(cls, db, minconn=POOL_SIZE[0], maxconn=POOL_SIZE[1], **kwargs):
+        """Initializes connection pool for Database if not already initialized."""
+        if db.identity in cls.POOLS: return
 
-        Will be applied as soon as a cursor is created, as type OIDS need lookup.
-        """
-        cls.CONVERTERS.update({n: transformer for n in typenames})
+        args = dict(minconn=minconn, maxconn=maxconn, **kwargs)
+        cls.POOLS[db.identity] = psycopg2.pool.ThreadedConnectionPool(db.dsn, **args)
 
 
-    def apply_converters(self):
+    @classmethod
+    def make_identity(cls, opts, **kwargs):
+        """Returns a tuple of (connection options as string, engine arguments as string)."""
+        return (make_db_url(opts), str(kwargs) if kwargs else "")
+
+
+    def _apply_converters(self):
         """Applies registered converters, if any, looking up type OIDs on cursor."""
         if not self.CONVERTERS: return
 
@@ -602,9 +606,29 @@ def autodetect(opts):
                      or a dictionary of `dict(host="localhost", dbname=..)`
     """
     if not opts: return False
-    if isinstance(opts, dict): return True
+    if isinstance(opts, dict):
+        try: return bool(psycopg2.extensions.make_dsn(**opts) or True) # "{}" returns ""
+        except Exception: return False
     try: return bool(psycopg2.extensions.parse_dsn(opts) or True) # "postgresql://" returns {}
     except Exception: return False
+
+
+def make_db_url(opts):
+    """Returns Postgres connection options as URL, like `"postgresql://host/dbname"`."""
+    BASICS = collections.OrderedDict([("user", ""), ("password", ":"), ("host", ""),
+                                      ("port", ":"), ("dbname", "/")])
+    result, creds = "", False
+    if isinstance(opts, string_types):
+        opts = psycopg2.extensions.parse_dsn(opts)
+    for i, (k, prefix) in enumerate(BASICS.items()):
+        if creds and i > 1: result, creds = result + "@", False  # Either user or password set
+        if opts.get(k) is not None:
+            result, creds = result + prefix + "%%(%s)s" % k, (i < 2)
+    result %= {k : urllib_parse.quote(str(opts[k])) for k in opts}
+    if any(k not in BASICS for k in opts):
+        result += "/" if opts.get("dbname") is None else ""
+        result += "?" + urllib_parse.urlencode({k: opts[k] for k in opts if k not in BASICS})
+    return "postgresql://" + result
 
 
 def quote(val, force=False):
