@@ -78,6 +78,7 @@ Released under the MIT License.
 @author      Erki Suurjaak
 @created     05.03.2014
 @modified    18.11.2022
+------------------------------------------------------------------------------
 """
 import collections
 import copy
@@ -90,7 +91,7 @@ import threading
 
 from six import binary_type, integer_types, string_types
 
-from . import Database as DB, Queryable as QQ, Rollback, Transaction as TX
+from .. import api
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +113,7 @@ RESERVED_KEYWORDS = [
 ]
 
 
-class Queryable(QQ):
+class Queryable(api.Queryable):
 
     OPS = ["||", "*", "/", "%", "+", "-", "<<", ">>", "&", "|", "<", "<=", ">",
            ">=", "=", "==", "!=", "<>", "IS", "IS NOT", "IN", "NOT IN", "LIKE",
@@ -232,7 +233,7 @@ class Queryable(QQ):
 
 
 
-class Database(DB, Queryable):
+class Database(api.Database, Queryable):
     """Convenience wrapper around sqlite3.Connection."""
 
     ## Mutexes for exclusive transactions, as {Database instance: lock}
@@ -292,7 +293,7 @@ class Database(DB, Queryable):
 
 
 
-class Transaction(TX, Queryable):
+class Transaction(api.Transaction, Queryable):
     """Transaction context manager, breakable by raising Rollback."""
 
     def __init__(self, db, commit=True, exclusive=False, **__):
@@ -317,7 +318,7 @@ class Transaction(TX, Queryable):
             if self._autocommit and exc_type is None: self._db.connection.commit()
             else: self._db.connection.rollback()
             self._db.connection.isolation_level = self._isolevel0
-            return exc_type in (None, Rollback) # Do not propagate raised Rollback
+            return exc_type in (None, api.Rollback) # Do not propagate raised Rollback
         finally:
             if self._exclusive: Database.MUTEX[self._db].release()
 

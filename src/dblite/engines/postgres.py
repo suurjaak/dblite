@@ -68,6 +68,7 @@ Released under the MIT License.
 @author      Erki Suurjaak
 @created     08.05.2020
 @modified    18.11.2022
+------------------------------------------------------------------------------
 """
 import collections
 from contextlib import contextmanager
@@ -84,8 +85,7 @@ try:
     import psycopg2.pool
 except ImportError: psycopg2 = None
 
-from . import Database as DB, Queryable as QQ, Rollback, Transaction as TX
-from . import json_dumps
+from .. import api
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ RESERVED_KEYWORDS = [
 ]
 
 
-class Queryable(QQ):
+class Queryable(api.Queryable):
 
     ## Database schemas as {Database key: {structure filled on first access}}
     TABLES = {}
@@ -339,7 +339,7 @@ class Queryable(QQ):
 
 
 
-class Database(DB, Queryable):
+class Database(api.Database, Queryable):
     """Convenience wrapper around psycopg2.ConnectionPool and Cursor."""
 
     ## Connection pools, as {opts+kwargs str: psycopg2.pool.ConnectionPool}
@@ -502,7 +502,7 @@ class Database(DB, Queryable):
                 psycopg2.extensions.register_type(TYPE)
 
 
-class Transaction(TX, Queryable):
+class Transaction(api.Transaction, Queryable):
     """
     Transaction context manager, provides convenience methods for queries.
     Supports lazy cursors; those can only be used for making a single query.
@@ -540,7 +540,7 @@ class Transaction(TX, Queryable):
         try:
             self._cursorctx.__exit__(exc_type, exc_val, exc_trace)
             self._cursor = None
-            return exc_type in (None, Rollback)
+            return exc_type in (None, api.Rollback)
         finally:
             if self._exclusive: Database.MUTEX[self._db].release()
 

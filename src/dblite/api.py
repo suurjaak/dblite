@@ -78,6 +78,7 @@ Released under the MIT License.
 @author      Erki Suurjaak
 @created     05.03.2014
 @modified    18.11.2022
+------------------------------------------------------------------------------
 """
 import collections
 import datetime
