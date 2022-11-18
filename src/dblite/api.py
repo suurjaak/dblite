@@ -401,11 +401,16 @@ class Transaction(Queryable):
 
     def __init__(self, db, commit=True, exclusive=False, **kwargs):
         """
+        Note that in SQLite, a single connection has one shared transaction state,
+        so it is highly recommended to use exclusive Transaction instances for any action queries,
+        as otherwise concurrent transactions can interfere with one another.
+        The `exclusive` parameter defaults to `True` when using SQLite.
+
         @param   commit     if true, transaction auto-commits at the end
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances entering an exclusive with-block
-                            on this connection
-        @param   kwargs     engine-specific args, like `schema="backup", lazy=True` for Postgres
+                            on this Database instance
+        @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
         """
         super(Transaction, self).__init__()
         self._db, self._autocommit = db, commit

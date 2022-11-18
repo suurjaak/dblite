@@ -296,12 +296,16 @@ class Database(api.Database, Queryable):
 class Transaction(api.Transaction, Queryable):
     """Transaction context manager, breakable by raising Rollback."""
 
-    def __init__(self, db, commit=True, exclusive=False, **__):
+    def __init__(self, db, commit=True, exclusive=True, **__):
         """
+        Note that in SQLite, a single connection has one shared transaction state,
+        so it is highly recommended to use exclusive Transaction instances for any action queries,
+        as otherwise concurrent transactions can interfere with one another.
+
         @param   commit     if true, transaction auto-commits at the end
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances entering an exclusive with-block
-                            on this connection
+                            on this Database instance
         """
         super(Transaction, self).__init__(db, commit)
         self._isolevel0 = None

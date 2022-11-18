@@ -510,12 +510,12 @@ class Transaction(api.Transaction, Queryable):
     Block can be exited early by raising Rollback.
     """
 
-    def __init__(self, db, commit=True, exclusive=False, schema=None, lazy=False):
+    def __init__(self, db, commit=True, exclusive=False, schema=None, lazy=False, **__):
         """
         @param   commit     if true, transaction auto-commits at the end
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances entering an exclusive with-block
-                            on this connection
+                            on this Database instance
         @param   schema     search_path to use in this transaction
         @param   lazy       if true, fetches results from server iteratively
                             instead of all at once, supports single query only
