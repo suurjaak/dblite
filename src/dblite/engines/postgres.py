@@ -77,7 +77,7 @@ class Queryable(api.Queryable):
             if field and "array" == field["type"]:
                 return list(listify(val)) # Values for array fields must be lists
             elif field and val is not None:
-                return self.adapt_value(val, field["type"])
+                return self._adapt_value(val, field["type"])
             if isinstance(val, (list, set)):
                 return tuple(val) # Sequence parameters for IN etc must be tuples
             return val
@@ -260,7 +260,17 @@ class Queryable(api.Queryable):
         return result
 
 
-    def adapt_value(self, value, typename):
+    def quote(self, value, force=False):
+        """
+        Returns identifier in quotes and proper-escaped for queries,
+        if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
+
+        @param   force  whether to quote value even if not required
+        """
+        return quote(value, force)
+
+
+    def _adapt_value(self, value, typename):
         """
         Returns value as JSON if field is a JSON type and no adapter registered for value type,
         or original value.
@@ -270,25 +280,9 @@ class Queryable(api.Queryable):
         return value
 
 
-    def quote(self, val, force=False):
-        """
-        Returns identifier in quotes and proper-escaped for queries,
-        if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
-
-        @param   force  whether to quote value even if not required
-        """
-        return quote(val, force)
-
-
 
 class Database(api.Database, Queryable):
     """Convenience wrapper around psycopg2.ConnectionPool and Cursor."""
-
-    ## Connection pools, as {Database identity: psycopg2.pool.ConnectionPool}
-    POOLS = {}
-
-    ## Connection pool default size per Database
-    POOL_SIZE = (1, 4)
 
     ## Registered adapters for Python->SQL, as {typeclass: converter}
     ADAPTERS = {}
@@ -298,6 +292,12 @@ class Database(api.Database, Queryable):
 
     ## Mutexes for exclusive transactions, as {Database instance: lock}
     MUTEX = collections.defaultdict(threading.RLock)
+
+    ## Connection pool default size per Database
+    POOL_SIZE = (1, 4)
+
+    ## Connection pools, as {Database identity: psycopg2.pool.ConnectionPool}
+    POOLS = {}
 
 
     def __init__(self, opts, **kwargs):
@@ -384,7 +384,7 @@ class Database(api.Database, Queryable):
         context, committing changes if specified.
 
         @param   commit  auto-commit at the end on success
-        @param   schema  name of Postgres schema to use, if not using default public
+        @param   schema  name of Postgres schema to use, if not using default `"public"`
         @param   lazy    if true, returns a named cursor that fetches rows iteratively;
                          only supports making a single query
         @return          psycopg2.extras.RealDictCursor
@@ -421,10 +421,11 @@ class Database(api.Database, Queryable):
     @classmethod
     def init_pool(cls, db, minconn=POOL_SIZE[0], maxconn=POOL_SIZE[1], **kwargs):
         """Initializes connection pool for Database if not already initialized."""
-        if db.identity in cls.POOLS: return
+        with cls.MUTEX[db]:
+            if db.identity in cls.POOLS: return
 
-        args = dict(minconn=minconn, maxconn=maxconn, **kwargs)
-        cls.POOLS[db.identity] = psycopg2.pool.ThreadedConnectionPool(db.dsn, **args)
+            args = dict(minconn=minconn, maxconn=maxconn, **kwargs)
+            cls.POOLS[db.identity] = psycopg2.pool.ThreadedConnectionPool(db.dsn, **args)
 
 
     @classmethod
@@ -434,7 +435,7 @@ class Database(api.Database, Queryable):
 
 
     def _apply_converters(self):
-        """Applies registered converters, if any, looking up type OIDs on cursor."""
+        """Applies registered converters, if any, looking up type OIDs on live cursor."""
         if not self.CONVERTERS: return
 
         regs, self.CONVERTERS = dict(self.CONVERTERS), {}
@@ -450,25 +451,31 @@ class Database(api.Database, Queryable):
 class Transaction(api.Transaction, Queryable):
     """
     Transaction context manager, provides convenience methods for queries.
+
     Supports lazy cursors; those can only be used for making a single query.
+
     Must be closed explicitly if not used as context manager in a with-block.
     Block can be exited early by raising Rollback.
     """
 
     def __init__(self, db, commit=True, exclusive=False, schema=None, lazy=False, **__):
         """
-        @param   commit     if true, transaction auto-commits at the end
+        Returns a transaction context manager.
+    
+        Context is breakable by raising Rollback.
+
+        @param   commit     whether transaction autocommits at the end
         @param   exclusive  whether entering a with-block is exclusive over other
-                            Transaction instances entering an exclusive with-block
-                            on this Database instance
+                            Transaction instances Database
         @param   schema     search_path to use in this transaction
         @param   lazy       if true, fetches results from server iteratively
                             instead of all at once, supports single query only
         """
-        super(Transaction, self).__init__(db, commit)
-        self._cursor = None
-        self._cursorctx = db.get_cursor(commit, schema, lazy)
-        self._exclusive = exclusive
+        self._db         = db
+        self._autocommit = commit
+        self._cursor     = None
+        self._cursorctx  = db.get_cursor(commit, schema, lazy)
+        self._exclusive  = exclusive
 
     def __enter__(self):
         """Context manager entry, returns Transaction object."""
@@ -540,7 +547,7 @@ class Transaction(api.Transaction, Queryable):
     @property
     def database(self):
         """Returns transaction Database instance."""
-        raise self._db
+        return self._db
 
 
 def autodetect(opts):
@@ -577,21 +584,21 @@ def make_db_url(opts):
     return "postgresql://" + result
 
 
-def quote(val, force=False):
+def quote(value, force=False):
     """
     Returns identifier in quotes and proper-escaped for queries,
     if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
 
     @param   force  whether to quote value even if not required
     """
-    if not isinstance(val, string_types):
-        return val
+    if not isinstance(value, string_types):
+        return value
     RGX_INVALID, RGX_UNICODE = r"(^[\W\d])|(?=\W)", r"[^\x01-\x7E]"
-    result = val.decode() if isinstance(val, binary_type) else val
+    result = value.decode() if isinstance(value, binary_type) else value
     if force or result.upper() in RESERVED_KEYWORDS or re.search(RGX_INVALID, result):
-        if re.search(RGX_UNICODE, val):  # Unicode escape U&"\+ABCDEF"
+        if re.search(RGX_UNICODE, value):  # Unicode escape U&"\+ABCDEF"
             result = result.replace("\\", r"\\").replace('"', '""')
-            result = 'U&"%s"' % re.sub(RGX_UNICODE, lambda m: r"\+%06X" % ord(m.group(0)), val)
+            result = 'U&"%s"' % re.sub(RGX_UNICODE, lambda m: r"\+%06X" % ord(m.group(0)), value)
         else:
             result = '"%s"' % result.replace('"', '""')
     return result

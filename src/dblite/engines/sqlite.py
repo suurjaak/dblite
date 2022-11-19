@@ -152,14 +152,14 @@ class Queryable(api.Queryable):
         return sql, args
 
 
-    def quote(self, val, force=False):
+    def quote(self, value, force=False):
         """
         Returns identifier in quotes and proper-escaped for queries,
         if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
 
         @param   force  whether to quote value even if not required
         """
-        return quote(val, force)
+        return quote(value, force)
 
 
 
@@ -172,9 +172,9 @@ class Database(api.Database, Queryable):
 
     def __init__(self, path=":memory:", **kwargs):
         """
-        Creates a new SQLite connection.
+        Creates a new Database instance for SQLite.
 
-        @param   kwargs  suitable arguments are passed to sqlite3.connect()
+        @param   kwargs  supported arguments are passed to sqlite3.connect() in open()
         """
         super(Database, self).__init__()
         self.connection = None
@@ -199,7 +199,7 @@ class Database(api.Database, Queryable):
 
 
     def execute(self, sql, args=None):
-        """Executes the SQL and returns sqlite3.Cursor."""
+        """Executes the SQL statement and returns sqlite3.Cursor."""
         return self.connection.execute(sql, args or {})
 
 
@@ -239,22 +239,26 @@ class Database(api.Database, Queryable):
 
 
 class Transaction(api.Transaction, Queryable):
-    """Transaction context manager, breakable by raising Rollback."""
+    """
+    Transaction context manager, breakable by raising Rollback.
+
+    Note that in SQLite, a single connection has one shared transaction state,
+    so it is highly recommended to use exclusive Transaction instances for any action queries,
+    as otherwise concurrent transactions can interfere with one another.
+    """
 
     def __init__(self, db, commit=True, exclusive=True, **__):
         """
-        Note that in SQLite, a single connection has one shared transaction state,
-        so it is highly recommended to use exclusive Transaction instances for any action queries,
-        as otherwise concurrent transactions can interfere with one another.
+        Creates a new transaction.
 
         @param   commit     if true, transaction auto-commits at the end
         @param   exclusive  whether entering a with-block is exclusive over other
-                            Transaction instances entering an exclusive with-block
-                            on this Database instance
+                            Transaction instances on this Database
         """
-        super(Transaction, self).__init__(db, commit)
-        self._isolevel0 = None
-        self._exclusive = exclusive
+        self._db         = db
+        self._autocommit = commit
+        self._isolevel0  = None
+        self._exclusive  = exclusive
 
     def __enter__(self):
         if self._exclusive: Database.MUTEX[self._db].acquire()
@@ -291,7 +295,7 @@ class Transaction(api.Transaction, Queryable):
         return self.execute(sql, args).lastrowid
 
     def execute(self, sql, args=None):
-        """Executes the SQL and returns sqlite3.Cursor."""
+        """Executes the SQL statement and returns sqlite3.Cursor."""
         return self._db.connection.execute(sql, args or {})
 
     def executescript(self, sql):
@@ -304,7 +308,7 @@ class Transaction(api.Transaction, Queryable):
     @property
     def database(self):
         """Returns transaction Database instance."""
-        raise self._db
+        return self._db
 
 
 
@@ -322,17 +326,17 @@ def autodetect(opts):
     return False
 
 
-def quote(val, force=False):
+def quote(value, force=False):
     """
     Returns identifier in quotes and proper-escaped for queries,
     if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
 
     @param   force  whether to quote value even if not required
     """
-    if not isinstance(val, string_types):
-        return val
+    if not isinstance(value, string_types):
+        return value
     RGX_INVALID = r"(^[\W\d])|(?=\W)"
-    result = val.decode() if isinstance(val, binary_type) else val
+    result = value.decode() if isinstance(value, binary_type) else value
     if force or result.upper() in RESERVED_KEYWORDS or re.search(RGX_INVALID, result, re.U):
         result = u'"%s"' % result.replace('"', '""')
     return result

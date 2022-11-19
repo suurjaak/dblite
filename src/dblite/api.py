@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 def init(opts=None, engine=None, **kwargs):
     """
-    Returns a Database object, creating one if not already open with these parameters.
+    Returns a Database object, creating one if not already created with these parameters.
+
     If opts is `None`, returns the default database - the very first initialized.
     Module level functions use the default database.
 
@@ -42,7 +43,7 @@ def init(opts=None, engine=None, **kwargs):
                      `"host=localhost username=user dbname=mydb"`
                      or a dictionary of connection options like `dict(host="localhost", dbname=..)`
     @param   engine  database engine if not auto-detecting from connection options,
-                     "sqlite" for SQLite3 and "postgres" for PostgreSQL (case-insensitive)
+                     `"sqlite"` for SQLite3 and `"postgres"` for PostgreSQL (case-insensitive)
     @param   kwargs  additional arguments given to engine constructor,
                      e.g. `detect_types=sqlite3.PARSE_COLNAMES` for SQLite,
                      or `minconn=1, maxconn=4` for Postgres connection pool
@@ -77,7 +78,7 @@ def insert(table, values=(), **kwargs):
 
 def select(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     """
-    Convenience wrapper for database SELECT, returns sqlite3.Cursor.
+    Convenience wrapper for database SELECT, returns database cursor.
     Keyword arguments are added to WHERE.
     """
     return init().select(table, cols, where, group, order, limit, **kwargs)
@@ -100,7 +101,7 @@ def delete(table, where=(), **kwargs):
 
 
 def execute(sql, args=None):
-    """Executes the SQL and returns sqlite3.Cursor."""
+    """Executes the SQL statement and returns database cursor."""
     return init().execute(sql, args)
 
 
@@ -116,14 +117,18 @@ def close():
     init().close()
 
 
-def transaction(commit=True, **kwargs):
+def transaction(commit=True, exclusive=False, **kwargs):
     """
-    Returns a transaction context manager, breakable by raising Rollback,
-    manually actionable by .commit() and .rollback().
+    Returns a transaction context manager.
+    
+    Context is breakable by raising Rollback.
 
-    @param   commit  whether transaction autocommits at exit
+    @param   commit     whether transaction autocommits at the end
+    @param   exclusive  whether entering a with-block is exclusive over other
+                        Transaction instances on this Database
+    @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
     """
-    return init().transaction(commit, **kwargs)
+    return init().transaction(commit, exclusive, **kwargs)
 
 
 def register_adapter(transformer, typeclasses, engine=None):
@@ -140,7 +145,6 @@ def register_adapter(transformer, typeclasses, engine=None):
     if not isinstance(typeclasses, (list, set, tuple)): typeclasses = [typeclasses]
     engine = engine.lower() if engine else next(Database.ENGINES)
     Database.ENGINES[engine].register_adapter(transformer, typeclasses)
-    #for t in typeclasses: sqlite3.register_adapter(t, transformer)
 
 
 def register_converter(transformer, typenames, engine=None):
@@ -195,7 +199,7 @@ class Queryable(object):
     def select(self, table, cols="*", where=(), group=(), order=(), limit=(),
                **kwargs):
         """
-        Convenience wrapper for database SELECT, returns sqlite3.Cursor.
+        Convenience wrapper for database SELECT, returns database cursor.
         Keyword arguments are added to WHERE.
         """
         where = list(where.items() if isinstance(where, dict) else where)
@@ -227,7 +231,7 @@ class Queryable(object):
 
 
     def execute(self, sql, args=None):
-        """Executes the SQL and returns sqlite3.Cursor."""
+        """Executes the SQL statement and returns database cursor."""
         raise NotImplementedError()
 
 
@@ -242,7 +246,7 @@ class Queryable(object):
         raise NotImplementedError()
 
 
-    def quote(self, val, force=False):
+    def quote(self, value, force=False):
         """
         Returns identifier in quotes and proper-escaped for queries,
         if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
@@ -254,7 +258,11 @@ class Queryable(object):
 
 
 class Database(Queryable):
-    """Database instance. Usable as an auto-closing context manager."""
+    """
+    Database instance. Usable as an auto-closing context manager.
+
+    Note that the database connection is not opened immediately on construction.
+    """
 
     ## Database engine modules, as {"sqlite": sqlite submodule, ..}
     ENGINES = None
@@ -266,7 +274,7 @@ class Database(Queryable):
     @classmethod
     def factory(cls, opts, engine=None, **kwargs):
         """
-        Returns a new or cached Database, or first created if opts is None.
+        Returns an opened Database, new or cached, the first created if opts is `None`.
 
         @param   opts    database connection options, engine-specific;
                          SQLite takes a file path or path-like object or `":memory:"`,
@@ -297,6 +305,44 @@ class Database(Queryable):
         cls.INSTANCES[key].open()
         return cls.INSTANCES[key]
 
+    def transaction(self, commit=True, exclusive=False, **kwargs):
+        """
+        Returns a transaction context manager.
+
+        Context is breakable by raising Rollback.
+
+        @param   commit     whether transaction autocommits at the end
+        @param   exclusive  whether entering a with-block is exclusive over other
+                            Transaction instances on this Database
+        @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
+        """
+        engine = next(n for (n, _), d in self.INSTANCES.items() if d is self)
+        return self.ENGINES[engine].Transaction(self, commit, exclusive, **kwargs)
+
+    @property
+    def identity(self):
+        """Tuple of (connection options as string, engine arguments as string)."""
+        raise NotImplementedError()
+
+    def __enter__(self):
+        """Context manager entry, opens database if not already open, returns Database object."""
+        raise NotImplementedError()
+
+    def __exit__(self, exc_type, exc_val, exc_trace):
+        """Context manager exit, closes database."""
+        raise NotImplementedError()
+
+    def __del__(self):
+        """Closes the database, if open."""
+        self.close()
+
+    def open(self):
+        """Opens database connection if not already open."""
+        raise NotImplementedError()
+
+    def close(self):
+        """Closes the database, if open."""
+        raise NotImplementedError()
 
     @classmethod
     def make_identity(cls, opts, **kwargs):
@@ -304,74 +350,55 @@ class Database(Queryable):
         raise NotImplementedError()
 
 
-    @property
-    def identity(self):
-        """Tuple of (connection options as string, engine arguments as string)."""
-        raise NotImplementedError()
-
-
-    def __enter__(self):
-        """Context manager entry, opens database if not already open, returns Database object."""
-        self.open()
-        return self
-
-
-    def __exit__(self, exc_type, exc_val, exc_trace):
-        """Context manager exit, closes database."""
-        self.close()
-
-
-    def transaction(self, commit=True):
-        """
-        Returns a transaction context manager, breakable by raising Rollback,
-        manually actionable by .commit() and .rollback().
-
-        @param   commit  whether transaction autocommits at exit
-        """
-        engine = next(n for (n, _), d in self.INSTANCES.items() if d is self)
-        return self.ENGINES[engine].Transaction(self, commit)
-
-
-    def open(self):
-        """Opens database connection if not already open."""
-        raise NotImplementedError()
-
-
-    def close(self):
-        """Closes the database, if open."""
-        raise NotImplementedError()
-
-
 class Transaction(Queryable):
-    """Transaction context manager, breakable by raising Rollback."""
+    """
+    Transaction context manager, breakable by raising Rollback.
+
+    Note that in SQLite, a single connection has one shared transaction state,
+    so it is highly recommended to use exclusive Transaction instances for any action queries,
+    as otherwise concurrent transactions can interfere with one another.
+    """
 
     def __init__(self, db, commit=True, exclusive=False, **kwargs):
         """
-        Note that in SQLite, a single connection has one shared transaction state,
-        so it is highly recommended to use exclusive Transaction instances for any action queries,
-        as otherwise concurrent transactions can interfere with one another.
-        The `exclusive` parameter defaults to `True` when using SQLite.
+        Constructs a new transaction.
+
+        Note that parameter `exclusive` defaults to `True` when using SQLite.
 
         @param   commit     if true, transaction auto-commits at the end
         @param   exclusive  whether entering a with-block is exclusive over other
-                            Transaction instances entering an exclusive with-block
-                            on this Database instance
+                            Transaction instances on this Database
         @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
         """
-        super(Transaction, self).__init__()
-        self._db, self._autocommit = db, commit
+        pass
 
     def __enter__(self):
         """Context manager entry, returns Transaction object."""
-        return self
+        raise NotImplementedError()
 
     def __exit__(self, exc_type, exc_val, exc_trace):
         """Context manager exit, propagates raised errors except Rollback."""
-        return exc_type in (None, Rollback)
+        raise NotImplementedError()
 
-    def close(self, commit=None): raise NotImplementedError()
-    def commit(self):             raise NotImplementedError()
-    def rollback(self):           raise NotImplementedError()
+    def __del__(self):
+        """Closes the transaction, if open."""
+        self.close()
+
+    def close(self, commit=None):
+        """
+        Closes the transaction, performing commit or rollback as configured.
+
+        @param   commit  True for final commit, False for rollback, None for autocommit
+        """
+        raise NotImplementedError()
+
+    def commit(self):
+        """Commits current transaction, if any."""
+        raise NotImplementedError()
+
+    def rollback(self):
+        """Rolls back current transaction, if any."""
+        raise NotImplementedError()
 
     @property
     def database(self):
