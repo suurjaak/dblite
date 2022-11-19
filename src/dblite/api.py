@@ -123,7 +123,7 @@ def transaction(commit=True, exclusive=False, **kwargs):
     
     Context is breakable by raising Rollback.
 
-    @param   commit     whether transaction autocommits at the end
+    @param   commit     whether transaction commits automatically at exiting with-block
     @param   exclusive  whether entering a with-block is exclusive over other
                         Transaction instances on this Database
     @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
@@ -311,13 +311,12 @@ class Database(Queryable):
 
         Context is breakable by raising Rollback.
 
-        @param   commit     whether transaction autocommits at the end
+        @param   commit     whether transaction autocommits at exiting with-block
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances on this Database
         @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
         """
-        engine = next(n for (n, _), d in self.INSTANCES.items() if d is self)
-        return self.ENGINES[engine].Transaction(self, commit, exclusive, **kwargs)
+        raise NotImplementedError()
 
     @property
     def identity(self):
@@ -356,7 +355,7 @@ class Transaction(Queryable):
 
     Note that in SQLite, a single connection has one shared transaction state,
     so it is highly recommended to use exclusive Transaction instances for any action queries,
-    as otherwise concurrent transactions can interfere with one another.
+    as concurrent transactions can interfere with one another otherwise.
     """
 
     def __init__(self, db, commit=True, exclusive=False, **kwargs):
@@ -365,9 +364,9 @@ class Transaction(Queryable):
 
         Note that parameter `exclusive` defaults to `True` when using SQLite.
 
-        @param   commit     if true, transaction auto-commits at the end
-        @param   exclusive  whether entering a with-block is exclusive over other
-                            Transaction instances on this Database
+        @param   commit     whether transaction commits automatically at exiting with-block
+        @param   exclusive  whether entering a with-block is exclusive
+                            over other Transaction instances on this Database
         @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
         """
         pass
@@ -386,9 +385,11 @@ class Transaction(Queryable):
 
     def close(self, commit=None):
         """
-        Closes the transaction, performing commit or rollback as configured.
+        Closes the transaction, performing commit or rollback as specified.
+        Required if not using transaction as context manager in a with-block.
 
-        @param   commit  True for final commit, False for rollback, None for autocommit
+        @param   commit  `True` for explicit commit, `False` for explicit rollback,
+                         `None` defaults to `commit` flag from creation
         """
         raise NotImplementedError()
 

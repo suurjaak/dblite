@@ -307,7 +307,7 @@ class Database(api.Database, Queryable):
         By default uses a pool of 1..4 connections.
 
         Connection parameters can also be specified in OS environment,
-        standard Postgres environment variables like `PGUSER` and `PGPASSWORD`.
+        via standard Postgres environment variables like `PGUSER` and `PGPASSWORD`.
 
         @param   opts     Postgres connection string, or options dictionary as
                           `dict(dbname=.., user=.., password=.., host=.., port=.., ..)`
@@ -321,6 +321,7 @@ class Database(api.Database, Queryable):
         self._identity  = (self.dsn, (str(kwargs) if kwargs else ""))
         self._cursor    = None
         self._cursorctx = None
+        self._txs       = []  # [Transaction, ]
 
 
     @property
@@ -367,6 +368,8 @@ class Database(api.Database, Queryable):
 
     def close(self):
         """Closes connection, if open."""
+        txs, self._txs[:] = self._txs[:], []
+        for tx in txs: tx.close()
         if self._cursor:
             self._cursorctx.__exit__(None, None, None)
             self._cursor = None
@@ -376,6 +379,22 @@ class Database(api.Database, Queryable):
         if pool: pool.close_all()
 
 
+    def transaction(self, commit=True, exclusive=False, **kwargs):
+        """
+        Returns a transaction context manager.
+
+        Context is breakable by raising Rollback.
+
+        @param   commit     whether transaction commits at exiting with-block
+        @param   exclusive  whether entering a with-block is exclusive
+                            over other Transaction instances on this Database
+        @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
+        """
+        tx = Transaction(self, commit, exclusive, **kwargs)
+        self._txs.append(tx)
+        return tx
+
+
     @contextmanager
     def get_cursor(self, commit=True, schema=None, lazy=False):
         """
@@ -383,7 +402,7 @@ class Database(api.Database, Queryable):
         Creates a new cursor on an unused connection and closes it when exiting
         context, committing changes if specified.
 
-        @param   commit  auto-commit at the end on success
+        @param   commit  commit at the end on success
         @param   schema  name of Postgres schema to use, if not using default `"public"`
         @param   lazy    if true, returns a named cursor that fetches rows iteratively;
                          only supports making a single query
@@ -448,6 +467,12 @@ class Database(api.Database, Queryable):
                 psycopg2.extensions.register_type(TYPE)
 
 
+    def _notify(self, tx):
+        """Notifies database of transaction closing."""
+        if tx in self._txs: self._txs.remove(tx)
+
+
+
 class Transaction(api.Transaction, Queryable):
     """
     Transaction context manager, provides convenience methods for queries.
@@ -460,11 +485,11 @@ class Transaction(api.Transaction, Queryable):
 
     def __init__(self, db, commit=True, exclusive=False, schema=None, lazy=False, **__):
         """
-        Returns a transaction context manager.
+        Creates a transaction context manager.
     
         Context is breakable by raising Rollback.
 
-        @param   commit     whether transaction autocommits at the end
+        @param   commit     whether transaction commits automatically at exiting with-block
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances Database
         @param   schema     search_path to use in this transaction
@@ -472,7 +497,6 @@ class Transaction(api.Transaction, Queryable):
                             instead of all at once, supports single query only
         """
         self._db         = db
-        self._autocommit = commit
         self._cursor     = None
         self._cursorctx  = db.get_cursor(commit, schema, lazy)
         self._exclusive  = exclusive
@@ -481,7 +505,7 @@ class Transaction(api.Transaction, Queryable):
         """Context manager entry, returns Transaction object."""
         if self._exclusive: Database.MUTEX[self._db].acquire()
         try:
-            self._cursor = self._cursorctx.__enter__()
+            if not self._cursor: self._cursor = self._cursorctx.__enter__()
             return self
         except Exception:
             if self._exclusive: Database.MUTEX[self._db].release()
@@ -489,26 +513,29 @@ class Transaction(api.Transaction, Queryable):
 
     def __exit__(self, exc_type, exc_val, exc_trace):
         """Context manager exit, propagates raised errors except Rollback."""
+        self._cursor = None
         try:
             self._cursorctx.__exit__(exc_type, exc_val, exc_trace)
-            self._cursor = None
             return exc_type in (None, api.Rollback)
         finally:
             if self._exclusive: Database.MUTEX[self._db].release()
+            self._db._notify(self)
 
     def close(self, commit=None):
         """
-        Closes the transaction, performing commit or rollback as configured,
+        Closes the transaction, performing commit or rollback as specified,
         and releases database connection back to connection pool.
         Required if not using transaction as context manager in a with-block.
 
-        @param   commit  if true, performs explicit final commit on transaction;
-                         if false, performs explicit rollback
+        @param   commit  `True` for explicit commit, `False` for explicit rollback,
+                         `None` defaults to `commit` flag from creation
         """
-        if self._cursor:
-            if commit is False: self.rollback()
-            elif commit:        self.commit()
-            self.__exit__(None, None, None)
+        if not self._cursor: return
+        if commit is False: self.rollback()
+        elif commit: self.commit()
+        self._cursor = None
+        try: self._cursorctx.__exit__(None, None, None)
+        finally: self._db._notify(self)
 
     def insert(self, table, values=(), **kwargs):
         """
@@ -596,7 +623,7 @@ def quote(value, force=False):
     RGX_INVALID, RGX_UNICODE = r"(^[\W\d])|(?=\W)", r"[^\x01-\x7E]"
     result = value.decode() if isinstance(value, binary_type) else value
     if force or result.upper() in RESERVED_KEYWORDS or re.search(RGX_INVALID, result):
-        if re.search(RGX_UNICODE, value):  # Unicode escape U&"\+ABCDEF"
+        if re.search(RGX_UNICODE, value):  # Convert to Unicode escape U&"\+ABCDEF"
             result = result.replace("\\", r"\\").replace('"', '""')
             result = 'U&"%s"' % re.sub(RGX_UNICODE, lambda m: r"\+%06X" % ord(m.group(0)), value)
         else:

@@ -166,21 +166,23 @@ class Queryable(api.Queryable):
 class Database(api.Database, Queryable):
     """Convenience wrapper around sqlite3.Connection."""
 
-    ## Mutexes for exclusive transactions, as {Database instance: lock}
+    ## Mutexes for exclusive actions, as {Database instance: lock}
     MUTEX = collections.defaultdict(threading.RLock)
 
 
-    def __init__(self, path=":memory:", **kwargs):
+    def __init__(self, opts=":memory:", **kwargs):
         """
         Creates a new Database instance for SQLite.
 
-        @param   kwargs  supported arguments are passed to sqlite3.connect() in open()
+        @param   kwargs  supported arguments are passed to sqlite3.connect() in open(),
+                         like `detect_types=sqlite3.PARSE_COLNAMES`
         """
         super(Database, self).__init__()
         self.connection = None
-        self.path       = path
+        self.path       = opts
         self._kwargs    = kwargs
         self._identity  = (self.path, (str(kwargs) if kwargs else ""))
+        self._txs       = []  # [Transaction, ]
 
 
     @property
@@ -226,15 +228,37 @@ class Database(api.Database, Queryable):
 
     def close(self):
         """Closes the database connection, if open."""
-        try: self.connection.close()
-        except Exception: pass
-        self.connection = None
+        txs, self._txs[:] = self._txs[:], []
+        for tx in txs: tx.close()
+        if self.connection:
+            self.connection.close()
+            self.connection = None
+
+    def transaction(self, commit=True, exclusive=False, **kwargs):
+        """
+        Returns a transaction context manager.
+
+        Context is breakable by raising Rollback.
+
+        @param   commit     whether transaction commits automatically at exiting with-block
+        @param   exclusive  whether entering a with-block is exclusive
+                            over other Transaction instances on this Database
+        @param   kwargs     engine-specific arguments, like `detect_types=sqlite3.PARSE_COLNAMES`
+        """
+        tx = Transaction(self, commit, exclusive, **kwargs)
+        self._txs.append(tx)
+        return tx
 
 
     @classmethod
     def make_identity(cls, opts, **kwargs):
         """Returns a tuple of (connection options as string, engine arguments as string)."""
         return (opts, str(kwargs) if kwargs else "")
+
+
+    def _notify(self, tx):
+        """Notifies database of transaction closing."""
+        if tx in self._txs: self._txs.remove(tx)
 
 
 
@@ -244,14 +268,14 @@ class Transaction(api.Transaction, Queryable):
 
     Note that in SQLite, a single connection has one shared transaction state,
     so it is highly recommended to use exclusive Transaction instances for any action queries,
-    as otherwise concurrent transactions can interfere with one another.
+    as concurrent transactions can interfere with one another otherwise.
     """
 
     def __init__(self, db, commit=True, exclusive=True, **__):
         """
         Creates a new transaction.
 
-        @param   commit     if true, transaction auto-commits at the end
+        @param   commit     whether transaction commits automatically at exiting with-block
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances on this Database
         """
@@ -261,6 +285,7 @@ class Transaction(api.Transaction, Queryable):
         self._exclusive  = exclusive
 
     def __enter__(self):
+        " @todo siin peaks tagama et ei saa mitu korda siseneda "
         if self._exclusive: Database.MUTEX[self._db].acquire()
         self._isolevel0 = self._db.connection.isolation_level
         self._db.connection.isolation_level = "DEFERRED"
@@ -274,15 +299,18 @@ class Transaction(api.Transaction, Queryable):
             return exc_type in (None, api.Rollback) # Do not propagate raised Rollback
         finally:
             if self._exclusive: Database.MUTEX[self._db].release()
+            self._db._notify(self)
 
     def close(self, commit=None):
         """
-        Closes the transaction, performing commit or rollback as configured.
+        Closes the transaction, performing commit or rollback as specified.
 
-        @param   commit  True for final commit, False for rollback
+        @param   commit  `True` for final commit, `False` for rollback,
+                         `None` for auto-commit, if any
         """
         if commit is False: self.rollback()
-        elif commit:        self.commit()
+        elif commit or self._autocommit: self.commit()
+        self._db._notify(self)
 
     def insert(self, table, values=(), **kwargs):
         """
