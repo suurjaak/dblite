@@ -361,7 +361,7 @@ class Database(api.Database, Queryable):
     def open(self):
         """Opens database connection if not already open."""
         if self._cursorctx: return
-        self.init_pool(self._identity, self.dsn, **self._kwargs)
+        self.init_pool(self, **self._kwargs)
         self._apply_converters()
         self._cursorctx = self.get_cursor(commit=True)
 
@@ -443,8 +443,8 @@ class Database(api.Database, Queryable):
         with cls.MUTEX[db]:
             if db.identity in cls.POOLS: return
 
-            args = dict(minconn=minconn, maxconn=maxconn, **kwargs)
-            cls.POOLS[db.identity] = psycopg2.pool.ThreadedConnectionPool(db.dsn, **args)
+            args = minconn, maxconn, db.dsn
+            cls.POOLS[db.identity] = psycopg2.pool.ThreadedConnectionPool(*args, **kwargs)
 
 
     @classmethod
