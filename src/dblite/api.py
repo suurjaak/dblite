@@ -347,7 +347,7 @@ class Database(Queryable):
         raise NotImplementedError()
 
     def __exit__(self, exc_type, exc_val, exc_trace):
-        """Context manager exit, closes database."""
+        """Context manager exit, closes database and any pending transactions if open."""
         raise NotImplementedError()
 
     def __del__(self):

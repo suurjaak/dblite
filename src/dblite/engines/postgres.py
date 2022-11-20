@@ -342,11 +342,11 @@ class Database(api.Database, Queryable):
 
 
     def __exit__(self, exc_type, exc_val, exc_trace):
-        """Context manager exit, closes database if open."""
+        """Context manager exit, closes database and any pending transactions if open."""
         txs, self._txs[:] = self._txs[:], []
         for tx in txs: tx.close(commit=None if exc_type is None else False)
         self.close()
-        return exc_type in (None, api.Rollback) # Do not propagate raised Rollback
+        return exc_type is None
 
 
     def insert(self, table, values=(), **kwargs):
