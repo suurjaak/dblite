@@ -208,7 +208,7 @@ class Queryable(api.Queryable):
         with Transaction(db, schema="information_schema") as tx:
             # Retrieve column names
             for v in tx.fetchall("columns", table_schema="public",
-                                 order="table_name, dtd_identifier"):
+                                 order="table_name, ordinal_position"):
                 t, c, d = v["table_name"], v["column_name"], v["data_type"]
                 if t not in result: result[t] = {"type": "table",
                                                  "fields": collections.OrderedDict()}
