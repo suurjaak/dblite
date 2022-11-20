@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    18.11.2022
+@modified    20.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -168,10 +168,12 @@ class Queryable(api.Queryable):
                 sort = col[1] if name != col and len(col) > 1 else ""
                 if not isinstance(sort, string_types): sort = "DESC" if sort else ""
                 sql += (", " if i else "") + name + (" " if sort else "") + sort
-        for k, v in zip(("limit", "offset"), limit or ()):
-            if v is None: continue # for k, v
-            sql += " %s %%(%s)s" % (k.upper(), k)
-            args[k] = v
+        if limit:
+            limit = [None if isinstance(v, integer_types) and v < 0 else v for v in limit]
+            for k, v in zip(("limit", "offset"), limit):
+                if v is None: continue  # for k, v
+                sql += " %s %%(%s)s" % (k.upper(), k)
+                args[k] = v
 
         return sql, args
 
@@ -239,7 +241,7 @@ class Queryable(api.Queryable):
                 result[v["parent"]].setdefault("children", []).append(v["child"])
                 result[v["child"]]["parent"] = v["parent"]
                 for f, opts in result[v["parent"]]["fields"].items() if keys else ():
-                    if not opts.get("fk"): continue # for f, opts
+                    if not opts.get("fk"): continue  # for f, opts
                     result[v["child"]]["fields"][f]["fk"] = opts["fk"]
 
             # Retrieve view column names

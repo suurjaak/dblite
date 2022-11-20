@@ -144,10 +144,14 @@ class Queryable(api.Queryable):
                 sort = col[1] if name != col and len(col) > 1 else ""
                 if not isinstance(sort, string_types): sort = "DESC" if sort else ""
                 sql += (", " if i else "") + name + (" " if sort else "") + sort
-        for k, v in zip(("limit", "offset"), limit or ()):
-            if v is None: continue # for k, v
-            sql += " %s :%s" % (k.upper(), k)
-            args[k] = v
+        if limit:
+            limit = [None if isinstance(v, integer_types) and v < 0 else v for v in limit]
+            for i, (k, v) in enumerate(zip(("limit", "offset"), limit)):
+                if v is None:
+                    if i or len(limit) < 2 or not limit[1]: continue  # for i, (k, v)
+                    v = -1  # LIMIT is required if OFFSET
+                sql += " %s :%s" % (k.upper(), k)
+                args[k] = v
 
         return sql, args
 
