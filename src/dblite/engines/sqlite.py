@@ -50,6 +50,17 @@ class Queryable(api.Queryable):
            "GLOB", "MATCH", "REGEXP", "AND", "OR"]
 
 
+    def insert(self, table, values=(), **kwargs):
+        """
+        Convenience wrapper for database INSERT, returns inserted row ID.
+        Keyword arguments are added to VALUES.
+        """
+        values = list(values.items() if isinstance(values, dict) else values)
+        values += kwargs.items()
+        sql, args = self.makeSQL("INSERT", table, values=values)
+        return self.execute(sql, args).lastrowid
+
+
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
@@ -207,17 +218,6 @@ class Database(api.Database, Queryable):
         return exc_type is None
 
 
-    def insert(self, table, values=(), **kwargs):
-        """
-        Convenience wrapper for database INSERT, returns inserted row ID.
-        Keyword arguments are added to VALUES.
-        """
-        values = list(values.items() if isinstance(values, dict) else values)
-        values += kwargs.items()
-        sql, args = self.makeSQL("INSERT", table, values=values)
-        return self.execute(sql, args).lastrowid
-
-
     def execute(self, sql, args=()):
         """Executes the SQL statement and returns sqlite3.Cursor."""
         return self.connection.execute(sql, args)
@@ -341,22 +341,14 @@ class Transaction(api.Transaction, Queryable):
         @param   commit  `True` for final commit, `False` for rollback,
                          `None` for auto-commit, if any
         """
-        if self._closed: return
+        if self._closed:
+            self._db._notify(self)
+            return
         if commit is False: self.rollback()
         elif commit or self._exitcommit: self.commit()
         self._closed = True
         self._db.connection.isolation_level = self._isolevel0
         self._db._notify(self)
-
-    def insert(self, table, values=(), **kwargs):
-        """
-        Convenience wrapper for database INSERT, returns inserted row ID.
-        Keyword arguments are added to VALUES.
-        """
-        values = list(values.items() if isinstance(values, dict) else values)
-        values += kwargs.items()
-        sql, args = self.makeSQL("INSERT", table, values=values)
-        return self.execute(sql, args).lastrowid
 
     def execute(self, sql, args=()):
         """Executes the SQL statement and returns sqlite3.Cursor."""

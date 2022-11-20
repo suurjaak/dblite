@@ -62,6 +62,19 @@ class Queryable(api.Queryable):
            "NOT LIKE", "NOT SIMILAR TO", "OR", "OVERLAPS", "SIMILAR TO", "SOME")
 
 
+    def insert(self, table, values=(), **kwargs):
+        """
+        Convenience wrapper for database INSERT, returns inserted row ID.
+        Keyword arguments are added to VALUES.
+        """
+        values = list(values.items() if isinstance(values, dict) else values)
+        values += kwargs.items()
+        sql, args = self.makeSQL("INSERT", table, values=values)
+        cursor = self.execute(sql, args)
+        row = None if cursor.description is None else next(cursor, None)
+        return next(iter(row.values())) if row and isinstance(row, dict) else None
+
+
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
@@ -344,18 +357,6 @@ class Database(api.Database, Queryable):
         return exc_type is None
 
 
-    def insert(self, table, values=(), **kwargs):
-        """
-        Convenience wrapper for database INSERT, returns inserted row ID.
-        Keyword arguments are added to VALUES.
-        """
-        values = list(values.items() if isinstance(values, dict) else values)
-        values += kwargs.items()
-        sql, args = self.makeSQL("INSERT", table, values=values)
-        res = next(self.execute(sql, args))
-        return res.values()[0] if res and isinstance(res, dict) else None
-
-
     def execute(self, sql, args=()):
         """
         Executes SQL statement, returns psycopg cursor.
@@ -398,7 +399,7 @@ class Database(api.Database, Queryable):
         self._cursorctx = None
         self.MUTEX.pop(self, None)
         pool = self.POOLS.pop(self, None)
-        if pool: pool.close_all()
+        if pool: pool.closeall()
 
 
     def transaction(self, commit=True, exclusive=False, **kwargs):
@@ -468,6 +469,7 @@ class Database(api.Database, Queryable):
             if db in cls.POOLS: return
 
             args = minconn, maxconn, db.dsn
+            kwargs.update(cursor_factory=psycopg2.extras.RealDictCursor)
             cls.POOLS[db] = psycopg2.pool.ThreadedConnectionPool(*args, **kwargs)
 
 
@@ -504,7 +506,7 @@ class Transaction(api.Transaction, Queryable):
     def __init__(self, db, commit=True, exclusive=False, schema=None, lazy=False, **__):
         """
         Creates a transaction context manager.
-    
+
         Context is breakable by raising Rollback.
 
         @param   commit     whether transaction commits automatically at exiting with-block
@@ -549,23 +551,14 @@ class Transaction(api.Transaction, Queryable):
         @param   commit  `True` for explicit commit, `False` for explicit rollback,
                          `None` defaults to `commit` flag from creation
         """
-        if not self._cursor: return
+        if not self._cursor:
+            self._db._notify(self)
+            return
         if commit is False: self.rollback()
         elif commit: self.commit()
         self._cursor = None
         try: self._cursorctx.__exit__(None, None, None)
         finally: self._db._notify(self)
-
-    def insert(self, table, values=(), **kwargs):
-        """
-        Convenience wrapper for database INSERT, returns inserted row ID.
-        Keyword arguments are added to VALUES.
-        """
-        values = list(values.items() if isinstance(values, dict) else values)
-        values += kwargs.items()
-        sql, args = self._db.makeSQL("INSERT", table, values=values)
-        res = next(self.execute(sql, args))
-        return res.values()[0] if res and isinstance(res, dict) else None
 
     def execute(self, sql, args=()):
         """
@@ -604,7 +597,7 @@ def autodetect(opts):
                      or keyword=value format string like `"host=localhost dbname=.."`
                      or a dictionary of `dict(host="localhost", dbname=..)`
     """
-    if not opts: return False
+    if not isinstance(opts, string_types + (dict, )): return False
     if isinstance(opts, dict):
         try: return bool(psycopg2.extensions.make_dsn(**opts) or True) # "{}" returns ""
         except Exception: return False

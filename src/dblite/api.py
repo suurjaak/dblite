@@ -126,9 +126,13 @@ def executescript(sql):
     return init().executescript(sql)
 
 
-def close():
+def close(commit=None):
     """
     Closes the default database connection, if any.
+
+    @param   commit  `True` for explicit commit on open transactions,
+                     `False` for explicit rollback on open transactions,
+                     `None` defaults to `commit` flag from transaction creations
     """
     init().close()
 
@@ -136,7 +140,7 @@ def close():
 def transaction(commit=True, exclusive=None, **kwargs):
     """
     Returns a transaction context manager.
-    
+
     Context is breakable by raising Rollback.
 
     Note that parameter `exclusive` defaults to `True` when using SQLite.
@@ -182,25 +186,21 @@ def register_converter(transformer, typenames, engine=None):
 class Queryable(object):
     """Abstract base for Database and Transaction."""
 
-    def fetchall(self, table, cols="*", where=(), group=(), order=(), limit=(),
-                 **kwargs):
+    def fetchall(self, table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
         """
         Convenience wrapper for database SELECT and fetch all.
         Keyword arguments are added to WHERE.
         """
-        cursor = self.select(table, cols, where, group, order, limit, **kwargs)
-        return cursor.fetchall()
+        return list(self.select(table, cols, where, group, order, limit, **kwargs))
 
 
-    def fetchone(self, table, cols="*", where=(), group=(), order=(), limit=(),
-                 **kwargs):
+    def fetchone(self, table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
         """
         Convenience wrapper for database SELECT and fetch one.
         Keyword arguments are added to WHERE.
         """
-        limit = limit or 1
-        cursor = self.select(table, cols, where, group, order, limit, **kwargs)
-        return cursor.fetchone()
+        limit = 1 if not limit and limit != 0 else limit
+        return next(self.select(table, cols, where, group, order, limit, **kwargs), None)
 
 
     def insert(self, table, values=(), **kwargs):
@@ -211,8 +211,7 @@ class Queryable(object):
         raise NotImplementedError()
 
 
-    def select(self, table, cols="*", where=(), group=(), order=(), limit=(),
-               **kwargs):
+    def select(self, table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
         """
         Convenience wrapper for database SELECT, returns database cursor.
         Keyword arguments are added to WHERE.
@@ -350,7 +349,7 @@ class Transaction(Queryable):
                             over other Transaction instances on this Database
         @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
         """
-        pass
+        raise NotImplementedError()
 
     def __enter__(self):
         """Context manager entry, returns Transaction object."""
