@@ -22,7 +22,7 @@ Usage
 import dblite
 
 dblite.init(":memory:")  # Open SQLite in-memory database
-dblite.execute("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
+dblite.executescript("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
 dblite.insert("test", val=None)
 for i in range(5):
     dblite.insert("test", {"val": i})
@@ -31,7 +31,7 @@ dblite.fetchall("test", order="val", limit=3)
 dblite.update("test", {"val": None}, val=2)
 dblite.fetchall("test", val=("IN", range(3)))
 dblite.delete("test", id=5)
-dblite.execute("DROP TABLE test")
+dblite.executescript("DROP TABLE test")
 ```
 
 
@@ -307,6 +307,10 @@ with Transaction(lazy=True) as tx:
     for i, row in enumerate(tx.select("some really huge table")):
         print("Processing row #%s" % i)
 ```
+
+`executescript()` forces an internal reload of schema metadata,
+allowing `insert()´ to return inserted primary key value,
+and query parameters to be auto-cast to expected column types.
 
 
 API

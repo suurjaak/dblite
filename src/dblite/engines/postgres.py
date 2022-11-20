@@ -51,10 +51,6 @@ RESERVED_KEYWORDS = [
 
 class Queryable(api.Queryable):
 
-    ## Database schemas as {Database: {structure filled on first access}}
-    TABLES = {}
-    # {name: {?"key": pk, "fields": {col: {"name", "type", ?"fk": ftable}}, "type": "table"}}
-
     # Recognized binary operators for makeSQL
     OPS = ("!=", "!~", "!~*", "#", "%", "&", "*", "+", "-", "/", "<", "<<",
            "<=", "<>", "<@", "=", ">", ">=", ">>", "@>", "^", "|", "||", "&&", "~",
@@ -78,15 +74,12 @@ class Queryable(api.Queryable):
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
-        key = self if isinstance(self, Database) else self.database
-        if key not in self.TABLES:
-            self.TABLES[key] = {}  # To skip later if querying fails
-            self.TABLES[key].update(self.query_schema(keys=True))
-        TABLES = self.TABLES[key]
+
+        SCHEMA = self._load_schema()
 
         def cast(col, val):
             """Returns column value cast to correct type for use in psycopg."""
-            field = table in TABLES and TABLES[table]["fields"].get(col)
+            field = table in SCHEMA and SCHEMA[table]["fields"].get(col)
             if field and "array" == field["type"]:
                 return list(listify(val)) # Values for array fields must be lists
             elif field and val is not None:
@@ -140,8 +133,8 @@ class Queryable(api.Queryable):
             args.update((n, cast(k, v)) for n, (k, v) in zip(keys, values))
             cols, vals = ", ".join(k for k, _ in values), ", ".join("%%(%s)s" % n for n in keys)
             sql += " (%s) VALUES (%s)" % (cols, vals)
-            if TABLES and table in TABLES and TABLES[table].get("key"):
-                sql += " RETURNING %s AS id" % (TABLES[table]["key"])
+            if SCHEMA and table in SCHEMA and SCHEMA[table].get("key"):
+                sql += " RETURNING %s AS id" % (SCHEMA[table]["key"])
         if "UPDATE" == action:
             sql += " SET "
             for i, (col, val) in enumerate(values):
@@ -191,90 +184,6 @@ class Queryable(api.Queryable):
         return sql, args
 
 
-    def query_schema(self, keys=False, views=False, inheritance=False):
-        """
-        Returns database table structure populated from current connection.
-
-        @param   views        whether to include views
-        @param   keys         whether to include primary and foreign key information
-        @param   inheritance  whether to include parent-child table information
-                              and populate inherited foreign keys
-        @return  ```{table or view name: {
-                         "fields": OrderedDict({
-                             column name: {
-                                 "name": column name,
-                                 "type": column type name,
-                                 ?"pk":  True,
-                                 ?"fk":  foreign table name,
-                             }
-                         }),
-                         ?"key":      primary key column name,
-                         ?"parent":   parent table name,
-                         ?"children": [child table name, ],
-                         "type":      "table" or "view",
-                     }
-                 }```
-        """
-        result = {}
-
-        db = self if isinstance(self, Database) else self.database
-        with Transaction(db, schema="information_schema") as tx:
-            # Retrieve column names
-            for v in tx.fetchall("columns", table_schema="public",
-                                 order="table_name, ordinal_position"):
-                t, c, d = v["table_name"], v["column_name"], v["data_type"]
-                if t not in result: result[t] = {"type": "table",
-                                                 "fields": collections.OrderedDict()}
-                result[t]["fields"][c] = {"name": c, "type": d.lower()}
-
-            # Retrieve primary and foreign keys
-            for v in tx.fetchall(
-                "table_constraints tc JOIN key_column_usage kcu "
-                  "ON tc.constraint_name = kcu.constraint_name "
-                "JOIN constraint_column_usage ccu "
-                  "ON ccu.constraint_name = tc.constraint_name ",
-                cols="DISTINCT tc.table_name, kcu.column_name, tc.constraint_type, "
-                "ccu.table_name AS table_name2", where={"tc.table_schema": "public"}
-            ) if keys else ():
-                t, c, t2 = v["table_name"], v["column_name"], v["table_name2"]
-                if "PRIMARY KEY" == v["constraint_type"]:
-                    result[t]["fields"][c]["pk"], result[t]["key"] = True, c
-                else: result[t]["fields"][c]["fk"] = t2
-
-            # Retrieve inheritance information, copy foreign key flags from parent
-            for v in tx.fetchall(
-                "pg_inherits i JOIN pg_class c ON inhrelid=c.oid "
-                "JOIN pg_class p ON inhparent = p.oid "
-                "JOIN pg_namespace pn ON pn.oid = p.relnamespace "
-                "JOIN pg_namespace cn "
-                  "ON cn.oid = c.relnamespace AND cn.nspname = pn.nspname",
-                cols="c.relname AS child, p.relname AS parent",
-                where={"pn.nspname": "public"}
-            ) if inheritance else ():
-                result[v["parent"]].setdefault("children", []).append(v["child"])
-                result[v["child"]]["parent"] = v["parent"]
-                for f, opts in result[v["parent"]]["fields"].items() if keys else ():
-                    if not opts.get("fk"): continue  # for f, opts
-                    result[v["child"]]["fields"][f]["fk"] = opts["fk"]
-
-            # Retrieve view column names
-            for v in tx.fetchall(
-                "pg_attribute a "
-                "JOIN pg_class c ON a.attrelid = c.oid "
-                "JOIN pg_namespace s ON c.relnamespace = s.oid "
-                "JOIN pg_type t ON a.atttypid = t.oid "
-                "JOIN pg_proc p ON t.typname = p.proname ",
-                cols="DISTINCT c.relname, a.attname, pg_get_function_result(p.oid) AS data_type",
-                where={"a.attnum": (">", 0), "a.attisdropped": False,
-                       "s.nspname": "public", "c.relkind": ("IN", ("v", "m"))}
-            ) if views else ():
-                t, c, d = v["relname"], v["attname"], v["data_type"]
-                if t not in result: result[t] = {"type": "view",
-                                                 "fields": collections.OrderedDict()}
-                result[t]["fields"][c] = {"name": c, "type": d.lower()}
-        return result
-
-
     @classmethod
     def quote(cls, value, force=False):
         """
@@ -294,6 +203,14 @@ class Queryable(api.Queryable):
         if typename in ("json", "jsonb") and type(value) not in self.ADAPTERS.values():
             return psycopg2.extras.Json(value, dumps=api.json_dumps)
         return value
+
+
+    def _load_schema(self, force=False):
+        """Returns database table structure, queried from database if uninitialized or forced."""
+        if self._structure is None or force:
+            self._structure = {}  # Avoid recursion on first query
+            self._structure.update(query_schema(self, keys=True))
+        return self._structure
 
 
 
@@ -341,6 +258,7 @@ class Database(api.Database, Queryable):
         self._cursor    = None
         self._cursorctx = None
         self._txs       = []  # [Transaction, ]
+        self._structure = None  # Database schema as {table or view name: {"fields": {..}, ..}}
 
 
     def __enter__(self):
@@ -371,8 +289,14 @@ class Database(api.Database, Queryable):
 
 
     def executescript(self, sql):
-        """Executes the SQL as script of any number of statements."""
-        return self.execute(sql)
+        """
+        Executes the SQL as script of any number of statements.
+
+        Reloads internal schema structure from database.
+        """
+        cursor = self.execute(sql)
+        self._load_schema(force=True)
+        return cursor
 
 
     def open(self):
@@ -520,6 +444,7 @@ class Transaction(api.Transaction, Queryable):
         self._cursor     = None
         self._cursorctx  = db.get_cursor(commit=commit, schema=schema, lazy=lazy)
         self._exclusive  = exclusive
+        self._structure  = None  # Database schema as {table or view name: {"fields": {..}, ..}}
 
     def __enter__(self):
         """Context manager entry, opens cursor, returns Transaction object."""
@@ -572,8 +497,14 @@ class Transaction(api.Transaction, Queryable):
         return self._cursor
 
     def executescript(self, sql):
-        """Executes the SQL as script of any number of statements."""
-        return self.execute(sql)
+        """
+        Executes the SQL as script of any number of statements.
+
+        Reloads internal schema structure from database.
+        """
+        cursor = self.execute(sql)
+        self._load_schema(force=True)
+        return cursor
 
     def commit(self):
         """Commits pending actions, if any."""
@@ -621,6 +552,91 @@ def make_db_url(opts):
         result += "/" if opts.get("dbname") is None else ""
         result += "?" + urllib_parse.urlencode({k: opts[k] for k in opts if k not in BASICS})
     return "postgresql://" + result
+
+
+def query_schema(queryable, keys=False, views=False, inheritance=False):
+    """
+    Returns database table structure populated from given database.
+
+    @param   queryable    Database or Transaction instance
+    @param   views        whether to include views
+    @param   keys         whether to include primary and foreign key information
+    @param   inheritance  whether to include parent-child table information
+                          and populate inherited foreign keys
+    @return  ```{table or view name: {
+                     "fields": OrderedDict({
+                         column name: {
+                             "name": column name,
+                             "type": column type name,
+                             ?"pk":  True,
+                             ?"fk":  foreign table name,
+                         }
+                     }),
+                     ?"key":      primary key column name,
+                     ?"parent":   parent table name,
+                     ?"children": [child table name, ],
+                     "type":      "table" or "view",
+                 }
+             }```
+    """
+    result = {}
+
+    # Retrieve column names
+    for v in queryable.fetchall("information_schema.columns", table_schema="public",
+                                order="table_name, ordinal_position"):
+        t, c, d = v["table_name"], v["column_name"], v["data_type"]
+        if t not in result: result[t] = {"type": "table",
+                                         "fields": collections.OrderedDict()}
+        result[t]["fields"][c] = {"name": c, "type": d.lower()}
+
+    # Retrieve primary and foreign keys
+    for v in queryable.fetchall(
+        "information_schema.table_constraints tc "
+        "JOIN information_schema.key_column_usage kcu "
+          "ON tc.constraint_name = kcu.constraint_name "
+        "JOIN information_schema.constraint_column_usage ccu "
+          "ON ccu.constraint_name = tc.constraint_name ",
+        cols="DISTINCT tc.table_name, kcu.column_name, tc.constraint_type, "
+        "ccu.table_name AS table_name2", where={"tc.table_schema": "public"}
+    ) if keys else ():
+        t, c, t2 = v["table_name"], v["column_name"], v["table_name2"]
+        if "PRIMARY KEY" == v["constraint_type"]:
+            result[t]["fields"][c]["pk"], result[t]["key"] = True, c
+        else: result[t]["fields"][c]["fk"] = t2
+
+    # Retrieve inheritance information, copy foreign key flags from parent
+    for v in queryable.fetchall(
+        "information_schema.pg_inherits i JOIN information_schema.pg_class c ON inhrelid=c.oid "
+        "JOIN information_schema.pg_class p ON inhparent = p.oid "
+        "JOIN information_schema.pg_namespace pn ON pn.oid = p.relnamespace "
+        "JOIN information_schema.pg_namespace cn "
+          "ON cn.oid = c.relnamespace AND cn.nspname = pn.nspname",
+        cols="c.relname AS child, p.relname AS parent",
+        where={"pn.nspname": "public"}
+    ) if inheritance else ():
+        result[v["parent"]].setdefault("children", []).append(v["child"])
+        result[v["child"]]["parent"] = v["parent"]
+        for f, opts in result[v["parent"]]["fields"].items() if keys else ():
+            if not opts.get("fk"): continue  # for f, opts
+            result[v["child"]]["fields"][f]["fk"] = opts["fk"]
+
+    # Retrieve view column names
+    for v in queryable.fetchall(
+        "information_schema.pg_attribute a "
+        "JOIN information_schema.pg_class c ON a.attrelid = c.oid "
+        "JOIN information_schema.pg_namespace s ON c.relnamespace = s.oid "
+        "JOIN information_schema.pg_type t ON a.atttypid = t.oid "
+        "JOIN information_schema.pg_proc p ON t.typname = p.proname ",
+        cols="DISTINCT c.relname, a.attname, pg_get_function_result(p.oid) AS data_type",
+        where={"a.attnum": (">", 0), "a.attisdropped": False,
+               "s.nspname": "public", "c.relkind": ("IN", ("v", "m"))}
+    ) if views else ():
+        t, c, d = v["relname"], v["attname"], v["data_type"]
+        if t not in result: result[t] = {"type": "view",
+                                         "fields": collections.OrderedDict()}
+        result[t]["fields"][c] = {"name": c, "type": d.lower()}
+
+    return result
 
 
 def quote(value, force=False):
@@ -675,5 +691,5 @@ if psycopg2:
 
 __all__ = [
     "RESERVED_KEYWORDS", "Database", "Transaction",
-    "autodetect", "make_db_url", "quote", "register_adapter", "register_converter",
+    "autodetect", "quote", "register_adapter", "register_converter",
 ]
