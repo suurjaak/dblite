@@ -375,11 +375,11 @@ class Transaction(Queryable):
         raise NotImplementedError()
 
     def commit(self):
-        """Commits current transaction, if any."""
+        """Commits pending actions, if any."""
         raise NotImplementedError()
 
     def rollback(self):
-        """Rolls back current transaction, if any."""
+        """Rolls back pending actions, if any."""
         raise NotImplementedError()
 
     @property

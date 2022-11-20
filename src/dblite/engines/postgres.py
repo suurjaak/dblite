@@ -583,11 +583,11 @@ class Transaction(api.Transaction, Queryable):
         return self.execute(sql)
 
     def commit(self):
-        """Commits current transaction, if any."""
+        """Commits pending actions, if any."""
         if self._cursor: self._cursor.connection.commit()
 
     def rollback(self):
-        """Rolls back current transaction, if any."""
+        """Rolls back pending actions, if any."""
         if self._cursor: self._cursor.connection.rollback()
 
     @property
