@@ -122,15 +122,18 @@ def close():
     init().close()
 
 
-def transaction(commit=True, exclusive=False, **kwargs):
+def transaction(commit=True, exclusive=None, **kwargs):
     """
     Returns a transaction context manager.
     
     Context is breakable by raising Rollback.
 
+    Note that parameter `exclusive` defaults to `True` when using SQLite.
+
     @param   commit     whether transaction commits automatically at exiting with-block
     @param   exclusive  whether entering a with-block is exclusive over other
-                        Transaction instances on this Database
+                        Transaction instances on this Database;
+                        `None` stands for engine default
     @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
     """
     return init().transaction(commit, exclusive, **kwargs)
@@ -315,15 +318,18 @@ class Database(Queryable):
         cls.INSTANCES[key].open()
         return cls.INSTANCES[key]
 
-    def transaction(self, commit=True, exclusive=False, **kwargs):
+    def transaction(self, commit=True, exclusive=None, **kwargs):
         """
         Returns a transaction context manager.
 
         Context is breakable by raising Rollback.
 
+        Note that parameter `exclusive` defaults to `True` when using SQLite.
+
         @param   commit     whether transaction autocommits at exiting with-block
         @param   exclusive  whether entering a with-block is exclusive over other
-                            Transaction instances on this Database
+                            Transaction instances on this Database;
+                            `None` stands for engine default
         @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
         """
         raise NotImplementedError()

@@ -254,7 +254,7 @@ class Database(api.Database, Queryable):
             self.connection.close()
             self.connection = None
 
-    def transaction(self, commit=True, exclusive=False, **kwargs):
+    def transaction(self, commit=True, exclusive=True, **kwargs):
         """
         Returns a transaction context manager.
 
@@ -302,7 +302,7 @@ class Transaction(api.Transaction, Queryable):
         self._db         = db
         self._exitcommit = commit
         self._isolevel0  = None
-        self._exclusive  = exclusive
+        self._exclusive  = True if exclusive is None else exclusive
         self._entered    = False
         self._closed     = False
         self._cursor     = None
