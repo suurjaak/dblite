@@ -189,6 +189,20 @@ class Database(api.Database, Queryable):
     def identity(self): return self._identity
 
 
+    def __enter__(self):
+        """Context manager entry, opens database if not already open, returns Database object."""
+        self.open()
+        return self
+
+
+    def __exit__(self, exc_type, exc_val, exc_trace):
+        """Context manager exit, closes database if open."""
+        txs, self._txs[:] = self._txs[:], []
+        for tx in txs: tx.close(commit=None if exc_type is None else False)
+        self.close()
+        return exc_type in (None, api.Rollback) # Do not propagate raised Rollback
+
+
     def insert(self, table, values=(), **kwargs):
         """
         Convenience wrapper for database INSERT, returns inserted row ID.
@@ -227,7 +241,7 @@ class Database(api.Database, Queryable):
 
 
     def close(self):
-        """Closes the database connection, if open."""
+        """Closes the database and any pending transactions, if open."""
         txs, self._txs[:] = self._txs[:], []
         for tx in txs: tx.close()
         if self.connection:
@@ -304,7 +318,7 @@ class Transaction(api.Transaction, Queryable):
 
     def __exit__(self, exc_type, exc_val, exc_trace):
         """Context manager exit, closes cursor, commits or rolls back as specified on creation."""
-        if self._cursor is None: return
+        if self._cursor is None: return exc_type in (None, api.Rollback)
         try:
             if self._exitcommit and exc_type is None: self.commit()
             else: self.rollback()

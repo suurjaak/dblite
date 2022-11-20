@@ -350,7 +350,7 @@ class Database(Queryable):
         raise NotImplementedError()
 
     def close(self):
-        """Closes the database, if open."""
+        """Closes the database and any pending transactions, if open."""
         raise NotImplementedError()
 
     @classmethod
