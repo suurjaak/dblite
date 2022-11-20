@@ -100,13 +100,18 @@ def delete(table, where=(), **kwargs):
     return init().delete(table, where, **kwargs)
 
 
-def execute(sql, args=None):
+def execute(sql, args=()):
     """Executes the SQL statement and returns database cursor."""
     return init().execute(sql, args)
 
 
 def executescript(sql):
-    """Executes the SQL as script of any number of statements."""
+    """
+    Executes the SQL as script of any number of statements.
+
+    Note that in SQLite, the statements are executed outside of transaction,
+    and any pending transaction will be committed first.
+    """
     return init().executescript(sql)
 
 
@@ -230,13 +235,18 @@ class Queryable(object):
         return self.execute(sql, args).rowcount
 
 
-    def execute(self, sql, args=None):
+    def execute(self, sql, args=()):
         """Executes the SQL statement and returns database cursor."""
         raise NotImplementedError()
 
 
     def executescript(self, sql):
-        """Executes the SQL as script of any number of statements."""
+        """
+        Executes the SQL as script of any number of statements.
+
+        Note that in SQLite, the statements are executed outside of transaction,
+        and any pending transaction will be committed first.
+        """
         raise NotImplementedError()
 
 

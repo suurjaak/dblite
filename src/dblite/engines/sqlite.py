@@ -200,9 +200,9 @@ class Database(api.Database, Queryable):
         return self.execute(sql, args).lastrowid
 
 
-    def execute(self, sql, args=None):
+    def execute(self, sql, args=()):
         """Executes the SQL statement and returns sqlite3.Cursor."""
-        return self.connection.execute(sql, args or {})
+        return self.connection.execute(sql, args)
 
 
     def executescript(self, sql):
@@ -280,24 +280,39 @@ class Transaction(api.Transaction, Queryable):
                             Transaction instances on this Database
         """
         self._db         = db
-        self._autocommit = commit
+        self._exitcommit = commit
         self._isolevel0  = None
         self._exclusive  = exclusive
+        self._entered    = False
+        self._closed     = False
+        self._cursor     = None
 
     def __enter__(self):
-        " @todo siin peaks tagama et ei saa mitu korda siseneda "
+        """Context manager entry, opens cursor, returns Transaction object."""
+        if self._entered: raise RuntimeError("Context already entered")
+
         if self._exclusive: Database.MUTEX[self._db].acquire()
-        self._isolevel0 = self._db.connection.isolation_level
-        self._db.connection.isolation_level = "DEFERRED"
+        if not self._cursor:
+            self._isolevel0 = self._db.connection.isolation_level
+            self._db.connection.isolation_level = "DEFERRED"
+            try: self._cursor = self._db.execute("SAVEPOINT tx%s" % id(self))
+            except Exception:
+                if self._exclusive: Database.MUTEX[self._db].release()
+                raise
+        self._entered = True
         return self
 
     def __exit__(self, exc_type, exc_val, exc_trace):
+        """Context manager exit, closes cursor, commits or rolls back as specified on creation."""
+        if self._cursor is None: return
         try:
-            if self._autocommit and exc_type is None: self._db.connection.commit()
-            else: self._db.connection.rollback()
-            self._db.connection.isolation_level = self._isolevel0
+            if self._exitcommit and exc_type is None: self.commit()
+            else: self.rollback()
             return exc_type in (None, api.Rollback) # Do not propagate raised Rollback
         finally:
+            self._cursor = None
+            self._closed = True
+            self._db.connection.isolation_level = self._isolevel0
             if self._exclusive: Database.MUTEX[self._db].release()
             self._db._notify(self)
 
@@ -309,7 +324,8 @@ class Transaction(api.Transaction, Queryable):
                          `None` for auto-commit, if any
         """
         if commit is False: self.rollback()
-        elif commit or self._autocommit: self.commit()
+        elif commit or self._exitcommit: self.commit()
+        self._closed = True
         self._db._notify(self)
 
     def insert(self, table, values=(), **kwargs):
@@ -322,21 +338,47 @@ class Transaction(api.Transaction, Queryable):
         sql, args = self.makeSQL("INSERT", table, values=values)
         return self.execute(sql, args).lastrowid
 
-    def execute(self, sql, args=None):
+    def execute(self, sql, args=()):
         """Executes the SQL statement and returns sqlite3.Cursor."""
-        return self._db.connection.execute(sql, args or {})
+        if self._closed: raise RuntimeError("Transaction already closed")
+        if not self._cursor: self._cursor = self._db.execute("SAVEPOINT tx%s" % id(self))
+        return self._cursor.execute(sql, args)
 
     def executescript(self, sql):
-        """Executes the SQL as script of any number of statements."""
-        self._db.connection.executescript(sql)
+        """
+        Executes the SQL as script of any number of statements, outside of transaction.
 
-    def commit(self):   self._db.connection.commit()
-    def rollback(self): self._db.connection.rollback()
+        Any pending transaction will be committed first.
+        """
+        if self._closed: raise RuntimeError("Transaction already closed")
+        with Database.MUTEX[self._db]:
+            self._reset(commit=True)
+            self._db.executescript(sql)
+
+    def commit(self):
+        """Commits pending actions, if any."""
+        if not self._cursor: return
+        with Database.MUTEX[self._db]:
+            self._reset(commit=True)
+
+    def rollback(self):
+        """Rolls back pending actions, if any."""
+        if not self._cursor: return
+        with Database.MUTEX[self._db]:
+            self._reset(commit=False)
 
     @property
     def database(self):
         """Returns transaction Database instance."""
         return self._db
+
+    def _reset(self, commit=False):
+        """Commits or rolls back ongoing transaction, if any, closes cursor, if any."""
+        if getattr(self._db.connection, "in_transaction", True):  # Py 3.2+
+            self._db.connection.commit() if commit else self._db.connection.rollback()
+        if self._cursor:
+            self._cursor.close()
+            self._cursor = None
 
 
 

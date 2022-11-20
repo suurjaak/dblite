@@ -502,7 +502,7 @@ class Transaction(api.Transaction, Queryable):
         self._exclusive  = exclusive
 
     def __enter__(self):
-        """Context manager entry, returns Transaction object."""
+        """Context manager entry, opens cursor, returns Transaction object."""
         if self._exclusive: Database.MUTEX[self._db].acquire()
         try:
             if not self._cursor: self._cursor = self._cursorctx.__enter__()
@@ -512,7 +512,8 @@ class Transaction(api.Transaction, Queryable):
             raise
 
     def __exit__(self, exc_type, exc_val, exc_trace):
-        """Context manager exit, propagates raised errors except Rollback."""
+        """Context manager exit, closes cursor, commits or rolls back as specified on creation."""
+        if self._cursor is None: return
         self._cursor = None
         try:
             self._cursorctx.__exit__(exc_type, exc_val, exc_trace)
