@@ -262,7 +262,8 @@ class Queryable(api.Queryable):
         return result
 
 
-    def quote(self, value, force=False):
+    @classmethod
+    def quote(cls, value, force=False):
         """
         Returns identifier in quotes and proper-escaped for queries,
         if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
