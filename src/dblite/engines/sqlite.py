@@ -352,9 +352,11 @@ class Transaction(api.Transaction, Queryable):
         @param   commit  `True` for final commit, `False` for rollback,
                          `None` for auto-commit, if any
         """
+        if self._closed: return
         if commit is False: self.rollback()
         elif commit or self._exitcommit: self.commit()
         self._closed = True
+        self._db.connection.isolation_level = self._isolevel0
         self._db._notify(self)
 
     def insert(self, table, values=(), **kwargs):
@@ -370,7 +372,10 @@ class Transaction(api.Transaction, Queryable):
     def execute(self, sql, args=()):
         """Executes the SQL statement and returns sqlite3.Cursor."""
         if self._closed: raise RuntimeError("Transaction already closed")
-        if not self._cursor: self._cursor = self._db.execute("SAVEPOINT tx%s" % id(self))
+        if not self._cursor:
+            self._isolevel0 = self._db.connection.isolation_level
+            self._db.connection.isolation_level = "DEFERRED"
+            self._cursor = self._db.execute("SAVEPOINT tx%s" % id(self))
         return self._cursor.execute(sql, args)
 
     def executescript(self, sql):
