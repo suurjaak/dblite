@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    18.11.2022
+@modified    20.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -31,9 +31,9 @@ logger = logging.getLogger(__name__)
 
 def init(opts=None, engine=None, **kwargs):
     """
-    Returns a Database object, creating one if not already created with these parameters.
+    Returns a Database object.
 
-    If opts is `None`, returns the default database - the very first initialized.
+    If opts is `None`, returns the default database - the very first created.
     Module level functions use the default database.
 
     @param   opts    database connection options, engine-specific;
@@ -48,7 +48,7 @@ def init(opts=None, engine=None, **kwargs):
                      e.g. `detect_types=sqlite3.PARSE_COLNAMES` for SQLite,
                      or `minconn=1, maxconn=4` for Postgres connection pool
     """
-    return Database.factory(opts, engine, **kwargs)
+    return Engines.factory(opts, engine, **kwargs)
 
 
 
@@ -79,7 +79,18 @@ def insert(table, values=(), **kwargs):
 def select(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     """
     Convenience wrapper for database SELECT, returns database cursor.
-    Keyword arguments are added to WHERE.
+
+    @param   table   table name or expression to select from
+    @param   where   columns or expressions to select by, as dict or a sequence
+                     of key-value tuples; value can specify operator
+                     e.g. `{"mycolumn": ("IN", [1, 2, 3])}`
+    @param   cols    columns to select if not all, as string or a sequence of strings
+    @param   group   columns to GROUP BY, as string or a sequence of strings
+    @param   order   columns to ORDER BY, as string, a sequence of strings,
+                     or a combination of column names and direction flags
+    @param   limit   LIMIT .. OFFSET.. values, as integer or a sequence of integers;
+                     None or -1 disables LIMIT or OFFSET
+    @param   kwargs  additional arguments added to WHERE clause
     """
     return init().select(table, cols, where, group, order, limit, **kwargs)
 
@@ -149,10 +160,8 @@ def register_adapter(transformer, typeclasses, engine=None):
     @param   typeclasses  one or more Python classes to adapt
     @param   engine       database engine to adapt for, defaults to first initialized
     """
-    populate_engines()
     if not isinstance(typeclasses, (list, set, tuple)): typeclasses = [typeclasses]
-    engine = engine.lower() if engine else next(Database.ENGINES)
-    Database.ENGINES[engine].register_adapter(transformer, typeclasses)
+    Engines.get(engine).register_adapter(transformer, typeclasses)
 
 
 def register_converter(transformer, typenames, engine=None):
@@ -165,10 +174,8 @@ def register_converter(transformer, typenames, engine=None):
     @param   typenames    one or more database column types to adapt
     @param   engine       database engine to convert for, defaults to first initialized
     """
-    populate_engines()
     if isinstance(typenames, str): typenames = [typenames]
-    engine = engine.lower() if engine else next(Database.ENGINES)
-    Database.ENGINES[engine].register_converter(transformer, typenames)
+    Engines.get(engine).register_converter(transformer, typenames)
 
 
 
@@ -280,47 +287,6 @@ class Database(Queryable):
     Note that the database connection is not opened immediately on construction.
     """
 
-    ## Database engine modules, as {"sqlite": sqlite submodule, ..}
-    ENGINES = None
-
-    ## Created instances as {(engine name, Database.identity): Database}
-    INSTANCES = collections.OrderedDict()
-
-
-    @classmethod
-    def factory(cls, opts, engine=None, **kwargs):
-        """
-        Returns an opened Database, new or cached, the first created if opts is `None`.
-
-        @param   opts    database connection options, engine-specific;
-                         SQLite takes a file path or path-like object or `":memory:"`,
-                         Postgres takes a Postgres URI scheme
-                         like `"postgresql://user@localhost/mydb"`
-                         or a Postgres keyword=value format
-                         like `"host=localhost username=user dbname=mydb"`
-                         or a dictionary of connection options like `dict(host="localhost", ..)`
-        @param   engine  database engine if not auto-detecting from connection options,
-                         "sqlite" for SQLite3 and "postgres" for PostgreSQL (case-insensitive)
-        @param   kwargs  additional arguments given to engine constructor,
-                         e.g. `detect_types=sqlite3.PARSE_COLNAMES` for SQLite,
-                         or `minconn=1, maxconn=4` for Postgres connection pool
-        """
-        populate_engines()
-        key, engine = None, engine.lower() if engine else None
-        if opts is None and engine is None:  # Return first database, or raise
-            key = next(iter(cls.INSTANCES))
-        elif opts is None:  # Return first database from engine, or raise
-            key = next((n, o) for n, o in cls.INSTANCES if n == engine)
-        elif engine is None:  # Auto-detect engine from options, or raise
-            engine = next(n for n, m in cls.ENGINES.items() if m.autodetect(opts))
-
-        key = key or (engine, cls.ENGINES[engine].Database.make_identity(opts, **kwargs))
-        if key not in cls.INSTANCES:
-            db = cls.ENGINES[engine].Database(opts, **kwargs)
-            cls.INSTANCES[key] = db
-        cls.INSTANCES[key].open()
-        return cls.INSTANCES[key]
-
     def transaction(self, commit=True, exclusive=None, **kwargs):
         """
         Returns a transaction context manager.
@@ -335,11 +301,6 @@ class Database(Queryable):
                             `None` stands for engine default
         @param   kwargs     engine-specific arguments, like `schema="other", lazy=True` for Postgres
         """
-        raise NotImplementedError()
-
-    @property
-    def identity(self):
-        """Tuple of (connection options as string, engine arguments as string)."""
         raise NotImplementedError()
 
     def __enter__(self):
@@ -366,11 +327,6 @@ class Database(Queryable):
                          `False` for explicit rollback on open transactions,
                          `None` defaults to `commit` flag from transaction creations
         """
-        raise NotImplementedError()
-
-    @classmethod
-    def make_identity(cls, opts, **kwargs):
-        """Returns a tuple of (connection options as string, engine arguments as string)."""
         raise NotImplementedError()
 
 
@@ -442,6 +398,56 @@ class Rollback(Exception):
 
 
 # ---------------------------------- detail ----------------------------------
+
+class Engines(object):
+    """Database engine broker."""
+
+    ## Database engine modules, as {"sqlite": sqlite submodule, ..}
+    MODULES = None
+
+    ## Default Database instances as {engine name: Database}
+    DATABASES = collections.OrderedDict()
+
+    @classmethod
+    def factory(cls, opts, engine=None, **kwargs):
+        """
+        Returns an opened Database, the first created if opts is `None`.
+
+        @param   opts    database connection options, engine-specific;
+                         SQLite takes a file path or path-like object or `":memory:"`,
+                         Postgres takes a Postgres URI scheme
+                         like `"postgresql://user@localhost/mydb"`
+                         or a Postgres keyword=value format
+                         like `"host=localhost username=user dbname=mydb"`
+                         or a dictionary of connection options like `dict(host="localhost", ..)`
+        @param   engine  database engine if not auto-detecting from connection options,
+                         "sqlite" for SQLite3 and "postgres" for PostgreSQL (case-insensitive)
+        @param   kwargs  additional arguments given to engine constructor,
+                         e.g. `detect_types=sqlite3.PARSE_COLNAMES` for SQLite,
+                         or `minconn=1, maxconn=4` for Postgres connection pool
+        """
+        cls.populate()
+        engine = engine.lower() if engine else None
+        if opts is None and engine is None:  # Return first database, or raise
+            engine = next(iter(cls.DATABASES))
+        elif opts is not None:  # Auto-detect engine from options, or raise
+            engine = next(n for n, m in cls.MODULES.items() if m.autodetect(opts))
+        db = cls.DATABASES[engine] if opts is None else cls.MODULES[engine].Database(opts, **kwargs)
+        cls.DATABASES.setdefault(engine, db)
+        db.open()
+        return db
+
+    @classmethod
+    def get(cls, engine=None):
+        """Returns engine module, by default the first created."""
+        cls.populate()
+        engine = engine.lower() if engine else next(iter(cls.DATABASES))
+        return cls.MODULES[engine]
+
+    @classmethod
+    def populate(cls):
+        """Populates Database engines, if not already populated."""
+        if cls.MODULES is None: cls.MODULES = load_modules()
 
 
 class StaticTzInfo(datetime.tzinfo):
@@ -552,9 +558,3 @@ def load_modules():
         module = importlib.import_module(modulename)
         result[name] = module
     return result
-
-
-def populate_engines():
-    """Populates Database engines, if not already populated."""
-    if Database.ENGINES is None:
-        Database.ENGINES = load_modules()

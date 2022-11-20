@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    18.11.2022
+@modified    20.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -190,12 +190,7 @@ class Database(api.Database, Queryable):
         self.connection = None
         self.path       = opts
         self._kwargs    = kwargs
-        self._identity  = (self.path, (str(kwargs) if kwargs else ""))
         self._txs       = []  # [Transaction, ]
-
-
-    @property
-    def identity(self): return self._identity
 
 
     def __enter__(self):
@@ -277,12 +272,6 @@ class Database(api.Database, Queryable):
         tx = Transaction(self, commit, exclusive, **kwargs)
         self._txs.append(tx)
         return tx
-
-
-    @classmethod
-    def make_identity(cls, opts, **kwargs):
-        """Returns a tuple of (connection options as string, engine arguments as string)."""
-        return (opts, str(kwargs) if kwargs else "")
 
 
     def _notify(self, tx):

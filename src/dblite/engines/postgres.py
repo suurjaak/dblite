@@ -51,7 +51,7 @@ RESERVED_KEYWORDS = [
 
 class Queryable(api.Queryable):
 
-    ## Database schemas as {Database identity: {structure filled on first access}}
+    ## Database schemas as {Database: {structure filled on first access}}
     TABLES = {}
     # {name: {?"key": pk, "fields": {col: {"name", "type", ?"fk": ftable}}, "type": "table"}}
 
@@ -65,7 +65,7 @@ class Queryable(api.Queryable):
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
-        key = self.identity if isinstance(self, Database) else self.database.identity
+        key = self if isinstance(self, Database) else self.database
         if key not in self.TABLES:
             self.TABLES[key] = {}  # To skip later if querying fails
             self.TABLES[key].update(self.query_schema(keys=True))
@@ -303,7 +303,7 @@ class Database(api.Database, Queryable):
     ## Connection pool default size per Database
     POOL_SIZE = (1, 4)
 
-    ## Connection pools, as {Database identity: psycopg2.pool.ConnectionPool}
+    ## Connection pools, as {Database: psycopg2.pool.ConnectionPool}
     POOLS = {}
 
 
@@ -323,16 +323,11 @@ class Database(api.Database, Queryable):
         """
 
         ## Data Source Name, as URL like `"postgresql://user@host/dbname"`
-        self.dsn       = make_db_url(opts)
+        self.dsn        = make_db_url(opts)
         self._kwargs    = kwargs
-        self._identity  = (self.dsn, (str(kwargs) if kwargs else ""))
         self._cursor    = None
         self._cursorctx = None
         self._txs       = []  # [Transaction, ]
-
-
-    @property
-    def identity(self): return self._identity
 
 
     def __enter__(self):
@@ -402,7 +397,7 @@ class Database(api.Database, Queryable):
             self._cursor = None
         self._cursorctx = None
         self.MUTEX.pop(self, None)
-        pool = self.POOLS.pop(self._identity, None)
+        pool = self.POOLS.pop(self, None)
         if pool: pool.close_all()
 
 
@@ -436,7 +431,7 @@ class Database(api.Database, Queryable):
                              only supports making a single query
         @return              psycopg2.extras.RealDictCursor
         """
-        connection = self.POOLS[self._identity].getconn()
+        connection = self.POOLS[self].getconn()
         try:
             connection.autocommit = autocommit
             cursor, namedcursor = None, None
@@ -463,23 +458,17 @@ class Database(api.Database, Queryable):
                     cursor.execute("SET search_path TO public")
                     connection.commit()
                 if cursor: cursor.close()
-        finally: self.POOLS[self._identity].putconn(connection)
+        finally: self.POOLS[self].putconn(connection)
 
 
     @classmethod
     def init_pool(cls, db, minconn=POOL_SIZE[0], maxconn=POOL_SIZE[1], **kwargs):
         """Initializes connection pool for Database if not already initialized."""
         with cls.MUTEX[db]:
-            if db.identity in cls.POOLS: return
+            if db in cls.POOLS: return
 
             args = minconn, maxconn, db.dsn
-            cls.POOLS[db.identity] = psycopg2.pool.ThreadedConnectionPool(*args, **kwargs)
-
-
-    @classmethod
-    def make_identity(cls, opts, **kwargs):
-        """Returns a tuple of (connection options as string, engine arguments as string)."""
-        return (make_db_url(opts), str(kwargs) if kwargs else "")
+            cls.POOLS[db] = psycopg2.pool.ThreadedConnectionPool(*args, **kwargs)
 
 
     def _apply_converters(self):
