@@ -240,10 +240,16 @@ class Database(api.Database, Queryable):
         self.connection = conn
 
 
-    def close(self):
-        """Closes the database and any pending transactions, if open."""
+    def close(self, commit=None):
+        """
+        Closes the database and any pending transactions, if open.
+
+        @param   commit  `True` for explicit commit on open transactions,
+                         `False` for explicit rollback on open transactions,
+                         `None` defaults to `commit` flag from transaction creations
+        """
         txs, self._txs[:] = self._txs[:], []
-        for tx in txs: tx.close()
+        for tx in txs: tx.close(commit)
         if self.connection:
             self.connection.close()
             self.connection = None

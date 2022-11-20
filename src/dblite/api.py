@@ -349,8 +349,14 @@ class Database(Queryable):
         """Opens database connection if not already open."""
         raise NotImplementedError()
 
-    def close(self):
-        """Closes the database and any pending transactions, if open."""
+    def close(self, commit=None):
+        """
+        Closes the database and any pending transactions, if open.
+
+        @param   commit  `True` for explicit commit on open transactions,
+                         `False` for explicit rollback on open transactions,
+                         `None` defaults to `commit` flag from transaction creations
+        """
         raise NotImplementedError()
 
     @classmethod
