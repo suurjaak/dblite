@@ -557,3 +557,10 @@ def load_modules():
         module = importlib.import_module(modulename)
         result[name] = module
     return result
+
+
+__all__ = [
+    "Database", "Rollback", "Transaction",
+    "init", "fetchall", "fetchone", "insert", "select", "update", "delete", "execute",
+    "executescript", "close", "transaction", "register_adapter", "register_converter",
+]

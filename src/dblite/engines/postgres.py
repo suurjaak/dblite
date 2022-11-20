@@ -671,3 +671,9 @@ if psycopg2:
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
     except Exception: logger.exception("Error configuring psycopg.")
+
+
+__all__ = [
+    "RESERVED_KEYWORDS", "Database", "Transaction",
+    "autodetect", "make_db_url", "quote", "register_adapter", "register_converter",
+]

@@ -437,6 +437,11 @@ def register_converter(transformer, typenames):
     for n in typenames: sqlite3.register_converter(n, transformer)
 
 
+__all__ = [
+    "RESERVED_KEYWORDS", "Database", "Transaction",
+    "autodetect", "quote", "register_adapter", "register_converter",
+]
+
 
 if "__main__" == __name__:
     def test():
