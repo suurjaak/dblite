@@ -275,6 +275,8 @@ class Database(Queryable):
     """
     Database instance. Usable as an auto-closing context manager.
 
+    Queries directly on the Database object use autocommit mode.
+
     Note that the database connection is not opened immediately on construction.
     """
 

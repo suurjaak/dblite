@@ -169,7 +169,11 @@ class Queryable(api.Queryable):
 
 
 class Database(api.Database, Queryable):
-    """Convenience wrapper around sqlite3.Connection."""
+    """
+    Convenience wrapper around sqlite3.Connection.
+
+    Queries directly on the Database object use autocommit mode.
+    """
 
     ## Mutexes for exclusive actions, as {Database instance: lock}
     MUTEX = collections.defaultdict(threading.RLock)

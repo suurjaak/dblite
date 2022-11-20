@@ -285,7 +285,11 @@ class Queryable(api.Queryable):
 
 
 class Database(api.Database, Queryable):
-    """Convenience wrapper around psycopg2.ConnectionPool and Cursor."""
+    """
+    Convenience wrapper around psycopg2.ConnectionPool and Cursor.
+
+    Queries directly on the Database object use autocommit mode.
+    """
 
     ## Registered adapters for Python->SQL, as {typeclass: converter}
     ADAPTERS = {}
@@ -364,8 +368,8 @@ class Database(api.Database, Queryable):
         @param   args  dictionary for %(name)s placeholders,
                        or a sequence for positional %s placeholders, or None
         """
-        if not self._cursorctx: self._cursorctx = self.get_cursor(commit=True)
-        if not self._cursor:    self._cursor = self._cursorctx.__enter__()
+        if not self._cursorctx: self._cursorctx = self.get_cursor(autocommit=True)
+        if not self._cursor:    self._cursor    = self._cursorctx.__enter__()
         self._cursor.execute(sql, args or None)
         return self._cursor
 
@@ -380,7 +384,7 @@ class Database(api.Database, Queryable):
         if self._cursorctx: return
         self.init_pool(self, **self._kwargs)
         self._apply_converters()
-        self._cursorctx = self.get_cursor(commit=True)
+        self._cursorctx = self.get_cursor(autocommit=True)
 
 
     def close(self, commit=None):
@@ -419,20 +423,22 @@ class Database(api.Database, Queryable):
 
 
     @contextmanager
-    def get_cursor(self, commit=True, schema=None, lazy=False):
+    def get_cursor(self, commit=False, autocommit=False, schema=None, lazy=False):
         """
         Context manager for psycopg connection cursor.
         Creates a new cursor on an unused connection and closes it when exiting
         context, committing changes if specified.
 
-        @param   commit  commit at the end on success
-        @param   schema  name of Postgres schema to use, if not using default `"public"`
-        @param   lazy    if true, returns a named cursor that fetches rows iteratively;
-                         only supports making a single query
-        @return          psycopg2.extras.RealDictCursor
+        @param   commit      commit at the end on success
+        @param   autocommit  connection autocommit mode
+        @param   schema      name of Postgres schema to use, if not using default `"public"`
+        @param   lazy        if true, returns a named cursor that fetches rows iteratively;
+                             only supports making a single query
+        @return              psycopg2.extras.RealDictCursor
         """
         connection = self.POOLS[self._identity].getconn()
         try:
+            connection.autocommit = autocommit
             cursor, namedcursor = None, None
             if "public" == schema: schema = None  # Default, no need to set
 
@@ -521,7 +527,7 @@ class Transaction(api.Transaction, Queryable):
         """
         self._db         = db
         self._cursor     = None
-        self._cursorctx  = db.get_cursor(commit, schema, lazy)
+        self._cursorctx  = db.get_cursor(commit=commit, schema=schema, lazy=lazy)
         self._exclusive  = exclusive
 
     def __enter__(self):
