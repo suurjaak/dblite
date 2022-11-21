@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    20.11.2022
+@modified    21.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -450,13 +450,18 @@ class Transaction(api.Transaction, Queryable):
         self._cursor     = None
         self._cursorctx  = db.get_cursor(commit=commit, schema=schema, lazy=lazy)
         self._exclusive  = exclusive
+        self._exitcommit = commit
+        self._enterstack = 0     # Number of levels the transaction context is nested at
         self._structure  = None  # Database schema as {table or view name: {"fields": {..}, ..}}
 
     def __enter__(self):
         """Context manager entry, opens cursor, returns Transaction object."""
+        if self.closed: raise RuntimeError("Transaction already closed")
+
         if self._exclusive: Database.MUTEX[self._db].acquire()
         try:
             if not self._cursor: self._cursor = self._cursorctx.__enter__()
+            self._enterstack += 1
             return self
         except Exception:
             if self._exclusive: Database.MUTEX[self._db].release()
@@ -464,14 +469,19 @@ class Transaction(api.Transaction, Queryable):
 
     def __exit__(self, exc_type, exc_val, exc_trace):
         """Context manager exit, closes cursor, commits or rolls back as specified on creation."""
-        if self._cursor is None: return exc_type in (None, api.Rollback)
-        self._cursor = None
+        depth = self._enterstack = self._enterstack - 1
         try:
-            self._cursorctx.__exit__(exc_type, exc_val, exc_trace)
+            if self._cursor and depth < 1:  # Last level: close properly
+                self._cursorctx.__exit__(exc_type, exc_val, exc_trace)
+            elif self._cursor:  # Still some depth: intermediary commit/rollback
+                self.commit() if self._exitcommit and exc_type is None else self.rollback()
             return exc_type in (None, api.Rollback)
         finally:
+            if depth < 1:
+                self._cursor = None
+                self._cursorctx = None
+                self._db._notify(self)
             if self._exclusive: Database.MUTEX[self._db].release()
-            self._db._notify(self)
 
     def close(self, commit=None):
         """
@@ -500,6 +510,7 @@ class Transaction(api.Transaction, Queryable):
         @param   args  dictionary for %(name)s placeholders,
                        or a sequence for positional %s placeholders, or None
         """
+        if self.closed: raise RuntimeError("Transaction already closed")
         if not self._cursor: self._cursor = self._cursorctx.__enter__()
         self._cursor.execute(sql, args or None)
         return self._cursor

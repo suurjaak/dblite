@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    20.11.2022
+@modified    21.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -305,15 +305,15 @@ class Transaction(api.Transaction, Queryable):
         """
         self._db         = db
         self._exitcommit = commit
+        self._enterstack = 0  # Number of levels the transaction context is nested at
         self._isolevel0  = None
         self._exclusive  = True if exclusive is None else exclusive
-        self._entered    = False
         self._closed     = False
         self._cursor     = None
 
     def __enter__(self):
         """Context manager entry, opens cursor, returns Transaction object."""
-        if self._entered: raise RuntimeError("Context already entered")
+        if self._closed: raise RuntimeError("Transaction already closed")
 
         if self._exclusive: Database.MUTEX[self._db].acquire()
         if not self._cursor:
@@ -323,22 +323,23 @@ class Transaction(api.Transaction, Queryable):
             except Exception:
                 if self._exclusive: Database.MUTEX[self._db].release()
                 raise
-        self._entered = True
+        self._enterstack += 1
         return self
 
     def __exit__(self, exc_type, exc_val, exc_trace):
         """Context manager exit, closes cursor, commits or rolls back as specified on creation."""
-        if self._cursor is None: return exc_type in (None, api.Rollback)
+        depth = self._enterstack = self._enterstack - 1
         try:
-            if self._exitcommit and exc_type is None: self.commit()
-            else: self.rollback()
+            if self._cursor:
+                self.commit() if self._exitcommit and exc_type is None else self.rollback()
             return exc_type in (None, api.Rollback) # Do not propagate raised Rollback
         finally:
-            self._cursor = None
-            self._closed = True
-            self._db.connection.isolation_level = self._isolevel0
+            if depth < 1:
+                self._cursor = None
+                self._closed = True
+                self._db.connection.isolation_level = self._isolevel0
+                self._db._notify(self)
             if self._exclusive: Database.MUTEX[self._db].release()
-            self._db._notify(self)
 
     def close(self, commit=None):
         """
