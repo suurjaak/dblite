@@ -3,13 +3,15 @@
 """
 Test database general API in available engines.
 
+Running Postgres test needs sufficient variables in environment lik `PGUSER`.
+
 ------------------------------------------------------------------------------
 This file is part of dblite - simple query interface for SQL databases.
 Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    20.11.2022
+@modified    21.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -30,7 +32,7 @@ class TestAPI(unittest.TestCase):
     ## Engine parameters as {engine: (opts, kwargs)}
     ENGINES = {
         "sqlite":   ({}, {}),
-        "postgres": ({"user": "postgres", "host": "localhost"}, {"maxconn": 2}),
+        "postgres": ({}, {"maxconn": 2}),
     }
 
     ## Table columns as {table name: [{"name", "type"}]}
@@ -96,77 +98,8 @@ class TestAPI(unittest.TestCase):
                 self.verify_query_api(db, engine)
             with dblite.transaction() as tx:
                 self.verify_query_api(tx, engine)
+            self.verify_query_args(dblite, engine)
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
-
-
-    def verify_query_api(self, obj, engine):
-        """Verifies query functions."""
-        logger.info("Verifying %s query functions for %s.", label(obj), engine)
-        DATAS = copy.deepcopy(self.DATAS)
-
-        for table, cols in self.TABLES.items():
-            obj.executescript("DROP TABLE IF EXISTS %s" % table)
-            obj.executescript("CREATE TABLE %s (%s)" %
-                              (table, ", ".join("%(name)s %(type)s" % c for c in cols)))
-            logger.debug("Verifying %s.insert(%s).", label(obj), table)
-            for i, data in enumerate(DATAS[table]):
-                myid = obj.insert(table, data) if i % 2 else obj.insert(table, **data)
-                self.assertEqual(myid, data["id"], "Unexpected value from %s.insert()." % obj)
-            logger.debug("Verifying %s.fetchone(%s).", label(obj), table)
-            for i, data in enumerate(DATAS[table]):
-                row = obj.fetchone(table, id=data["id"]) if i % 2 else obj.fetchone(table, where=data)
-                self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % obj)
-            logger.debug("Verifying %s.fetchall(%r).", label(obj), table)
-            rows = obj.fetchall(table)
-            self.assertEqual(rows, DATAS[table], "Unexpected value from %s.fetchall()." % obj)
-
-            logger.debug("Verifying %s.update(%r).", label(obj), table)
-            for i, data in enumerate(DATAS[table]):
-                data.update(val=data["val"] * 3)  # Update DATAS
-                affected = obj.update(table, data, id=data["id"]) if i % 2 else \
-                           obj.update(table, data, {"id": data["id"]})
-                self.assertEqual(affected, 1, "Unexpected value from %s.update()." % obj)
-                row = obj.fetchone(table, id=data["id"])
-                self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % obj)
-        if isinstance(obj, dblite.api.Queryable):
-            obj.close()
-        if isinstance(obj, dblite.api.Database):
-            obj.open()
-        if isinstance(obj, dblite.api.Transaction):
-            obj = obj.database.transaction()  # Create new transaction for verifying persistence
-
-        logger.debug("Verifying %s persistence.", label(obj))
-        for table, cols in self.TABLES.items():
-            for i, data in enumerate(DATAS[table]):
-                row = obj.fetchone(table, id=data["id"]) if i % 2 else obj.fetchone(table, where=data)
-                #print(row, data)
-                self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % obj)
-            rows = obj.fetchall(table)
-            self.assertEqual(rows, DATAS[table], "Unexpected value from %s.fetchall()." % obj)
-
-            logger.debug("Verifying %s.delete(%r).", label(obj), engine)
-            for i, data in enumerate(DATAS[table][::2]):
-                affected = obj.delete(table, id=data["id"]) if i % 2 else \
-                           obj.delete(table, data)
-                self.assertEqual(affected, 1, "Unexpected value from %s.delete()." % obj)
-                row = obj.fetchone(table, id=data["id"])
-                self.assertIsNone(row, "Unexpected value from %s.fetchone()." % obj)
-
-            logger.debug("Verifying %s.select(%r).", label(obj), table)
-            rows = list(obj.select(table))
-            self.assertGreater(rows, [], "Unexpected value from %s.fetchall()." % obj)
-
-            affected = obj.delete(table)
-            self.assertGreater(affected, 1, "Unexpected value from %s.delete()." % obj)
-
-            logger.debug("Verifying %s.executescript().", label(obj))
-            obj.executescript("DROP TABLE %s" % table)
-            with self.assertRaises(Exception,
-                                   msg="Unexpected success for fetch after dropping table."):
-                obj.fetchone(table)
-
-        if isinstance(obj, dblite.api.Transaction):
-            obj.close()
 
 
     def verify_module_api(self, opts, kwargs, engine):
@@ -192,6 +125,171 @@ class TestAPI(unittest.TestCase):
         with self.assertRaises(Exception,
                                msg="Unexpected success for fetch after closing database."):
             db.fetchone(next(iter(self.TABLES)))
+
+
+    def verify_query_api(self, obj, engine):
+        """Verifies query functions."""
+        logger.info("Verifying %s query functions for %s.", label(obj), engine)
+        DATAS = copy.deepcopy(self.DATAS)
+
+        for table, cols in self.TABLES.items():
+            obj.executescript("DROP TABLE IF EXISTS %s" % table)
+            obj.executescript("CREATE TABLE %s (%s)" %
+                              (table, ", ".join("%(name)s %(type)s" % c for c in cols)))
+            logger.debug("Verifying %s.insert(%s).", label(obj), table)
+            for data in DATAS[table]:
+                myid = obj.insert(table, data)
+                self.assertEqual(myid, data["id"], "Unexpected value from %s.insert()." % obj)
+            logger.debug("Verifying %s.fetchone(%s).", label(obj), table)
+            for data in DATAS[table]:
+                row = obj.fetchone(table, id=data["id"])
+                self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % obj)
+            logger.debug("Verifying %s.fetchall(%r).", label(obj), table)
+            rows = obj.fetchall(table)
+            self.assertEqual(rows, DATAS[table], "Unexpected value from %s.fetchall()." % obj)
+
+            logger.debug("Verifying %s.update(%r).", label(obj), table)
+            for data in DATAS[table]:
+                data.update(val=data["val"] * 3)  # Update DATAS
+                affected = obj.update(table, data, id=data["id"])
+                self.assertEqual(affected, 1, "Unexpected value from %s.update()." % obj)
+                row = obj.fetchone(table, id=data["id"])
+                self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % obj)
+        if isinstance(obj, dblite.api.Queryable):
+            obj.close()
+        if isinstance(obj, dblite.api.Database):
+            obj.open()
+        if isinstance(obj, dblite.api.Transaction):
+            obj = obj.database.transaction()  # Create new transaction for verifying persistence
+
+        logger.debug("Verifying %s persistence.", label(obj))
+        for table, cols in self.TABLES.items():
+            for data in DATAS[table]:
+                row = obj.fetchone(table, id=data["id"])
+                self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % obj)
+            rows = obj.fetchall(table)
+            self.assertEqual(rows, DATAS[table], "Unexpected value from %s.fetchall()." % obj)
+
+            logger.debug("Verifying %s.delete(%r).", label(obj), engine)
+            for data in DATAS[table][::2]:
+                affected = obj.delete(table, id=data["id"])
+                self.assertEqual(affected, 1, "Unexpected value from %s.delete()." % obj)
+                row = obj.fetchone(table, id=data["id"])
+                self.assertIsNone(row, "Unexpected value from %s.fetchone()." % obj)
+
+            logger.debug("Verifying %s.select(%r).", label(obj), table)
+            rows = list(obj.select(table))
+            self.assertGreater(rows, [], "Unexpected value from %s.fetchall()." % obj)
+
+            affected = obj.delete(table)
+            self.assertGreater(affected, 1, "Unexpected value from %s.delete()." % obj)
+
+            logger.debug("Verifying %s.executescript().", label(obj))
+            obj.executescript("DROP TABLE %s" % table)
+            with self.assertRaises(Exception,
+                                   msg="Unexpected success for fetch after dropping table."):
+                obj.fetchone(table)
+
+        if isinstance(obj, dblite.api.Transaction):
+            obj.close()
+
+
+    def verify_query_args(self, obj, engine):
+        """Verifies various ways of providing query parameters."""
+        logger.info("Verifying %s query parameters for %s.", label(obj), engine)
+
+        for table, cols in self.TABLES.items():
+            obj.executescript("DROP TABLE IF EXISTS %s" % table)
+            obj.executescript("CREATE TABLE %s (%s)" %
+                              (table, ", ".join("%(name)s %(type)s" % c for c in cols)))
+
+        logger.info("Verifying INSERT arguments for %r.", engine)
+        for table, cols in self.TABLES.items():
+            for i, data in enumerate(self.DATAS[table]):
+                if i < 2: obj.insert(table, data if i else list(data.items()))
+                else:     obj.insert(table, **data)
+                row = obj.fetchone(table, where=data if i else list(data.items())) if i < 2 else \
+                      obj.fetchone(table, **data)
+                self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % label(obj))
+
+        logger.info("Verifying SELECT columns for %r.", engine)
+        for table, cols in self.TABLES.items():
+            for col in (", ".join(sorted(c["name"] for c in cols)),
+                        [c["name"] for c in cols], [c["name"] for c in cols][::2]):
+                row = obj.fetchone(table, col)
+                received = set(row) if isinstance(col, list) else ", ".join(sorted(row))
+                expected = set(col) if isinstance(col, list) else col
+                self.assertEqual(received, expected,
+                                 "Unexpected value from %s.select(cols)." % label(obj))
+
+        logger.info("Verifying SELECT WHERE for %r.", engine)
+        for table, cols in self.TABLES.items():
+            example = self.DATAS[table][0]
+            for where in (example, list(example.items())):
+                self.assertEqual(obj.fetchone(table, where=where), example,
+                                 "Unexpected value from %s.select(where=%s)." % (label(obj), where))
+
+        logger.info("Verifying SELECT LIMIT for %r.", engine)
+        for table, cols in self.TABLES.items():
+            for limit in (0, 2, (2, 1), (-1, 1), (None, 1), (None, None), (-1, None)):
+                LIMIT = next(v for v in [limit if isinstance(limit, int) else limit[0]])
+                LIMIT = len(self.DATAS[table]) if LIMIT in (-1, None) else LIMIT
+                OFFSET = (0 if isinstance(limit, int) or limit[1] is None or limit[1] < 0 else limit[1])
+                expected_count = min(LIMIT, len(self.DATAS[table]) - OFFSET)
+                expected_ids   = [x["id"] for i, x in enumerate(self.DATAS[table])
+                                  if i >= OFFSET and (i - OFFSET) < LIMIT]
+                rows = obj.fetchall(table, order="id", limit=limit)
+                self.assertEqual(len(rows), expected_count,
+                                 "Unexpected value from %s.select(limit=%s)." % (label(obj), limit))
+                self.assertEqual(set(x["id"] for x in rows), set(expected_ids),
+                                 "Unexpected value from %s.select(limit=%s)." % (label(obj), limit))
+
+        DATAS = copy.deepcopy(self.DATAS)
+        logger.info("Verifying UPDATE arguments for %r.", engine)
+        for table in DATAS:
+            for i, data in enumerate(DATAS[table]):
+                # Set alternating values for later ORDER BY verifying
+                data["val"] = chr(ord("Z") - (data["id"] - 1) % 2) # Updates DATAS
+                if i < 2: obj.update(table, data if i else list(data.items()), {"id": data["id"]})
+                else:     obj.update(table, data, id=data["id"])
+                row = obj.fetchone(table, where=data)
+                self.assertEqual(row, data, "Unexpected value from %s.select()." % label(obj))
+
+        logger.info("Verifying ORDER BY arguments for %r.", engine)
+        for table in DATAS:
+            ORDERS = [  # [(argument value, [(col, direction), ])]
+                ("id",                           [("id",  False), ]),
+                ("id ASC",                       [("id",  False), ]),
+                ("id DESC",                      [("id",  True),  ]),
+                (["id", True],                   [("id",  True),  ]),
+                ("val, id DESC",                 [("val", False), ("id",  True)]),
+                (["val", "id DESC"],             [("val", False), ("id",  True)]),
+                (["val", ("id", "DESC")],        [("val", False), ("id",  True)]),
+                (["val DESC", ("id", True)],     [("val", True),  ("id",  True)]),
+            ]
+            for order, sorts in ORDERS:
+                reverse = "val" == sorts[0][0] and sorts[0][1]
+                expected_order = sorted(DATAS[table],
+                    key=lambda x: [-x[k] if "id" == k and desc and not reverse else x[k]
+                                   for k, desc in sorts], reverse=reverse
+                )
+                self.assertEqual(obj.fetchall(table, order=order), expected_order,
+                                 "Unexpected value from %s.select(order=%r)." % (label(obj), order))
+
+        logger.info("Verifying GROUP BY arguments for %r.", engine)
+        for table in DATAS:
+            expected_ids = all_ids = [x["id"] for x in DATAS[table]]
+            for group in ("id", "id, val", ["id"], ["id", "val"]):
+                rows = obj.fetchall(table, group=group)
+                self.assertEqual(set(x["id"] for x in rows), set(expected_ids),
+                                 "Unexpected value from %s.select(group=%r)." % (label(obj), group))
+            expected_ids = [max(v for v in all_ids if v % 2 == m) for m in (1, 0)]
+            rows = obj.fetchall(table, "MAX(id) AS id", group="id % 2")
+            self.assertEqual(set(x["id"] for x in rows), set(expected_ids),
+                             "Unexpected value from %s.select(group=%r)." % (label(obj), "id % 2"))
+
+        for table in DATAS:
+            obj.executescript("DROP TABLE %s" % table)
 
 
 def label(obj):
