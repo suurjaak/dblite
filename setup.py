@@ -52,8 +52,9 @@ setuptools.setup(
     keywords             = "SQL SQLite Postgres psycopg2",
     python_requires      = ">=2.7",
 
-    package_dir      = {"": "src"},
-    packages         = [PACKAGE],
+    package_dir          = {"": "src"},
+    packages             = [PACKAGE],
+    include_package_data = True,  # Use MANIFEST.in
 
     classifiers          = [
         "Development Status :: 4 - Beta",
