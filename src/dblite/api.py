@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    20.11.2022
+@modified    21.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -134,7 +134,7 @@ def close(commit=None):
                      `False` for explicit rollback on open transactions,
                      `None` defaults to `commit` flag from transaction creations
     """
-    init().close()
+    init().close(commit)
 
 
 def transaction(commit=True, exclusive=None, **kwargs):
@@ -262,6 +262,12 @@ class Queryable(object):
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
                 limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
+        raise NotImplementedError()
+
+
+    @property
+    def closed(self):
+        """Whether currently not open."""
         raise NotImplementedError()
 
 

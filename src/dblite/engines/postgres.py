@@ -282,8 +282,7 @@ class Database(api.Database, Queryable):
         @param   args  dictionary for %(name)s placeholders,
                        or a sequence for positional %s placeholders, or None
         """
-        if not self._cursorctx: self._cursorctx = self.get_cursor(autocommit=True)
-        if not self._cursor:    self._cursor    = self._cursorctx.__enter__()
+        if not self._cursor: raise RuntimeError("Database not open.")
         self._cursor.execute(sql, args or None)
         return self._cursor
 
@@ -301,10 +300,11 @@ class Database(api.Database, Queryable):
 
     def open(self):
         """Opens database connection if not already open."""
-        if self._cursorctx: return
+        if self._cursor: return
         self.init_pool(self, **self._kwargs)
         self._apply_converters()
         self._cursorctx = self.get_cursor(autocommit=True)
+        self._cursor    = self._cursorctx.__enter__()
 
 
     def close(self, commit=None):
@@ -324,6 +324,12 @@ class Database(api.Database, Queryable):
         self.MUTEX.pop(self, None)
         pool = self.POOLS.pop(self, None)
         if pool: pool.closeall()
+
+
+    @property
+    def closed(self):
+        """Whether database connection is currently not open."""
+        return not self._cursor
 
 
     def transaction(self, commit=True, exclusive=False, **kwargs):
@@ -481,9 +487,11 @@ class Transaction(api.Transaction, Queryable):
             return
         if commit is False: self.rollback()
         elif commit: self.commit()
-        self._cursor = None
         try: self._cursorctx.__exit__(None, None, None)
-        finally: self._db._notify(self)
+        finally:
+            self._cursor = None
+            self._cursorctx = None
+            self._db._notify(self)
 
     def execute(self, sql, args=()):
         """
@@ -513,6 +521,11 @@ class Transaction(api.Transaction, Queryable):
     def rollback(self):
         """Rolls back pending actions, if any."""
         if self._cursor: self._cursor.connection.rollback()
+
+    @property
+    def closed(self):
+        """Whether transaction is currently not open."""
+        return not self._cursorctx
 
     @property
     def database(self):

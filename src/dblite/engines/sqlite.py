@@ -258,6 +258,12 @@ class Database(api.Database, Queryable):
             self.connection.close()
             self.connection = None
 
+    @property
+    def closed(self):
+        """Whether database is currently not open."""
+        return not self.connection
+
+
     def transaction(self, commit=True, exclusive=True, **kwargs):
         """
         Returns a transaction context manager.
@@ -381,6 +387,11 @@ class Transaction(api.Transaction, Queryable):
         if not self._cursor: return
         with Database.MUTEX[self._db]:
             self._reset(commit=False)
+
+    @property
+    def closed(self):
+        """Whether transaction is currently not open."""
+        return self._closed
 
     @property
     def database(self):
