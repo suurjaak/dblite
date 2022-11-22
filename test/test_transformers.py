@@ -3,7 +3,7 @@
 """
 Test adapters and converters.
 
-Running Postgres test needs sufficient variables in environment lik `PGUSER`.
+Running Postgres test needs sufficient variables in environment like `PGUSER`.
 
 ------------------------------------------------------------------------------
 This file is part of dblite - simple query interface for SQL databases.
@@ -19,7 +19,6 @@ import datetime
 import json
 import logging
 import os
-import tempfile
 import unittest
 
 import dblite
@@ -32,7 +31,7 @@ class TestTransformers(unittest.TestCase):
 
     ## Engine parameters as {engine: (opts, kwargs)}
     ENGINES = {
-        "sqlite":   ("", {}),
+        "sqlite":   (":memory:", {}),
         "postgres": ({}, {"maxconn": 2}),
     }
 
@@ -59,14 +58,12 @@ class TestTransformers(unittest.TestCase):
         try: unittest.util._MAX_LENGTH = 100000
         except Exception: pass
         self._connections = collections.OrderedDict()  # {engine: (opts, kwargs)}
-        self._path = None  # Path to SQLite database
 
 
     def setUp(self):
         """Creates engine connection options."""
         super(TestTransformers, self).setUp()
-        with tempfile.NamedTemporaryFile(suffix=".sqlite") as f: self._path = f.name
-        self._connections["sqlite"] = (self._path, self.ENGINES["sqlite"][1])
+        self._connections["sqlite"] = self.ENGINES["sqlite"]
 
         try: import psycopg2
         except ImportError:
@@ -97,6 +94,7 @@ class TestTransformers(unittest.TestCase):
             dblite.register_adapter(json.dumps, dict)
             dblite.register_converter(json.loads, "JSON")
             self.verify_transformers(engine)
+            dblite.close()
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
 
 
@@ -116,6 +114,7 @@ class TestTransformers(unittest.TestCase):
                 row = dblite.fetchone(table, id=data["id"])
                 row["dt"], data["dt"] = (x["dt"].replace(tzinfo=None) for x in (row, data))
                 self.assertEqual(row, data, "Unexpected value from dblite.select().")
+
 
 
 if "__main__" == __name__:

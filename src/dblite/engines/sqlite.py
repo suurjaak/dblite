@@ -61,8 +61,7 @@ class Queryable(api.Queryable):
         return self.execute(sql, args).lastrowid
 
 
-    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
-                limit=(), values=()):
+    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
 
         def cast(col, val):

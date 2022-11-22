@@ -3,7 +3,7 @@
 """
 Test database general API in available engines.
 
-Running Postgres test needs sufficient variables in environment lik `PGUSER`.
+Running Postgres test needs sufficient variables in environment like `PGUSER`.
 
 ------------------------------------------------------------------------------
 This file is part of dblite - simple query interface for SQL databases.
@@ -391,12 +391,12 @@ class TestAPI(unittest.TestCase):
                                         (label(tx), value, result))
 
 
-
 def label(obj):
     """Returns readable name for logging, for `dblite` module or class instances."""
     if isinstance(obj, dblite.api.Queryable):
         return "%s.%s" % (obj.__class__.__module__, obj.__class__.__name__)
     return obj.__name__
+
 
 
 if "__main__" == __name__:
