@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    21.11.2022
+@modified    22.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -371,7 +371,7 @@ class Database(api.Database, Queryable):
             # If using schema, schema tables are queried first, fallback to public.
             # Need two cursors if schema+lazy, as named cursor only does one query.
             if schema or not lazy: cursor = connection.cursor()
-            if schema: cursor.execute('SET search_path TO "%s",public' % schema)
+            if schema: cursor.execute('SET search_path TO %s,public' % quote(schema))
             if lazy: namedcursor = connection.cursor("name_%s" % id(connection))
 
             try:
