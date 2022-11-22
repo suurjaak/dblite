@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    21.11.2022
+@modified    22.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -31,7 +31,7 @@ class TestAPI(unittest.TestCase):
 
     ## Engine parameters as {engine: (opts, kwargs)}
     ENGINES = {
-        "sqlite":   ({}, {}),
+        "sqlite":   ("", {}),
         "postgres": ({}, {"maxconn": 2}),
     }
 
@@ -99,6 +99,7 @@ class TestAPI(unittest.TestCase):
             with dblite.transaction() as tx:
                 self.verify_query_api(tx, engine)
             self.verify_query_args(dblite, engine)
+            self.verify_transactions(engine)
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
 
 
@@ -292,16 +293,115 @@ class TestAPI(unittest.TestCase):
             obj.executescript("DROP TABLE %s" % table)
 
 
+    def verify_transactions(self, engine):
+        """Verifies transactions."""
+        logger.info("Verifying transactions for %s.", engine)
+
+        for table, cols in self.TABLES.items():
+            dblite.executescript("DROP TABLE IF EXISTS %s" % table)
+            dblite.executescript("CREATE TABLE %s (%s)" %
+                              (table, ", ".join("%(name)s %(type)s" % c for c in cols)))
+
+        logger.info("Verifying commit and rollback for %s.", engine)
+        with dblite.transaction() as tx:
+            for table, datas in self.DATAS.items():
+                tx.insert(table, datas[0])
+                row = tx.fetchone(table, id=datas[0]["id"])
+                self.assertEqual(row, datas[0], "Unexpected value from %s.select()." % label(tx))
+            tx.commit()
+            for table, datas in self.DATAS.items():
+                tx.insert(table, datas[1])
+                row = tx.fetchone(table, id=datas[1]["id"])
+                self.assertEqual(row, datas[1], "Unexpected value from %s.select()." % label(tx))
+            tx.rollback()
+            for table, datas in self.DATAS.items():
+                row = tx.fetchone(table, id=datas[1]["id"])
+                self.assertIsNone(row, "Unexpected value from %s.select()." % label(tx))
+            for table, datas in self.DATAS.items():
+                tx.insert(table, datas[1])
+                row = tx.fetchone(table, id=datas[1]["id"])
+                self.assertEqual(row, datas[1], "Unexpected value from %s.select()." % label(tx))
+
+        logger.info("Verifying raising Rollback for %s.", engine)
+        with dblite.transaction() as tx:
+            for table, datas in self.DATAS.items():
+                rows = tx.fetchall(table)
+                self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
+                affected = tx.delete(table)
+                self.assertEqual(affected, 2, "Unexpected value from %s.delete()." % label(tx))
+            raise dblite.Rollback
+        with dblite.transaction() as tx:
+            for table, datas in self.DATAS.items():
+                rows = tx.fetchall(table)
+                self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
+
+        logger.info("Verifying Transaction(commit=False) for %s.", engine)
+        with dblite.transaction(commit=False) as tx:
+            for table in self.DATAS:
+                tx.delete(table)
+                rows = tx.fetchall(table)
+                self.assertEqual(rows, [], "Unexpected value from %s.select()." % label(tx))
+        with dblite.transaction() as tx:
+            for table, datas in self.DATAS.items():
+                rows = tx.fetchall(table)
+                self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
+
+        logger.info("Verifying Transaction.close() for %s.", engine)
+        with dblite.transaction() as tx:
+            for table, datas in self.DATAS.items():
+                tx.delete(table, datas[0])
+            tx.close(commit=False)
+        with dblite.transaction(commit=False) as tx:
+            for table, datas in self.DATAS.items():
+                rows = tx.fetchall(table)
+                self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
+                tx.delete(table, datas[0])
+            tx.close()
+        with dblite.transaction(commit=False) as tx:
+            for table, datas in self.DATAS.items():
+                rows = tx.fetchall(table)
+                self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
+                tx.delete(table, datas[0])
+            tx.close(commit=True)
+        with dblite.transaction() as tx:
+            for table, datas in self.DATAS.items():
+                rows = tx.fetchall(table)
+                self.assertEqual(rows, datas[1:2], "Unexpected value from %s.select()." % label(tx))
+                tx.delete(table, datas[1])
+            tx.close()
+        with dblite.transaction() as tx:
+            for table in self.DATAS:
+                rows = tx.fetchall(table)
+                self.assertEqual(rows, [], "Unexpected value from %s.select()." % label(tx))
+            tx.close()
+
+        for table in self.DATAS:
+            dblite.execute("DROP TABLE %s" % table)
+
+        logger.info("Verifying Transaction.quote() for %s.", engine)
+        with dblite.transaction() as tx:
+            for value, same in [("WHERE", False), ("one two", False), ("abcd", True)]:
+                result = tx.quote(value)
+                self.assertEqual(result == value, same, "Unexpected value from %s.quote(%r): %r." %
+                                 (label(tx), value, result))
+                if same:
+                    result = tx.quote(value, force=True)
+                    self.assertNotEqual(result, value,
+                                        "Unexpected value from %s.quote(%r, force=True): %r." %
+                                        (label(tx), value, result))
+
+
+
 def label(obj):
     """Returns readable name for logging, for `dblite` module or class instances."""
     if isinstance(obj, dblite.api.Queryable):
         return "%s.%s" % (obj.__class__.__module__, obj.__class__.__name__)
-    return "dblite"
+    return obj.__name__
 
 
 if "__main__" == __name__:
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="[%(levelname)s]\t[%(created).06f] [test_api] %(message)s"
     )
     unittest.main()
