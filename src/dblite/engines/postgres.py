@@ -378,8 +378,9 @@ class Database(api.Database, Queryable):
                 yield namedcursor or cursor
                 if commit: connection.commit()
             except GeneratorExit: pass  # Caller consumed nothing
-            except Exception:
-                logger.exception("SQL error on %s:", (namedcursor or cursor).query)
+            except Exception as e:
+                if not isinstance(e, api.Rollback):
+                    logger.exception("SQL error on %s:", (namedcursor or cursor).query)
                 raise
             finally:
                 connection.rollback()  # If not already committed, must rollback here
