@@ -303,7 +303,7 @@ not fetching and materializing all rows at once:
 
 ```python
 dblite.init("host=localhost user=postgres dbname=bigdata")
-with Transaction(lazy=True) as tx:
+with Transaction(lazy=True) as tx:  # Can only run a single query
     for i, row in enumerate(tx.select("some really huge table")):
         print("Processing row #%s" % i)
 ```

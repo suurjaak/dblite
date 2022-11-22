@@ -71,8 +71,7 @@ class Queryable(api.Queryable):
         return next(iter(row.values())) if row and isinstance(row, dict) else None
 
 
-    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(),
-                limit=(), values=()):
+    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
 
         SCHEMA = self._load_schema()
@@ -445,9 +444,10 @@ class Transaction(api.Transaction, Queryable):
                             Transaction instances Database
         @param   schema     search_path to use in this transaction
         @param   lazy       if true, fetches results from server iteratively
-                            instead of all at once, supports single query only
+                            instead of all at once, supports one single query only
         """
         self._db         = db
+        self._lazy       = lazy
         self._cursor     = None
         self._cursorctx  = db.get_cursor(commit=commit, schema=schema, lazy=lazy)
         self._exclusive  = exclusive
@@ -543,6 +543,15 @@ class Transaction(api.Transaction, Queryable):
     def database(self):
         """Returns transaction Database instance."""
         return self._db
+
+    def _load_schema(self, force=False):
+        """
+        Returns database table structure, queried from database if uninitialized or forced.
+
+        Uses parent Database for lookup if lazy cursor.
+        """
+        if self._lazy: return self._db._load_schema(force=force)
+        return super(Transaction, self)._load_schema(force=force)
 
 
 def autodetect(opts):
