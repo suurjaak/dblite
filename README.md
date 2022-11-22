@@ -332,7 +332,7 @@ API
 | `dblite.register_adapter()`             | registers function to auto-adapt given Python types to database types in query parameters
 | `dblite.register_converter()`           | registers function to auto-convert given database types to Python in query results
 |                                         | |
-| **dblite.Database**
+| **dblite.Database**                     | |
 | `Database.fetchall()`                   | runs `SELECT`, returns all rows
 | `Database.fetchone()`                   | runs `SELECT`, returns a single row, or `None`
 | `Database.insert()`                     | `INSERT` a single row into table, returns inserted ID
@@ -346,7 +346,7 @@ API
 | `Database.close()`                      | closes the database and all pending transactions, if open
 | `Database.closed`                       | whether database is not open
 |                                         | |
-| **dblite.Transaction**
+| **dblite.Transaction**                  | |
 | `Transaction.fetchall()`                | runs `SELECT`, returns all rows
 | `Transaction.fetchone()`                | runs `SELECT`, returns a single row, or `None`
 | `Transaction.insert()`                  | `INSERT` a single row into table, returns inserted ID
