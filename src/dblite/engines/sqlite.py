@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    21.11.2022
+@modified    23.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -263,6 +263,12 @@ class Database(api.Database, Queryable):
         return not self.connection
 
 
+    @property
+    def cursor(self):
+        """Database engine cursor object, or `None` if closed."""
+        return self.connection.cursor() if self.connection else None
+
+
     def transaction(self, commit=True, exclusive=True, **kwargs):
         """
         Returns a transaction context manager.
@@ -305,7 +311,7 @@ class Transaction(api.Transaction, Queryable):
         self._db         = db
         self._exitcommit = commit
         self._enterstack = 0  # Number of levels the transaction context is nested at
-        self._isolevel0  = None
+        self._isolevel0  = db.connection.isolation_level
         self._exclusive  = True if exclusive is None else exclusive
         self._closed     = False
         self._cursor     = None
@@ -315,13 +321,10 @@ class Transaction(api.Transaction, Queryable):
         if self._closed: raise RuntimeError("Transaction already closed")
 
         if self._exclusive: Database.MUTEX[self._db].acquire()
-        if not self._cursor:
-            self._isolevel0 = self._db.connection.isolation_level
-            self._db.connection.isolation_level = "DEFERRED"
-            try: self._cursor = self._db.execute("SAVEPOINT tx%s" % id(self))
-            except Exception:
-                if self._exclusive: Database.MUTEX[self._db].release()
-                raise
+        try: not self._cursor and self._make_cursor()
+        except Exception:
+            if self._exclusive: Database.MUTEX[self._db].release()
+            raise
         self._enterstack += 1
         return self
 
@@ -350,8 +353,9 @@ class Transaction(api.Transaction, Queryable):
         if self._closed:
             self._db._notify(self)
             return
-        if commit is False: self.rollback()
+        if commit is False or not commit and not self._exitcommit: self.rollback()
         elif commit or self._exitcommit: self.commit()
+        self._cursor = None
         self._closed = True
         self._db.connection.isolation_level = self._isolevel0
         self._db._notify(self)
@@ -359,10 +363,7 @@ class Transaction(api.Transaction, Queryable):
     def execute(self, sql, args=()):
         """Executes the SQL statement and returns sqlite3.Cursor."""
         if self._closed: raise RuntimeError("Transaction already closed")
-        if not self._cursor:
-            self._isolevel0 = self._db.connection.isolation_level
-            self._db.connection.isolation_level = "DEFERRED"
-            self._cursor = self._db.execute("SAVEPOINT tx%s" % id(self))
+        if not self._cursor: self._make_cursor()
         return self._cursor.execute(sql, args)
 
     def executescript(self, sql):
@@ -394,9 +395,25 @@ class Transaction(api.Transaction, Queryable):
         return self._closed
 
     @property
+    def cursor(self):
+        """Database engine cursor object, or `None` if closed."""
+        if self._closed: return None
+        if not self._cursor: self._make_cursor()
+        return self._cursor
+
+
+    @property
     def database(self):
         """Returns transaction Database instance."""
         return self._db
+
+    def _make_cursor(self):
+        """Opens the transaction cursor."""
+        self._db.connection.isolation_level = "DEFERRED"
+        try: self._cursor = self._db.execute("SAVEPOINT tx%s" % id(self))
+        except Exception:
+            self._db.connection.isolation_level = self._isolevel0
+            raise
 
     def _reset(self, commit=False):
         """Commits or rolls back ongoing transaction, if any, closes cursor, if any."""

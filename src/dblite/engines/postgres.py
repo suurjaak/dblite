@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    22.11.2022
+@modified    23.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -302,7 +302,7 @@ class Database(api.Database, Queryable):
         if self._cursor: return
         self.init_pool(self, **self._kwargs)
         self._apply_converters()
-        self._cursorctx = self.get_cursor(autocommit=True)
+        self._cursorctx = self.make_cursor(autocommit=True)
         self._cursor    = self._cursorctx.__enter__()
 
 
@@ -331,6 +331,12 @@ class Database(api.Database, Queryable):
         return not self._cursor
 
 
+    @property
+    def cursor(self):
+        """Database engine cursor object, or `None` if closed."""
+        return self._cursor
+
+
     def transaction(self, commit=True, exclusive=False, **kwargs):
         """
         Returns a transaction context manager.
@@ -348,7 +354,7 @@ class Database(api.Database, Queryable):
 
 
     @contextmanager
-    def get_cursor(self, commit=False, autocommit=False, schema=None, lazy=False):
+    def make_cursor(self, commit=False, autocommit=False, schema=None, lazy=False):
         """
         Context manager for psycopg connection cursor.
         Creates a new cursor on an unused connection and closes it when exiting
@@ -408,7 +414,7 @@ class Database(api.Database, Queryable):
         if not self.CONVERTERS: return
 
         regs, self.CONVERTERS = dict(self.CONVERTERS), {}
-        with self.get_cursor() as cursor:
+        with self.make_cursor() as cursor:
             for typename, transformer in regs.items():
                 cursor.execute("SELECT NULL::%s" % typename)
                 oid = cursor.description[0][1]  # description is [(name, type_code, ..)]
@@ -449,7 +455,7 @@ class Transaction(api.Transaction, Queryable):
         self._db         = db
         self._lazy       = lazy
         self._cursor     = None
-        self._cursorctx  = db.get_cursor(commit=commit, schema=schema, lazy=lazy)
+        self._cursorctx  = db.make_cursor(commit=commit, schema=schema, lazy=lazy)
         self._exclusive  = exclusive
         self._exitcommit = commit
         self._enterstack = 0     # Number of levels the transaction context is nested at
@@ -538,6 +544,13 @@ class Transaction(api.Transaction, Queryable):
     def closed(self):
         """Whether transaction is currently not open."""
         return not self._cursorctx
+
+    @property
+    def cursor(self):
+        """Database engine cursor object, or `None` if closed."""
+        if not self._cursorctx: return None
+        if not self._cursor: self._cursor = self._cursorctx.__enter__()
+        return self._cursor
 
     @property
     def database(self):

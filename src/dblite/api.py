@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    22.11.2022
+@modified    23.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -267,6 +267,12 @@ class Queryable(object):
     @property
     def closed(self):
         """Whether currently not open."""
+        raise NotImplementedError()
+
+
+    @property
+    def cursor(self):
+        """Database engine cursor object, or `None` if closed."""
         raise NotImplementedError()
 
 

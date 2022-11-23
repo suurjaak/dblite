@@ -345,6 +345,7 @@ API
 | `Database.open()`                       | opens database connection if not already open
 | `Database.close()`                      | closes the database and all pending transactions, if open
 | `Database.closed`                       | whether database is not open
+| `Database.cursor`                       | database engine cursor object
 |                                         | |
 | **dblite.Transaction**                  | |
 | `Transaction.fetchall()`                | runs `SELECT`, returns all rows
@@ -359,6 +360,7 @@ API
 | `Transaction.rollback()`                | rolls back pending actions, if any
 | `Transaction.close()`                   | closes the transaction, performing commit or rollback as specified
 | `Transaction.closed`                    | whether transaction is not open
+| `Transaction.cursor`                    | database engine cursor object
 | `Transaction.database`                  | returns transaction `Database` instance
 
 
