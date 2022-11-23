@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    22.11.2022
+@modified    23.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -91,7 +91,7 @@ class TestAPI(unittest.TestCase):
         """Tests dblite API."""
         logger.info("Verifying dblite API.")
         for engine, (opts, kwargs) in self._connections.items():
-            self.verify_module_api(opts, kwargs, engine)
+            self.verify_general_api(opts, kwargs, engine)
             self.verify_query_api(dblite, engine)
             dblite.close()
             with dblite.init() as db:
@@ -103,8 +103,8 @@ class TestAPI(unittest.TestCase):
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
 
 
-    def verify_module_api(self, opts, kwargs, engine):
-        """Verifies general module-level functions."""
+    def verify_general_api(self, opts, kwargs, engine):
+        """Verifies general module-level and Database-level functions."""
         logger.info("Verifying dblite module-level functions for %s.", engine)
 
         logger.debug("Verifying dblite.init().")
@@ -119,10 +119,15 @@ class TestAPI(unittest.TestCase):
                               "Unexpected value from dblite.transaction().")
         tx.close()
 
+        logger.info("Verifying Database property decorators for %s.", engine)
+        self.assertFalse(db.closed, "Unexpected value from %s.closed." % label(db))
+        self.assertIsNotNone(db.cursor, "Unexpected value from %s.cursor." % label(db))
+
         logger.debug("Verifying dblite.close().")
-        self.assertFalse(db.closed, "Unexpected value from Database.closed.")
+        self.assertFalse(db.closed, "Unexpected value from %s.closed." % label(db))
         dblite.close()
-        self.assertTrue(db.closed, "Unexpected value from Database.closed.")
+        self.assertTrue(db.closed, "Unexpected value from %s.closed." % label(db))
+        self.assertIsNone(db.cursor, "Unexpected value from %s.cursor." % label(db))
         with self.assertRaises(Exception,
                                msg="Unexpected success for fetch after closing database."):
             db.fetchone(next(iter(self.TABLES)))
@@ -377,6 +382,15 @@ class TestAPI(unittest.TestCase):
 
         for table in self.DATAS:
             dblite.execute("DROP TABLE %s" % table)
+
+        logger.info("Verifying Transaction property decorators for %s.", engine)
+        with dblite.transaction() as tx:
+            self.assertFalse(tx.closed, "Unexpected value from %s.closed." % label(tx))
+            self.assertIsNotNone(tx.cursor, "Unexpected value from %s.cursor." % label(tx))
+            self.assertIsInstance(tx.database, dblite.Database,
+                                  "Unexpected value from %s.database." % label(tx))
+        self.assertTrue(tx.closed, "Unexpected value from %s.closed." % label(tx))
+        self.assertIsNone(tx.cursor, "Unexpected value from %s.cursor." % label(tx))
 
         logger.info("Verifying Transaction.quote() for %s.", engine)
         with dblite.transaction() as tx:
