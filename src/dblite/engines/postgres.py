@@ -74,11 +74,10 @@ class Queryable(api.Queryable):
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=()):
         """Returns (SQL statement string, parameter dict)."""
 
-        SCHEMA = self._load_schema()
-
         def cast(col, val):
             """Returns column value cast to correct type for use in psycopg."""
-            field = table in SCHEMA and SCHEMA[table]["fields"].get(col)
+            self._load_schema()
+            field = table in self._structure and self._structure[table]["fields"].get(col)
             if field and "array" == field["type"]:
                 return list(listify(val)) # Values for array fields must be lists
             elif field and val is not None:
@@ -132,8 +131,9 @@ class Queryable(api.Queryable):
             args.update((n, cast(k, v)) for n, (k, v) in zip(keys, values))
             cols, vals = ", ".join(k for k, _ in values), ", ".join("%%(%s)s" % n for n in keys)
             sql += " (%s) VALUES (%s)" % (cols, vals)
-            if SCHEMA and table in SCHEMA and SCHEMA[table].get("key"):
-                sql += " RETURNING %s AS id" % (SCHEMA[table]["key"])
+            self._load_schema()
+            if table in self._structure and self._structure[table].get("key"):
+                sql += " RETURNING %s AS id" % (self._structure[table]["key"])
         if "UPDATE" == action:
             sql += " SET "
             for i, (col, val) in enumerate(values):
@@ -205,11 +205,10 @@ class Queryable(api.Queryable):
 
 
     def _load_schema(self, force=False):
-        """Returns database table structure, queried from database if uninitialized or forced."""
+        """Populates table structure from database if uninitialized or forced."""
         if self._structure is None or force:
             self._structure = {}  # Avoid recursion on first query
             self._structure.update(query_schema(self, keys=True))
-        return self._structure
 
 
 
@@ -293,7 +292,7 @@ class Database(api.Database, Queryable):
         Reloads internal schema structure from database.
         """
         cursor = self.execute(sql)
-        self._load_schema(force=True)
+        self._structure = None  # Clear database schema to force reload on next query
         return cursor
 
 
@@ -534,7 +533,7 @@ class Transaction(api.Transaction, Queryable):
         Reloads internal schema structure from database.
         """
         cursor = self.execute(sql)
-        self._load_schema(force=True)
+        self._structure = None  # Clear database schema to force reload on next query
         return cursor
 
     def commit(self):
@@ -564,7 +563,7 @@ class Transaction(api.Transaction, Queryable):
 
     def _load_schema(self, force=False):
         """
-        Returns database table structure, queried from database if uninitialized or forced.
+        Populates database table structure from database if uninitialized or forced.
 
         Uses parent Database for lookup if lazy cursor.
         """
