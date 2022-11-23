@@ -93,7 +93,7 @@ class TestPostgres(unittest.TestCase):
             tx.fetchone("columns")
 
         logger.info("Verifying postgres.Transaction(lazy).")
-        with dblite.transaction(lazy=True) as tx:
+        with dblite.transaction(lazy=True, itersize=2) as tx:
             for _ in tx.select("information_schema.columns"):
                 break  # for _
 

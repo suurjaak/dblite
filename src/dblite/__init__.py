@@ -8,8 +8,8 @@ Released under the MIT License.
 @modified    23.11.2022
 ------------------------------------------------------------------------------
 """
-__version__      = "1.0.1.dev1"
-__version_info__ = (1, 0, 1, "dev1")
+__version__      = "1.0.1.dev2"
+__version_info__ = (1, 0, 1, "dev2")
 __version_date__ = "2022-11-23"
 
 from . api import *

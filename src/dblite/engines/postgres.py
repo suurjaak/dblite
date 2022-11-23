@@ -354,7 +354,7 @@ class Database(api.Database, Queryable):
 
 
     @contextmanager
-    def make_cursor(self, commit=False, autocommit=False, schema=None, lazy=False):
+    def make_cursor(self, commit=False, autocommit=False, schema=None, lazy=False, itersize=None):
         """
         Context manager for psycopg connection cursor.
         Creates a new cursor on an unused connection and closes it when exiting
@@ -363,8 +363,9 @@ class Database(api.Database, Queryable):
         @param   commit      commit at the end on success
         @param   autocommit  connection autocommit mode
         @param   schema      name of Postgres schema to use, if not using default `"public"`
-        @param   lazy        if true, returns a named cursor that fetches rows iteratively;
-                             only supports making a single query
+        @param   lazy        if true, returns a named server-side cursor that fetches rows
+                             iteratively in batches; only supports making a single query
+        @param   itersize    batch size in rows for server-side cursor
         @return              psycopg2.extras.RealDictCursor
         """
         connection = self.POOLS[self].getconn()
@@ -378,6 +379,7 @@ class Database(api.Database, Queryable):
             if schema or not lazy: cursor = connection.cursor()
             if schema: cursor.execute('SET search_path TO %s,public' % quote(schema))
             if lazy: namedcursor = connection.cursor("name_%s" % id(connection))
+            if lazy and itersize is not None: namedcursor.itersize = itersize
 
             try:
                 yield namedcursor or cursor
@@ -433,13 +435,14 @@ class Transaction(api.Transaction, Queryable):
     """
     Transaction context manager, provides convenience methods for queries.
 
-    Supports lazy cursors; those can only be used for making a single query.
+    Supports server-side cursors; those can only be used for making a single query.
 
     Must be closed explicitly if not used as context manager in a with-block.
     Block can be exited early by raising Rollback.
     """
 
-    def __init__(self, db, commit=True, exclusive=False, schema=None, lazy=False, **__):
+    def __init__(self, db, commit=True, exclusive=False,
+                 schema=None, lazy=False, itersize=None, **__):
         """
         Creates a transaction context manager.
 
@@ -449,13 +452,15 @@ class Transaction(api.Transaction, Queryable):
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances Database
         @param   schema     search_path to use in this transaction
-        @param   lazy       if true, fetches results from server iteratively
-                            instead of all at once, supports one single query only
+        @param   lazy       if true, uses a server-side cursor to fetch results from server
+                            iteratively in batches instead of all at once,
+                            supports one single query only
+        @param   itersize   batch size for server-side cursor (defaults to 2000 rows)
         """
         self._db         = db
         self._lazy       = lazy
         self._cursor     = None
-        self._cursorctx  = db.make_cursor(commit=commit, schema=schema, lazy=lazy)
+        self._cursorctx  = db.make_cursor(commit, schema=schema, lazy=lazy, itersize=itersize)
         self._exclusive  = exclusive
         self._exitcommit = commit
         self._enterstack = 0     # Number of levels the transaction context is nested at

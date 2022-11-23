@@ -299,16 +299,21 @@ with dblite.transaction(schema="information_schema") as tx:
 ```
 
 Postgres transactions support server-side cursors for iterative data access,
-not fetching and materializing all rows at once:
+fetching and materializing rows in batches:
 
 ```python
 dblite.init("host=localhost user=postgres dbname=bigdata")
 with Transaction(lazy=True) as tx:  # Can only run a single query
     for i, row in enumerate(tx.select("some really huge table")):
         print("Processing row #%s" % i)
+
+# Can also specify size of fetched batches (default is 2000 rows)
+with Transaction(lazy=True, itersize=100) as tx:
+    for i, row in enumerate(tx.select("some really huge table")):
+        print("Processing row #%s" % i)
 ```
 
-`executescript()` forces an internal reload of schema metadata,
+Note that `executescript()` in Postgres forces an internal reload of schema metadata,
 allowing `insert()´ to return inserted primary key value,
 and query parameters to be auto-cast to expected column types.
 
