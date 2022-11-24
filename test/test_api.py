@@ -19,6 +19,8 @@ import copy
 import logging
 import os
 import tempfile
+import threading
+import time
 import unittest
 
 import dblite
@@ -100,6 +102,7 @@ class TestAPI(unittest.TestCase):
                 self.verify_query_api(tx, engine)
             self.verify_query_args(dblite, engine)
             self.verify_transactions(engine)
+            self.verify_exclusive_transactions(engine)
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
 
 
@@ -409,6 +412,26 @@ class TestAPI(unittest.TestCase):
                     self.assertNotEqual(result, value,
                                         "Unexpected value from %s.quote(%r, force=True): %r." %
                                         (label(tx), value, result))
+
+
+    def verify_exclusive_transactions(self, engine):
+        """Verifies exclusive transactions being exclusive."""
+        logger.info("Verifying exclusive transactions for %s.", engine)
+
+        DELAY = 3
+        def waiter(semaphore):
+            """Opens transaction and sleeps for a bit."""
+            with dblite.transaction(exclusive=True):
+                semaphore.set()
+                time.sleep(DELAY)
+
+        semaphore = threading.Event()
+        threading.Thread(target=waiter, args=(semaphore, )).start()
+        semaphore.wait()
+        t1 = time.time()
+        with dblite.transaction(exclusive=True):
+            t2 = time.time()
+        self.assertLessEqual(t1, t2 - DELAY, "Exclusive transaction did not exclude.")
 
 
 def label(obj):
