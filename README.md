@@ -5,6 +5,8 @@ Simple query interface to SQL databases.
 
 Supports SQLite and Postgres.
 
+Full API documentation available at https://suurjaak.github.io/dblite.
+
 - [Installation](#installation)
 - [Usage](#usage)
 - [Queries](#queries)
@@ -198,7 +200,6 @@ dblite.fetchall("test", limit=(2, 10))
 dblite.fetchall("test", limit=(-1, 10))
 dblite.fetchall("test", limit=(None, 10))
 ```
-
 
 
 ### Name quoting
