@@ -1,2 +1,2 @@
 recursive-include src *.py
-include Doxyfile LICENSE.md README.md requirements.txt
+include CHANGELOG.md Doxyfile LICENSE.md README.md requirements.txt
