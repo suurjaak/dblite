@@ -175,6 +175,7 @@ class Queryable(api.Queryable):
         Returns identifier in quotes and proper-escaped for queries,
         if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
 
+        @param   value  the value to quote, returned as-is if not string
         @param   force  whether to quote value even if not required
         """
         return quote(value, force)
@@ -196,6 +197,7 @@ class Database(api.Database, Queryable):
         """
         Creates a new Database instance for SQLite.
 
+        @param   opts    file path or `":memory:"`
         @param   kwargs  supported arguments are passed to sqlite3.connect() in open(),
                          like `detect_types=sqlite3.PARSE_COLNAMES`
         """
@@ -221,12 +223,22 @@ class Database(api.Database, Queryable):
 
 
     def execute(self, sql, args=()):
-        """Executes the SQL statement and returns sqlite3.Cursor."""
+        """
+        Executes the SQL statement and returns sqlite3.Cursor.
+
+        @param   sql   SQL statement to execute, with SQLite-specific parameter bindings, if any
+        @param   args  dictionary for %(name)s placeholders,
+                       or a sequence for positional %s placeholders
+        """
         return self.connection.execute(sql, args)
 
 
     def executescript(self, sql):
-        """Executes the SQL as script of any number of statements."""
+        """
+        Executes the SQL as script of any number of statements.
+
+        @param   sql   script with one or more SQL statements
+        """
         self.connection.executescript(sql)
 
 
@@ -307,6 +319,7 @@ class Transaction(api.Transaction, Queryable):
         """
         Creates a new transaction.
 
+        @param   db         Database instance
         @param   commit     whether transaction commits automatically at exiting with-block
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances on this Database
@@ -364,7 +377,13 @@ class Transaction(api.Transaction, Queryable):
         self._db._notify(self)
 
     def execute(self, sql, args=()):
-        """Executes the SQL statement and returns sqlite3.Cursor."""
+        """
+        Executes the SQL statement and returns sqlite3.Cursor.
+
+        @param   sql   SQL statement to execute, with SQLite-specific parameter bindings, if any
+        @param   args  dictionary for %(name)s placeholders,
+                       or a sequence for positional %s placeholders
+        """
         if self._closed: raise RuntimeError("Transaction already closed")
         if not self._cursor: self._make_cursor()
         return self._cursor.execute(sql, args)
@@ -374,6 +393,8 @@ class Transaction(api.Transaction, Queryable):
         Executes the SQL as script of any number of statements, outside of transaction.
 
         Any pending transaction will be committed first.
+
+        @param   sql   script with one or more SQL statements
         """
         if self._closed: raise RuntimeError("Transaction already closed")
         with Database.MUTEX[self._db]:
@@ -447,6 +468,7 @@ def quote(value, force=False):
     Returns identifier in quotes and proper-escaped for queries,
     if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
 
+    @param   value  the value to quote, returned as-is if not string
     @param   force  whether to quote value even if not required
     """
     if not isinstance(value, string_types):

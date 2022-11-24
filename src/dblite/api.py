@@ -112,7 +112,12 @@ def delete(table, where=(), **kwargs):
 
 
 def execute(sql, args=()):
-    """Executes the SQL statement and returns database cursor."""
+    """
+    Executes the SQL statement and returns database cursor.
+
+    @param   sql   SQL statement to execute, with engine-specific parameter bindings, if any
+    @param   args  query parameters, as tuple or dictionary
+    """
     return init().execute(sql, args)
 
 
@@ -122,6 +127,8 @@ def executescript(sql):
 
     Note that in SQLite, the statements are executed outside of transaction,
     and any pending transaction will be committed first.
+
+    @param   sql   script with one or more SQL statements
     """
     return init().executescript(sql)
 
@@ -245,7 +252,12 @@ class Queryable(object):
 
 
     def execute(self, sql, args=()):
-        """Executes the SQL statement and returns database cursor."""
+        """
+        Executes the SQL statement and returns database cursor.
+
+        @param   sql   SQL statement to execute, with engine-specific parameter bindings, if any
+        @param   args  query parameters, as tuple or dictionary
+        """
         raise NotImplementedError()
 
 
@@ -255,6 +267,8 @@ class Queryable(object):
 
         Note that in SQLite, the statements are executed outside of transaction,
         and any pending transaction will be committed first.
+
+        @param   sql   script with one or more SQL statements
         """
         raise NotImplementedError()
 
@@ -282,6 +296,7 @@ class Queryable(object):
         Returns identifier in quotes and proper-escaped for queries,
         if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
 
+        @param   value  the value to quote, returned as-is if not string
         @param   force  whether to quote value even if not required
         """
         raise NotImplementedError()
@@ -355,6 +370,7 @@ class Transaction(Queryable):
 
         Note that parameter `exclusive` defaults to `True` when using SQLite.
 
+        @param   db         Database instance
         @param   commit     whether transaction commits automatically at exiting with-block
         @param   exclusive  whether entering a with-block is exclusive
                             over other Transaction instances on this Database

@@ -192,6 +192,7 @@ class Queryable(api.Queryable):
         Returns identifier in quotes and proper-escaped for queries,
         if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
 
+        @param   value  the value to quote, returned as-is if not string
         @param   force  whether to quote value even if not required
         """
         return quote(value, force)
@@ -280,6 +281,7 @@ class Database(api.Database, Queryable):
         """
         Executes SQL statement, returns psycopg cursor.
 
+        @param   sql   SQL statement to execute, with psycopg-specific parameter bindings, if any
         @param   args  dictionary for %(name)s placeholders,
                        or a sequence for positional %s placeholders, or None
         """
@@ -293,6 +295,8 @@ class Database(api.Database, Queryable):
         Executes the SQL as script of any number of statements.
 
         Reloads internal schema structure from database.
+
+        @param   sql   script with one or more SQL statements
         """
         cursor = self.execute(sql)
         self._structure = None  # Clear database schema to force reload on next query
@@ -450,6 +454,7 @@ class Transaction(api.Transaction, Queryable):
 
         Context is breakable by raising Rollback.
 
+        @param   db         Database instance
         @param   commit     whether transaction commits automatically at exiting with-block
         @param   exclusive  whether entering a with-block is exclusive over other
                             Transaction instances Database
@@ -521,6 +526,7 @@ class Transaction(api.Transaction, Queryable):
         """
         Executes SQL statement, returns psycopg cursor.
 
+        @param   sql   SQL statement to execute, with psycopg-specific parameter bindings, if any
         @param   args  dictionary for %(name)s placeholders,
                        or a sequence for positional %s placeholders, or None
         """
@@ -534,6 +540,8 @@ class Transaction(api.Transaction, Queryable):
         Executes the SQL as script of any number of statements.
 
         Reloads internal schema structure from database.
+
+        @param   sql   script with one or more SQL statements
         """
         cursor = self.execute(sql)
         self._structure = None  # Clear database schema to force reload on next query
@@ -698,6 +706,7 @@ def quote(value, force=False):
     Returns identifier in quotes and proper-escaped for queries,
     if value needs quoting (has non-alphanumerics, starts with number, or is reserved).
 
+    @param   value  the value to quote, returned as-is if not string
     @param   force  whether to quote value even if not required
     """
     if not isinstance(value, string_types):
