@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    23.11.2022
+@modified    24.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -84,9 +84,9 @@ def select(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     @param   where   columns or expressions to select by, as dict or a sequence
                      of key-value tuples; value can specify operator
                      e.g. `{"mycolumn": ("IN", [1, 2, 3])}`
-    @param   cols    columns to select if not all, as string or a sequence of strings
-    @param   group   columns to GROUP BY, as string or a sequence of strings
-    @param   order   columns to ORDER BY, as string, a sequence of strings,
+    @param   cols    columns to select if not all, as string or a sequence of stringables
+    @param   group   columns to GROUP BY, as string or a sequence of stringables
+    @param   order   columns to ORDER BY, as string, a sequence of stringables,
                      or a combination of column names and direction flags
     @param   limit   LIMIT .. OFFSET.. values, as integer or a sequence of integers;
                      None or -1 disables LIMIT or OFFSET

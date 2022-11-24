@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    23.11.2022
+@modified    24.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -107,13 +107,14 @@ class Queryable(api.Queryable):
                 col = "%s%s = ANY('{}')" % ("" if "IN" == op else "NOT ", col)
                 op = "EXPR"
             return col, op, val, key
-        def argcount(x): return len(x) if isinstance(x, (list, set, tuple)) else 1
-        def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
+        def argcount(x)  : return len(x) if isinstance(x, (list, set, tuple)) else 1
+        def listify(x)   : return x if isinstance(x, (list, tuple)) else [x]
+        def strlistify(x): return [text_type(y) for y in listify(x) if y not in ("", None)]
 
         action = action.upper()
-        cols   =    cols if isinstance(cols,  string_types) else ", ".join(cols)
+        cols   =    cols if isinstance(cols,  string_types) else ", ".join(strlistify(cols)) or "*"
         where  = [where] if isinstance(where, string_types) else where
-        group  =   group if isinstance(group, string_types) else ", ".join(map(str, listify(group)))
+        group  =   group if isinstance(group, string_types) else ", ".join(strlistify(group))
         order  = [order] if isinstance(order, string_types) else order
         order  = [order] if isinstance(order, (list, tuple)) \
                  and len(order) == 2 and isinstance(order[1], bool) else order
@@ -168,9 +169,11 @@ class Queryable(api.Queryable):
             sql += " GROUP BY " + group
         if order:
             sql += " ORDER BY "
-            for i, col in enumerate(order):
-                name = col if isinstance(col, string_types) else col[0]
-                sort = col[1] if name != col and len(col) > 1 else ""
+            for i, col in enumerate(listify(order)):
+                name = col if isinstance(col, string_types) else \
+                       text_type(col[0] if isinstance(col, (list, tuple)) else col)
+                sort = col[1] if name != col and isinstance(col, (list, tuple)) and len(col) > 1 \
+                       else ""
                 if not isinstance(sort, string_types): sort = "DESC" if sort else ""
                 sql += (", " if i else "") + name + (" " if sort else "") + sort
         if limit:
@@ -598,7 +601,7 @@ def make_db_url(opts):
         if creds and i > 1: result, creds = result + "@", False  # Either user or password set
         if opts.get(k) is not None:
             result, creds = result + prefix + "%%(%s)s" % k, (i < 2)
-    result %= {k : urllib_parse.quote(str(opts[k])) for k in opts}
+    result %= {k : urllib_parse.quote(text_type(opts[k])) for k in opts}
     if any(k not in BASICS for k in opts):
         result += "/" if opts.get("dbname") is None else ""
         result += "?" + urllib_parse.urlencode({k: opts[k] for k in opts if k not in BASICS})

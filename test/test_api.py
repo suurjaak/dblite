@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    23.11.2022
+@modified    24.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -203,6 +203,10 @@ class TestAPI(unittest.TestCase):
     def verify_query_args(self, obj, engine):
         """Verifies various ways of providing query parameters."""
         logger.info("Verifying %s query parameters for %s.", label(obj), engine)
+        class Column(object):
+            """Simple stringable class."""
+            def __init__(self, name): self._name = name
+            def __str__(self): return self._name
 
         for table, cols in self.TABLES.items():
             obj.executescript("DROP TABLE IF EXISTS %s" % table)
@@ -221,10 +225,12 @@ class TestAPI(unittest.TestCase):
         logger.info("Verifying SELECT columns for %r.", engine)
         for table, cols in self.TABLES.items():
             for col in (", ".join(sorted(c["name"] for c in cols)),
+                        [Column(c["name"]) for c in cols], None,
                         [c["name"] for c in cols], [c["name"] for c in cols][::2]):
                 row = obj.fetchone(table, col)
                 received = set(row) if isinstance(col, list) else ", ".join(sorted(row))
-                expected = set(col) if isinstance(col, list) else col
+                expected = set(map(str, col)) if isinstance(col, list) else \
+                           ", ".join(sorted(c["name"] for c in cols)) if col is None else col
                 self.assertEqual(received, expected,
                                  "Unexpected value from %s.select(cols)." % label(obj))
 
@@ -264,14 +270,14 @@ class TestAPI(unittest.TestCase):
         logger.info("Verifying ORDER BY arguments for %r.", engine)
         for table in DATAS:
             ORDERS = [  # [(argument value, [(col, direction), ])]
-                ("id",                           [("id",  False), ]),
-                ("id ASC",                       [("id",  False), ]),
-                ("id DESC",                      [("id",  True),  ]),
-                (["id", True],                   [("id",  True),  ]),
-                ("val, id DESC",                 [("val", False), ("id",  True)]),
-                (["val", "id DESC"],             [("val", False), ("id",  True)]),
-                (["val", ("id", "DESC")],        [("val", False), ("id",  True)]),
-                (["val DESC", ("id", True)],     [("val", True),  ("id",  True)]),
+                (Column("id"),                    [("id",  False), ]),
+                ("id ASC",                        [("id",  False), ]),
+                ("id DESC",                       [("id",  True),  ]),
+                ([Column("id"), True],            [("id",  True),  ]),
+                ("val, id DESC",                  [("val", False), ("id",  True)]),
+                ([Column("val"), "id DESC"],      [("val", False), ("id",  True)]),
+                (["val", (Column("id"), "DESC")], [("val", False), ("id",  True)]),
+                (["val DESC", ("id", True)],      [("val", True),  ("id",  True)]),
             ]
             for order, sorts in ORDERS:
                 reverse = "val" == sorts[0][0] and sorts[0][1]
@@ -285,7 +291,7 @@ class TestAPI(unittest.TestCase):
         logger.info("Verifying GROUP BY arguments for %r.", engine)
         for table in DATAS:
             expected_ids = all_ids = [x["id"] for x in DATAS[table]]
-            for group in ("id", "id, val", ["id"], ["id", "val"]):
+            for group in ("id", Column("id"), "id, val", ["id"], [Column("id"), "val"], 1):
                 rows = obj.fetchall(table, group=group)
                 self.assertEqual(set(x["id"] for x in rows), set(expected_ids),
                                  "Unexpected value from %s.select(group=%r)." % (label(obj), group))
