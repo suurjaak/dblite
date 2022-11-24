@@ -1,0 +1,6 @@
+<map id="dblite.engines.postgres.Database" name="dblite.engines.postgres.Database">
+<area shape="rect" id="node1" title="Convenience wrapper around psycopg2.ConnectionPool and Cursor." alt="" coords="84,169,263,211"/>
+<area shape="rect" id="node2" href="$classdblite_1_1api_1_1_database.html" title="Database instance." alt="" coords="5,87,155,114"/>
+<area shape="rect" id="node3" href="$classdblite_1_1api_1_1_queryable.html" title="Abstract base for Database and Transaction." alt="" coords="96,5,251,32"/>
+<area shape="rect" id="node4" href="$classdblite_1_1engines_1_1postgres_1_1_queryable.html" title=" " alt="" coords="179,80,357,121"/>
+</map>

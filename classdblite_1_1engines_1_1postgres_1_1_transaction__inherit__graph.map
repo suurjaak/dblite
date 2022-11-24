@@ -1,0 +1,6 @@
+<map id="dblite.engines.postgres.Transaction" name="dblite.engines.postgres.Transaction">
+<area shape="rect" id="node1" title="Transaction context manager, provides convenience methods for queries." alt="" coords="95,169,273,211"/>
+<area shape="rect" id="node2" href="$classdblite_1_1api_1_1_transaction.html" title="Transaction context manager, breakable by raising Rollback." alt="" coords="5,87,168,114"/>
+<area shape="rect" id="node3" href="$classdblite_1_1api_1_1_queryable.html" title="Abstract base for Database and Transaction." alt="" coords="107,5,261,32"/>
+<area shape="rect" id="node4" href="$classdblite_1_1engines_1_1postgres_1_1_queryable.html" title=" " alt="" coords="192,80,371,121"/>
+</map>

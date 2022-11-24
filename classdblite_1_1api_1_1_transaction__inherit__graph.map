@@ -1,0 +1,6 @@
+<map id="dblite.api.Transaction" name="dblite.api.Transaction">
+<area shape="rect" id="node1" title="Transaction context manager, breakable by raising Rollback." alt="" coords="128,80,291,107"/>
+<area shape="rect" id="node3" href="$classdblite_1_1engines_1_1postgres_1_1_transaction.html" title="Transaction context manager, provides convenience methods for queries." alt="" coords="5,155,184,196"/>
+<area shape="rect" id="node4" href="$classdblite_1_1engines_1_1sqlite_1_1_transaction.html" title="Transaction context manager, breakable by raising Rollback." alt="" coords="209,162,442,189"/>
+<area shape="rect" id="node2" href="$classdblite_1_1api_1_1_queryable.html" title="Abstract base for Database and Transaction." alt="" coords="132,5,287,32"/>
+</map>

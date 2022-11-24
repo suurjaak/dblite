@@ -1,0 +1,6 @@
+<map id="dblite.engines.sqlite.Database" name="dblite.engines.sqlite.Database">
+<area shape="rect" id="node1" title="Convenience wrapper around sqlite3.Connection." alt="" coords="75,155,295,181"/>
+<area shape="rect" id="node2" href="$classdblite_1_1api_1_1_database.html" title="Database instance." alt="" coords="5,80,155,107"/>
+<area shape="rect" id="node3" href="$classdblite_1_1api_1_1_queryable.html" title="Abstract base for Database and Transaction." alt="" coords="108,5,263,32"/>
+<area shape="rect" id="node4" href="$classdblite_1_1engines_1_1sqlite_1_1_queryable.html" title=" " alt="" coords="179,80,405,107"/>
+</map>

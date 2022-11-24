@@ -1,0 +1,8 @@
+var searchData=
+[
+  ['readme_2emd_57',['README.md',['../_r_e_a_d_m_e_8md.html',1,'']]],
+  ['register_5fadapter_58',['register_adapter',['../namespacedblite_1_1api.html#a61b20cce18ca828a3354e6bc5a05ca82',1,'dblite.api.register_adapter()'],['../namespacedblite_1_1engines_1_1postgres.html#ae1cdb6da36ed5f5bf373ccd07dbaeeae',1,'dblite.engines.postgres.register_adapter()'],['../namespacedblite_1_1engines_1_1sqlite.html#a8de81a95ef56863e5aecb6217d11e1c9',1,'dblite.engines.sqlite.register_adapter()']]],
+  ['register_5fconverter_59',['register_converter',['../namespacedblite_1_1api.html#a4187d66095bf5c0463aded129c6bc880',1,'dblite.api.register_converter()'],['../namespacedblite_1_1engines_1_1postgres.html#a62cdb67c3092ad89360d1bc10e58ec10',1,'dblite.engines.postgres.register_converter()'],['../namespacedblite_1_1engines_1_1sqlite.html#a91d2d9621291b13682df9c2ea0643186',1,'dblite.engines.sqlite.register_converter()']]],
+  ['reserved_5fkeywords_60',['RESERVED_KEYWORDS',['../namespacedblite_1_1engines_1_1postgres.html#aa3aa706bdf4122682b376bc534d0d516',1,'dblite.engines.postgres.RESERVED_KEYWORDS()'],['../namespacedblite_1_1engines_1_1sqlite.html#a08deb237856866ea07850eda50d694a8',1,'dblite.engines.sqlite.RESERVED_KEYWORDS()']]],
+  ['rollback_61',['Rollback',['../classdblite_1_1api_1_1_rollback.html',1,'dblite.api.Rollback'],['../classdblite_1_1api_1_1_transaction.html#ae67fc3701db8782784515a9478a8778c',1,'dblite.api.Transaction.rollback()'],['../classdblite_1_1engines_1_1postgres_1_1_transaction.html#a2e431b2da15491c306d89f75be0ae169',1,'dblite.engines.postgres.Transaction.rollback()'],['../classdblite_1_1engines_1_1sqlite_1_1_transaction.html#af8d50ce026ba2942b2fff5bd34efa03d',1,'dblite.engines.sqlite.Transaction.rollback()']]]
+];
