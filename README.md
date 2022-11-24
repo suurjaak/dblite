@@ -5,6 +5,7 @@ Simple query interface to SQL databases.
 
 Supports SQLite and Postgres.
 
+- [Installation](#installation)
 - [Usage](#usage)
 - [Queries](#queries)
   - [Name quoting](#name-quoting)
@@ -13,6 +14,14 @@ Supports SQLite and Postgres.
 - [Postgres](#postgres)
 - [API](#api)
 - [Dependencies](#dependencies)
+
+
+Installation
+------------
+
+```bash
+pip install dblite
+```
 
 
 Usage
