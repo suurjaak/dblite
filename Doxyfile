@@ -25,7 +25,7 @@ BRIEF_MEMBER_DESC      = YES
 
 REPEAT_BRIEF           = YES
 
-ABBREVIATE_BRIEF       = dummy_placeholder
+ABBREVIATE_BRIEF       = dummy_placeholder_disable_autostrip
 
 ALWAYS_DETAILED_SEC    = YES
 
@@ -33,7 +33,7 @@ INLINE_INHERITED_MEMB  = NO
 
 FULL_PATH_NAMES        = YES
 
-STRIP_FROM_PATH        =
+STRIP_FROM_PATH        = src/
 
 SHORT_NAMES            = NO
 
@@ -84,7 +84,7 @@ SORT_MEMBER_DOCS       = YES
 
 SORT_BRIEF_DOCS        = YES
 
-SORT_MEMBERS_CTORS_1ST = NO
+SORT_MEMBERS_CTORS_1ST = YES
 
 SORT_BY_SCOPE_NAME     = NO
 
@@ -115,7 +115,7 @@ WARN_IF_UNDOCUMENTED   = YES
 
 WARN_IF_DOC_ERROR      = YES
 
-WARN_NO_PARAMDOC       = NO
+WARN_NO_PARAMDOC       = YES
 
 WARN_AS_ERROR          = NO
 
@@ -130,17 +130,17 @@ INPUT                  =
 
 INPUT_ENCODING         = UTF-8
 
-FILE_PATTERNS          = *.md *.py *.rst
+FILE_PATTERNS          = *.md *.py
 
 RECURSIVE              = YES
 
-EXCLUDE                = test/ doc/
+EXCLUDE                = test/ doc/ .dev/
 
-EXCLUDE_SYMLINKS       = NO
+EXCLUDE_SYMLINKS       = YES
 
-EXCLUDE_PATTERNS       = CMakeLists.txt setup.py */vendor */__*__.py
+EXCLUDE_PATTERNS       = setup.py
 
-EXCLUDE_SYMBOLS        =
+EXCLUDE_SYMBOLS        = logger psycopg2
 
 INPUT_FILTER           =
 
@@ -282,4 +282,3 @@ DOT_MULTI_TARGETS      = NO
 GENERATE_LEGEND        = NO
 
 DOT_CLEANUP            = YES
-
