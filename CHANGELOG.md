@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.1.0, 2022-11-24
+1.1.0, 2022-11-25
 -----------------
 - fix using Postgres server-side cursors
 - allow specifying batch size for Postgres server-side cursors
