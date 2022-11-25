@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    24.11.2022
+@modified    25.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -494,27 +494,3 @@ __all__ = [
     "RESERVED_KEYWORDS", "Database", "Transaction",
     "autodetect", "quote", "register_adapter", "register_converter",
 ]
-
-
-if "__main__" == __name__:
-    def test():
-        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-        import dblite as db
-        db.init(":memory:")
-        db.execute("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
-
-        print("Inserted ID %s." % db.insert("test", val=None))
-        for i in range(5): print("Inserted ID %s." % db.insert("test", {"val": i}))
-        print("Fetch ID 1: %s." % db.fetchone("test", id=1))
-        print("Fetch all up to 3, order by val: %s." % db.fetchall("test", order="val", limit=3))
-        print("Updated %s row where val is NULL." % db.update("test", {"val": "new"}, val=None))
-        print("Select where val IN [0, 1, 2]: %s." % db.fetchall("test", val=("IN", range(3))))
-        print("Delete %s row where val=0." % db.delete("test", val=0))
-        with db.transaction():
-            print("Delete %s row where val=1, and roll back." % db.delete("test", val=1))
-            raise db.Rollback
-        print("Fetch all, order by val: %s." % db.fetchall("test", order="val"))
-        print("Select with expression: %s." % db.fetchall("test", EXPR=("id IN (SELECT id FROM test WHERE id in (?, ?, ?))", [1, 3, 5])))
-        db.execute("DROP TABLE test")
-        db.close()
-    test()
