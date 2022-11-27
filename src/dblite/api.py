@@ -19,6 +19,7 @@ import datetime
 import decimal
 import glob
 import importlib
+import inspect
 import json
 import logging
 import os
@@ -189,7 +190,6 @@ def register_converter(transformer, typenames, engine=None):
     Engines.get(engine).register_converter(transformer, typenames)
 
 
-
 class Queryable(object):
     """Abstract base for Database and Transaction."""
 
@@ -223,10 +223,9 @@ class Queryable(object):
         Convenience wrapper for database SELECT, returns database cursor.
         Keyword arguments are added to WHERE.
         """
-        where = list(where.items() if isinstance(where, dict) else where)
-        where += kwargs.items()
-        sql, args = self.makeSQL("SELECT", table, cols, where, group, order, limit)
-        return self.execute(sql, args)
+        sql, args = self.makeSQL("SELECT", table, cols, where, group, order, limit, kwargs=kwargs)
+        cursor = self.execute(sql, args)
+        return TypeCursor(cursor, table) if inspect.isclass(table) else cursor
 
 
     def update(self, table, values, where=(), **kwargs):
@@ -234,9 +233,7 @@ class Queryable(object):
         Convenience wrapper for database UPDATE, returns affected row count.
         Keyword arguments are added to WHERE.
         """
-        where = list(where.items() if isinstance(where, dict) else where)
-        where += kwargs.items()
-        sql, args = self.makeSQL("UPDATE", table, values=values, where=where)
+        sql, args = self.makeSQL("UPDATE", table, values=values, where=where, kwargs=kwargs)
         return self.execute(sql, args).rowcount
 
 
@@ -245,9 +242,7 @@ class Queryable(object):
         Convenience wrapper for database DELETE, returns affected row count.
         Keyword arguments are added to WHERE.
         """
-        where = list(where.items() if isinstance(where, dict) else where)
-        where += kwargs.items()
-        sql, args = self.makeSQL("DELETE", table, where=where)
+        sql, args = self.makeSQL("DELETE", table, where=where, kwargs=kwargs)
         return self.execute(sql, args).rowcount
 
 
@@ -273,7 +268,8 @@ class Queryable(object):
         raise NotImplementedError()
 
 
-    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=()):
+    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=(),
+                kwargs=None):
         """Returns (SQL statement string, parameter dict)."""
         raise NotImplementedError()
 
@@ -496,6 +492,54 @@ class StaticTzInfo(datetime.tzinfo):
 UTC = StaticTzInfo("UTC", StaticTzInfo.ZERO)
 
 
+class TypeCursor(object):
+    """Wrapper for database cursor, yielding rows constructed with given callable."""
+
+    def __init__(self, cursor, callable):
+        """
+        @param   cursor    database engine cursor instance
+        @param   callable  function(rowdict) or function(*row values) or function(**rowdict)
+        """
+        self.__cursor = cursor
+        self.__cls    = callable
+        self._logged = False
+        for name, value in inspect.getmembers(cursor):
+            if not hasattr(self, name):  # Monkey-patch cursor members to self
+                setattr(self, name, value)
+
+    def fetchmany(self, size=None):
+        result = []
+        for _ in range(self.__cursor.arraysize if size is None else size):
+            row = next(self.__cursor, None)
+            if row is None: break  # for
+            result.append(self.__factory(row))
+        return result
+
+    def fetchone(self): return next(self, None)
+    def fetchall(self): return list(self)
+    def __iter__(self): return iter(self.__factory(x) for x in self.__cursor)
+    def __next__(self): return self.__factory(next(self.__cursor))
+    def next(self):     return self.__factory(next(self.__cursor))
+
+    def __factory(self, row):
+        """Returns row constructed with callable, or original row if all argument options failed."""
+        errors = []
+        try: return self.__cls(**row)          # Constructed with keyword args as row keys-values
+        except Exception as e: errors.append(e)
+        try: return self.__cls(*row.values())  # Constructed with positional args as row values
+        except Exception as e: errors.append(e)
+        try: return self.__cls(row)            # Constructed with row as single arg
+        except Exception as e: errors.append(e)
+        if issubclass(self.__cls, tuple) and hasattr(self.__cls, "_fields"):
+            # collections.namedtuple: populate any missing fields with None
+            try: return self.__cls(**dict({k: None for k in self.__cls._fields}, **row))
+            except Exception as e: errors.append(e)
+        if not self._logged:
+            logger.warning("Failed to instantiate %s with keywords, posargs, and dictionary. "
+                           "Returning dictionary.\n%s", self.__cls, "\n".join(map(repr, errors)))
+            self._logged = True
+        return row
+
 
 def json_loads(s):
     """
@@ -584,6 +628,63 @@ def load_modules():
         module = importlib.import_module(modulename)
         result[name] = module
     return result
+
+
+def is_dataobject(obj):
+    """Returns whether input is a data object: namedtuple, or has attributes or slots."""
+    if isinstance(obj, tuple) and hasattr(obj, "_asdict") and hasattr(obj, "_fields"):
+        return True    # collections.namedtuple
+    if getattr(obj, "__slots__", None):
+        return True    # __slots__
+    if any(isinstance(v, property) for _, v in inspect.getmembers(type(obj))):
+        return True    # Declared properties
+    if getattr(obj, "__dict__", None):
+        return True    # Plain object
+    return False
+
+
+def nameify(val, format=None, parent=None):
+    """
+    Returns value as table or column name string, for use in SQL statements.
+
+    @param   val     a primitive like string, or a named object like a class,
+                     or a class property or member or data descriptor
+    @param   parent  the parent class object if value is a class member or property
+    @param   format  function(name) to apply on name extracted from class or object, if any
+    @return          string
+    """
+    format = format if callable(format) else lambda x: x
+    if inspect.isclass(val):
+        return format(val.__name__)
+    if inspect.isdatadescriptor(val):
+        if hasattr(val, "__name__"): return format(val.__name__)  # __slots__ entry
+        return next(format(k) for k, v in inspect.getmembers(parent) if v is val)
+    return six.text_type(val)
+
+
+def keyvalues(obj, format=None):
+    """
+    Returns a list of keys and values, or [given object] if not applicable.
+
+    @param   obj     mapping or namedtuple or object with attributes or slots
+    @param   format  function(key) to apply on extracted keys, if any
+    @return          [(key, value)] if available,
+                     else original argument as single item in list if not already a list
+    """
+    format = format if callable(format) else lambda x: x
+    if isinstance(obj, tuple) and hasattr(obj, "_asdict") and hasattr(obj, "_fields"):
+        return [(format(k), getattr(obj, k)) for k in obj._fields]    # collections.namedtuple
+    if getattr(obj, "__slots__", None):
+        return [(format(k), getattr(obj, k)) for k in obj.__slots__
+                if hasattr(obj, k)]                                   # __slots__
+    if any(isinstance(v, property) for _, v in inspect.getmembers(type(obj))):
+        return [(format(k), getattr(obj, k)) for k, v in inspect.getmembers(type(obj))
+                if isinstance(v, property)]                           # Declared properties
+    if getattr(obj, "__dict__", None):
+        return [(format(k), v) for k, v in vars(obj).items()]         # Plain object
+    if isinstance(obj, six.moves.collections_abc.Mapping):
+        return list(obj.items())                                      # dictionary
+    return list(obj) if isinstance(obj, (list, tuple)) else [obj]
 
 
 __all__ = [

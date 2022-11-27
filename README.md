@@ -15,6 +15,7 @@ Full API documentation available at https://suurjaak.github.io/dblite.
 - [SQLite](#sqlite)
 - [Postgres](#postgres)
 - [API](#api)
+- [Object-relational mapping](#object-relational-mapping)
 - [Dependencies](#dependencies)
 
 
@@ -157,7 +158,7 @@ dblite.fetchall("test", where=[("id < ? OR id > ?", [1, 2]), ("val", 3)])
 
 
 Argument for key-value parameters, like `WHERE` or `VALUES`,
-can be a dict, or a sequence of key-value pairs:
+can be a mapping, or a sequence of key-value pairs:
 
 ```python
 # Result: SET val = 'done' WHERE id = 1
@@ -181,6 +182,7 @@ dblite.fetchall("test", group=("id", "val"))
 dblite.fetchall("test", order="id")
 dblite.fetchall("test", order="id ASC")
 dblite.fetchall("test", order=("id", False))
+dblite.fetchall("test", order={"id": False})
 # Result: SELECT * FROM test ORDER BY id ASC val DESC
 dblite.fetchall("test", order="id, val DESC")
 dblite.fetchall("test", order=["id", ("val", True)])
@@ -377,6 +379,152 @@ API
 | `Transaction.closed`                    | whether transaction is not open
 | `Transaction.cursor`                    | database engine cursor object
 | `Transaction.database`                  | returns transaction `Database` instance
+
+
+Object-relational mapping
+-------------------------
+
+dblite uses dictionaries as rows by default, but can just as easily operate with
+various types of data classes.
+
+If data attributes have been declared as properties on the class,
+the class properties can be used directly in dblite in place of column names,
+e.g. for `ORDER BY`.
+
+(Such data descriptor properties are automatically available for
+`property` attributes, classes with `__slots__`, and namedtuples).
+
+### Data classes
+
+```python
+schema = "CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)"
+class Device(object):
+    def __init__(self, id=None, name=None):
+        self._id   = id
+        self._name = name
+
+    def get_id(self): return self._id
+    def set_id(self, id): self._id = id
+    id = property(get_id, set_id)
+
+    def get_name(self): return self._name
+    def set_name(self, name): self._name = name
+    name = property(get_name, set_name)
+Device.__name__ = "devices"  # cls.__name__ will be used as table name
+
+dblite.init(":memory:").executescript(schema)
+
+device = Device(name="lidar")
+device.id = dblite.insert(Device, device)
+
+device.name = "solid-state lidar"
+dblite.update(Device, device, {Device.id: device.id})
+
+device = dblite.fetchone(Device, Device.id, where=device)
+print(device.name)  # Will be None as we only selected Device.id
+
+for device in dblite.fetchall(Device, order=Device.name):
+    print(device.id, device.name)
+    dblite.delete(Device, device)
+```
+
+It is also possible to use very simple data classes with no declared properties.
+
+```python
+schema = "CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)"
+class Device(object):
+    def __init__(self, id=None, name=None):
+        self.id   = id
+        self.name = name
+Device.__name__ = "devices"  # cls.__name__ will be used as table name
+
+dblite.init(":memory:").executescript(schema)
+
+device = Device(name="lidar")
+device.id = dblite.insert(Device, device)
+
+device.name = "solid-state lidar"
+dblite.update(Device, device, id=device.id)
+
+device = dblite.fetchone(Device, "id", where=device)
+print(device.name)  # Will be None as we only selected Device.id
+
+for device in dblite.fetchall(Device, order="name"):
+    print(device.id, device.name)
+    dblite.delete(Device, device)
+```
+
+### Classes with `__slots__`
+
+```python
+schema = "CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)"
+class Device(object):
+    __slots__ = ("id", "name")
+    def __init__(self, id=None, name=None):
+        self.id   = id
+        self.name = name
+Device.__name__ = "devices"  # cls.__name__ will be used as table name
+
+dblite.init(":memory:").executescript(schema)
+
+device = Device()
+device.name = "lidar"
+device.id = dblite.insert(Device, device)
+
+device.name = "solid-state lidar"
+dblite.update(Device, device, id=device.id)
+
+device = dblite.fetchone(Device, Device.id, where=device)
+print(device.name)  # Will be None as we only selected Device.id
+
+for device in dblite.fetchall(Device, order=Device.name):
+    print(device.id, device.name)
+    dblite.delete(Device, device)
+```
+
+### collections.namedtuple
+
+```python
+schema = "CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)"
+Device = collections.namedtuple("devices", ("id", "name"))
+
+dblite.init(":memory:").executescript(schema)
+
+device = Device(id=None, name="lidar")
+device_id = dblite.insert(Device, device)
+
+device = Device(id=device_id, name="solid-state lidar")
+dblite.update(Device, device, {Device.id: device_id})
+
+device = dblite.fetchone(Device, Device.id, where=device)
+print(device.name)  # Will be None as we only selected Device.id
+
+for device in dblite.fetchall(Device, order=Device.name):
+    print(device.id, device.name)
+    dblite.delete(Device, device)
+```
+
+### Name quoting
+
+dblite automatically quotes table and column names in queries when using objects as arguments.
+
+```python
+schema = 'CREATE TABLE "restaurant bookings" ("group" TEXT, "table" TEXT, "date" TIMESTAMP)'
+Booking = collections.namedtuple("_", ("group", "table", "date"))
+Booking.__name__ = "restaurant bookings"
+
+dblite.init(":memory:").executescript(schema)
+
+booking1 = Booking("Squirrel Charity", "Table 16", datetime.datetime(2022, 12, 30, 18, 30))
+booking2 = Booking("The Three Henrys", "Table 23", datetime.datetime(2022, 12, 30, 19))
+dblite.insert(Booking, booking1)
+dblite.insert(Booking, booking2)
+
+for booking in dblite.fetchall(Booking, order=Booking.date):
+    print(booking.date, booking.group, booking.table)
+```
+
+For more thorough examples on using objects, see [test/test_orm.py](test/test_orm.py).
 
 
 

@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.2.0, 2022-11-27
+-----------------
+- support data classes and objects in query arguments and results
+
 1.1.0, 2022-11-25
 -----------------
 - fix using Postgres server-side cursors

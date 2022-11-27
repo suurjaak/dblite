@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    25.11.2022
+@modified    27.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -19,7 +19,7 @@ import sqlite3
 import sys
 import threading
 
-from six import binary_type, integer_types, string_types, text_type
+from six import binary_type, integer_types, string_types
 
 from .. import api
 
@@ -55,13 +55,12 @@ class Queryable(api.Queryable):
         Convenience wrapper for database INSERT, returns inserted row ID.
         Keyword arguments are added to VALUES.
         """
-        values = list(values.items() if isinstance(values, dict) else values)
-        values += kwargs.items()
-        sql, args = self.makeSQL("INSERT", table, values=values)
+        sql, args = self.makeSQL("INSERT", table, values=values, kwargs=kwargs)
         return self.execute(sql, args).lastrowid
 
 
-    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=()):
+    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=(),
+                kwargs=None):
         """Returns (SQL statement string, parameter dict)."""
 
         def cast(col, val):
@@ -70,6 +69,7 @@ class Queryable(api.Queryable):
 
         def parse_members(i, col, op, val):
             """Returns (col, op, val, argkey)."""
+            col = api.nameify(col, quote, table)
             key = "%sW%s" % (re.sub(r"\W+", "_", col), i)
             if "EXPR" == col.upper():
                 # ("EXPR", ("SQL", val))
@@ -80,31 +80,34 @@ class Queryable(api.Queryable):
             elif isinstance(val, (list, tuple)) and len(val) == 2 \
             and isinstance(val[0], string_types):
                 tmp = val[0].strip().upper()
-                if tmp in self.OPS: # ("col", ("binary op like >=", val))
+                if tmp in self.OPS:
+                    # ("col", ("binary op like >=", val))
                     op, val = tmp, val[1]
                 elif val[0].count("?") == argcount(val[1]):
                     # ("col", ("SQL with ? placeholders", val))
                     col, val, op = "%s = %s" % (col, val[0]), listify(val[1]), "EXPR"
             return col, op, val, key
-        def argcount(x)  : return len(x) if isinstance(x, (list, set, tuple)) else 1
-        def listify(x)   : return x if isinstance(x, (list, tuple)) else [x]
-        def strlistify(x): return [text_type(y) for y in listify(x) if y not in ("", None)]
+        def argcount(x): return len(x) if isinstance(x, (list, set, tuple)) else 1
+        def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
 
         action = action.upper()
-        cols   =    cols if isinstance(cols,  string_types) else ", ".join(strlistify(cols)) or "*"
+        tablesql = api.nameify(table, quote)
+        cols   = ", ".join(api.nameify(x, quote, table) for x in listify(cols)) or "*"
+        group  = ", ".join(api.nameify(x, quote, table) for x in listify(group) if x is not None) 
         where  = [where] if isinstance(where, string_types) else where
-        group  =   group if isinstance(group, string_types) else ", ".join(strlistify(group))
+        where  = api.keyvalues(where, quote)
         order  = [order] if isinstance(order, string_types) else order
         order  = [order] if isinstance(order, (list, tuple)) \
                  and len(order) == 2 and isinstance(order[1], bool) else order
         limit  = [limit] if isinstance(limit, string_types + integer_types) else limit
-        values = values if not isinstance(values, dict) else values.items()
-        where  =  where if not isinstance(where,  dict)  else where.items()
-        sql = "SELECT %s FROM %s" % (cols, table) if "SELECT" == action else ""
-        sql = "DELETE FROM %s"    % (table)       if "DELETE" == action else sql
-        sql = "INSERT INTO %s"    % (table)       if "INSERT" == action else sql
-        sql = "UPDATE %s"         % (table)       if "UPDATE" == action else sql
-        args = {}
+        values = api.keyvalues(values, quote)
+        sql    = "SELECT %s FROM %s" % (cols, tablesql) if "SELECT" == action else ""
+        sql    = "DELETE FROM %s"    % (tablesql)       if "DELETE" == action else sql
+        sql    = "INSERT INTO %s"    % (tablesql)       if "INSERT" == action else sql
+        sql    = "UPDATE %s"         % (tablesql)       if "UPDATE" == action else sql
+        args   = {}
+        if kwargs and action in ("SELECT", "DELETE", "UPDATE"): where  += list(kwargs.items())
+        if kwargs and action in ("INSERT", ):                   values += list(kwargs.items()) 
 
         if "INSERT" == action:
             keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, _) in enumerate(values)]
@@ -151,8 +154,7 @@ class Queryable(api.Queryable):
         if order:
             sql += " ORDER BY "
             for i, col in enumerate(listify(order)):
-                name = col if isinstance(col, string_types) else \
-                       text_type(col[0] if isinstance(col, (list, tuple)) else col)
+                name = api.nameify(col[0] if isinstance(col, (list, tuple)) else col, quote, table)
                 sort = col[1] if name != col and isinstance(col, (list, tuple)) and len(col) > 1 \
                        else ""
                 if not isinstance(sort, string_types): sort = "DESC" if sort else ""
@@ -167,6 +169,7 @@ class Queryable(api.Queryable):
                 args[k] = v
 
         return sql, args
+
 
 
     @classmethod

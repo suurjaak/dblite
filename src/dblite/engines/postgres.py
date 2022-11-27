@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    24.11.2022
+@modified    27.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -63,21 +63,20 @@ class Queryable(api.Queryable):
         Convenience wrapper for database INSERT, returns inserted row ID.
         Keyword arguments are added to VALUES.
         """
-        values = list(values.items() if isinstance(values, dict) else values)
-        values += kwargs.items()
-        sql, args = self.makeSQL("INSERT", table, values=values)
+        sql, args = self.makeSQL("INSERT", table, values=values, kwargs=kwargs)
         cursor = self.execute(sql, args)
         row = None if cursor.description is None else next(cursor, None)
         return next(iter(row.values())) if row and isinstance(row, dict) else None
 
 
-    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=()):
+    def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=(),
+                kwargs=None):
         """Returns (SQL statement string, parameter dict)."""
 
         def cast(col, val):
             """Returns column value cast to correct type for use in psycopg."""
             self._load_schema()
-            field = table in self._structure and self._structure[table]["fields"].get(col)
+            field = tablename in self._structure and self._structure[tablename]["fields"].get(col)
             if field and "array" == field["type"]:
                 return list(listify(val)) # Values for array fields must be lists
             elif field and val is not None:
@@ -88,6 +87,7 @@ class Queryable(api.Queryable):
 
         def parse_members(i, col, op, val):
             """Returns (col, op, val, argkey)."""
+            col = api.nameify(col, quote, table)
             key = "%sW%s" % (re.sub(r"\W+", "_", col), i)
             if "EXPR" == col.upper():
                 # ("EXPR", ("SQL", val))
@@ -98,7 +98,8 @@ class Queryable(api.Queryable):
             elif isinstance(val, (list, tuple)) and len(val) == 2 \
             and isinstance(val[0], string_types):
                 tmp = val[0].strip().upper()
-                if tmp in self.OPS: # ("col", ("binary op like >=", val))
+                if tmp in self.OPS:
+                    # ("col", ("binary op like >=", val))
                     op, val = tmp, val[1]
                 elif val[0].count("?") == argcount(val[1]):
                     # ("col", ("SQL with ? placeholders", val))
@@ -107,40 +108,53 @@ class Queryable(api.Queryable):
                 col = "%s%s = ANY('{}')" % ("" if "IN" == op else "NOT ", col)
                 op = "EXPR"
             return col, op, val, key
-        def argcount(x)  : return len(x) if isinstance(x, (list, set, tuple)) else 1
-        def listify(x)   : return x if isinstance(x, (list, tuple)) else [x]
-        def strlistify(x): return [text_type(y) for y in listify(x) if y not in ("", None)]
+        def argcount(x): return len(x) if isinstance(x, (list, set, tuple)) else 1
+        def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
+
+
+        wherenames = [] if isinstance(where, string_types) else [k for k, _ in api.keyvalues(where)]
+        valuenames, values0 = [k for k, _ in api.keyvalues(values)], values
 
         action = action.upper()
-        cols   =    cols if isinstance(cols,  string_types) else ", ".join(strlistify(cols)) or "*"
+        tablename, tablesql = api.nameify(table), api.nameify(table, quote)
+        cols   = ", ".join(api.nameify(x, quote, table) for x in listify(cols)) or "*"
+        group  = ", ".join(api.nameify(x, quote, table) for x in listify(group) if x is not None) 
         where  = [where] if isinstance(where, string_types) else where
-        group  =   group if isinstance(group, string_types) else ", ".join(strlistify(group))
+        where  = api.keyvalues(where, quote)
         order  = [order] if isinstance(order, string_types) else order
         order  = [order] if isinstance(order, (list, tuple)) \
                  and len(order) == 2 and isinstance(order[1], bool) else order
         limit  = [limit] if isinstance(limit, string_types + integer_types) else limit
-        values = values if not isinstance(values, dict) else values.items()
-        where  =  where if not isinstance(where,  dict)  else where.items()
-        sql = "SELECT %s FROM %s" % (cols, table) if "SELECT" == action else ""
-        sql = "DELETE FROM %s"    % (table)       if "DELETE" == action else sql
-        sql = "INSERT INTO %s"    % (table)       if "INSERT" == action else sql
-        sql = "UPDATE %s"         % (table)       if "UPDATE" == action else sql
-        args = {}
+        values = api.keyvalues(values, quote)
+        sql    = "SELECT %s FROM %s" % (cols, tablesql) if "SELECT" == action else ""
+        sql    = "DELETE FROM %s"    % (tablesql)       if "DELETE" == action else sql
+        sql    = "INSERT INTO %s"    % (tablesql)       if "INSERT" == action else sql
+        sql    = "UPDATE %s"         % (tablesql)       if "UPDATE" == action else sql
+        args   = {}
+        if kwargs and action in ("SELECT", "DELETE", "UPDATE"):
+            where, wherenames = where + list(kwargs.items()), wherenames + list(kwargs) 
+        if kwargs and action in ("INSERT", ):
+            values, valuenames = values + list(kwargs.items()), valuenames + list(kwargs) 
 
         if "INSERT" == action:
-            keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, _) in enumerate(values)]
-            args.update((n, cast(k, v)) for n, (k, v) in zip(keys, values))
+            self._load_schema()
+            pk = self._structure.get(tablename, {}).get("key")
+            if pk and api.is_dataobject(values0):  # Can't avoid giving primary key if data object
+                values, valuenames = zip(*((kv, nv) for kv, nv in zip(values, valuenames)
+                                           if nv != (pk, None)))  # Discard NULL primary key
+            values = [x for x in values if x != (pk, None)] if pk else values
+            keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, v) in enumerate(values)]
+            args.update((n, cast(valuenames[i], v))
+                        for i, (n, (_, v)) in enumerate(zip(keys, values)))
             cols, vals = ", ".join(k for k, _ in values), ", ".join("%%(%s)s" % n for n in keys)
             sql += " (%s) VALUES (%s)" % (cols, vals)
-            self._load_schema()
-            if table in self._structure and self._structure[table].get("key"):
-                sql += " RETURNING %s AS id" % (self._structure[table]["key"])
+            if pk: sql += " RETURNING %s AS id" % (quote(pk))
         if "UPDATE" == action:
             sql += " SET "
             for i, (col, val) in enumerate(values):
                 key = "%sU%s" % (re.sub(r"\W+", "_", col), i)
                 sql += (", " if i else "") + "%s = %%(%s)s" % (col, key)
-                args[key] = cast(col, val)
+                args[key] = cast(valuenames[i], val)
         if where:
             sql += " WHERE "
             for i, clause in enumerate(where):
@@ -163,15 +177,14 @@ class Queryable(api.Queryable):
                     op = {"=": "IS", "!=": "IS NOT", "<>": "IS NOT"}.get(op, op)
                     sql += (" AND " if i else "") + "%s %s NULL" % (col, op)
                 else:
-                    args[key] = cast(col, val)
+                    args[key] = cast(wherenames[i], val)
                     sql += (" AND " if i else "") + "%s %s %%(%s)s" % (col, op, key)
         if group:
             sql += " GROUP BY " + group
         if order:
             sql += " ORDER BY "
             for i, col in enumerate(listify(order)):
-                name = col if isinstance(col, string_types) else \
-                       text_type(col[0] if isinstance(col, (list, tuple)) else col)
+                name = api.nameify(col[0] if isinstance(col, (list, tuple)) else col, quote, table)
                 sort = col[1] if name != col and isinstance(col, (list, tuple)) and len(col) > 1 \
                        else ""
                 if not isinstance(sort, string_types): sort = "DESC" if sort else ""
