@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-1.2.0, 2022-11-27
+1.2.0, 2022-11-28
 -----------------
 - support data classes and objects in query arguments and results
+- log generated SQL at half DEBUG level
 
 1.1.0, 2022-11-25
 -----------------

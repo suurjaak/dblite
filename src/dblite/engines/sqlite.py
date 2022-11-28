@@ -168,6 +168,7 @@ class Queryable(api.Queryable):
                 sql += " %s :%s" % (k.upper(), k)
                 args[k] = v
 
+        logger.log(logging.DEBUG // 2, sql)
         return sql, args
 
 
