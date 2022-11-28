@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    24.11.2022
+@modified    28.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -91,26 +91,27 @@ class TestAPI(unittest.TestCase):
 
     def test_api(self):
         """Tests dblite API."""
-        logger.info("Verifying dblite API.")
-        for engine, (opts, kwargs) in self._connections.items():
+        for i, (engine, (opts, kwargs)) in enumerate(self._connections.items()):
+            if i: logger.info("-" * 60)
+            logger.info("Verifying dblite API for %s.", engine)
             self.verify_general_api(opts, kwargs, engine)
-            self.verify_query_api(dblite, engine)
+            self.verify_query_api(dblite)
             dblite.close()
             with dblite.init() as db:
-                self.verify_query_api(db, engine)
+                self.verify_query_api(db)
             with dblite.transaction() as tx:
-                self.verify_query_api(tx, engine)
-            self.verify_query_args(dblite, engine)
-            self.verify_transactions(engine)
-            self.verify_exclusive_transactions(engine)
+                self.verify_query_api(tx)
+            self.verify_query_args(dblite)
+            self.verify_transactions()
+            self.verify_exclusive_transactions()
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
 
 
     def verify_general_api(self, opts, kwargs, engine):
         """Verifies general module-level and Database-level functions."""
-        logger.info("Verifying dblite module-level functions for %s.", engine)
+        logger.info("Verifying dblite general module and Database functions.")
 
-        logger.debug("Verifying dblite.init().")
+        logger.debug("Verifying dblite.init(engine=%r).", engine)
         db = dblite.init(opts, engine=engine, **kwargs)
         self.assertIsInstance(db, dblite.api.Database, "Unexpected value from dblite.init().")
         db2 = dblite.init()
@@ -122,34 +123,35 @@ class TestAPI(unittest.TestCase):
                               "Unexpected value from dblite.transaction().")
         tx.close()
 
-        logger.info("Verifying Database property decorators for %s.", engine)
+        logger.info("Verifying Database property decorators.")
         self.assertFalse(db.closed, "Unexpected value from %s.closed." % label(db))
         self.assertIsNotNone(db.cursor, "Unexpected value from %s.cursor." % label(db))
 
-        logger.debug("Verifying dblite.close().")
+        logger.info("Verifying dblite.close().")
         self.assertFalse(db.closed, "Unexpected value from %s.closed." % label(db))
         dblite.close()
         self.assertTrue(db.closed, "Unexpected value from %s.closed." % label(db))
         self.assertIsNone(db.cursor, "Unexpected value from %s.cursor." % label(db))
+        logger.debug("Verifying dblite.close() denying further queries.")
         with self.assertRaises(Exception,
                                msg="Unexpected success for fetch after closing database."):
             db.fetchone(next(iter(self.TABLES)))
 
 
-    def verify_query_api(self, obj, engine):
+    def verify_query_api(self, obj):
         """Verifies query functions."""
-        logger.info("Verifying %s query functions for %s.", label(obj), engine)
+        logger.info("Verifying %s query functions.", label(obj))
         DATAS = copy.deepcopy(self.DATAS)
 
         for table, cols in self.TABLES.items():
             obj.executescript("DROP TABLE IF EXISTS %s" % table)
             obj.executescript("CREATE TABLE %s (%s)" %
                               (table, ", ".join("%(name)s %(type)s" % c for c in cols)))
-            logger.debug("Verifying %s.insert(%s).", label(obj), table)
+            logger.debug("Verifying %s.insert(%r).", label(obj), table)
             for data in DATAS[table]:
                 myid = obj.insert(table, data)
                 self.assertEqual(myid, data["id"], "Unexpected value from %s.insert()." % obj)
-            logger.debug("Verifying %s.fetchone(%s).", label(obj), table)
+            logger.debug("Verifying %s.fetchone(%r).", label(obj), table)
             for data in DATAS[table]:
                 row = obj.fetchone(table, id=data["id"])
                 self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % obj)
@@ -164,14 +166,18 @@ class TestAPI(unittest.TestCase):
                 self.assertEqual(affected, 1, "Unexpected value from %s.update()." % obj)
                 row = obj.fetchone(table, id=data["id"])
                 self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % obj)
-        if isinstance(obj, dblite.api.Queryable):
-            obj.close()
+        obj.close()
         if isinstance(obj, dblite.api.Database):
+            logger.debug("Closing and reopening %s.", label(obj))
             obj.open()
-        if isinstance(obj, dblite.api.Transaction):
+        elif isinstance(obj, dblite.api.Transaction):
+            logger.debug("Closing and remaking %s.", label(obj))
             obj = obj.database.transaction()  # Create new transaction for verifying persistence
+        else:
+            logger.debug("Closing and reopening database.")
+            obj.init()
 
-        logger.debug("Verifying %s persistence.", label(obj))
+        logger.info("Verifying %s data persistence.", label(obj))
         for table, cols in self.TABLES.items():
             for data in DATAS[table]:
                 row = obj.fetchone(table, id=data["id"])
@@ -179,7 +185,7 @@ class TestAPI(unittest.TestCase):
             rows = obj.fetchall(table)
             self.assertEqual(rows, DATAS[table], "Unexpected value from %s.fetchall()." % obj)
 
-            logger.debug("Verifying %s.delete(%r).", label(obj), engine)
+            logger.debug("Verifying %s.delete(%r).", label(obj), table)
             for data in DATAS[table][::2]:
                 affected = obj.delete(table, id=data["id"])
                 self.assertEqual(affected, 1, "Unexpected value from %s.delete()." % obj)
@@ -203,20 +209,21 @@ class TestAPI(unittest.TestCase):
             obj.close()
 
 
-    def verify_query_args(self, obj, engine):
+    def verify_query_args(self, obj):
         """Verifies various ways of providing query parameters."""
-        logger.info("Verifying %s query parameters for %s.", label(obj), engine)
+        logger.info("Verifying %s query parameters.", label(obj))
         class Column(object):
             """Simple stringable class."""
-            def __init__(self, name): self._name = name
-            def __str__(self): return self._name
+            def __init__(self, name): self.name = name
+            def __repr__(self): return "Column(%r)" % self.name
+            def __str__(self):  return self.name
 
         for table, cols in self.TABLES.items():
             obj.executescript("DROP TABLE IF EXISTS %s" % table)
             obj.executescript("CREATE TABLE %s (%s)" %
                               (table, ", ".join("%(name)s %(type)s" % c for c in cols)))
 
-        logger.info("Verifying INSERT arguments for %r.", engine)
+        logger.info("Verifying INSERT arguments.")
         for table, cols in self.TABLES.items():
             for i, data in enumerate(self.DATAS[table]):
                 if i < 2: obj.insert(table, data if i else list(data.items()))
@@ -225,26 +232,26 @@ class TestAPI(unittest.TestCase):
                       obj.fetchone(table, **data)
                 self.assertEqual(row, data, "Unexpected value from %s.fetchone()." % label(obj))
 
-        logger.info("Verifying SELECT columns for %r.", engine)
+        logger.info("Verifying SELECT columns.")
         for table, cols in self.TABLES.items():
             for col in (", ".join(sorted(c["name"] for c in cols)),
-                        [Column(c["name"]) for c in cols], None,
+                        [Column(c["name"]) for c in cols], "*",
                         [c["name"] for c in cols], [c["name"] for c in cols][::2]):
                 row = obj.fetchone(table, col)
                 received = set(row) if isinstance(col, list) else ", ".join(sorted(row))
                 expected = set(map(str, col)) if isinstance(col, list) else \
-                           ", ".join(sorted(c["name"] for c in cols)) if col is None else col
+                           ", ".join(sorted(c["name"] for c in cols)) if col == "*" else col
                 self.assertEqual(received, expected,
                                  "Unexpected value from %s.select(cols)." % label(obj))
 
-        logger.info("Verifying SELECT WHERE for %r.", engine)
+        logger.info("Verifying SELECT WHERE.")
         for table, cols in self.TABLES.items():
             example = self.DATAS[table][0]
             for where in (example, list(example.items())):
                 self.assertEqual(obj.fetchone(table, where=where), example,
                                  "Unexpected value from %s.select(where=%s)." % (label(obj), where))
 
-        logger.info("Verifying SELECT LIMIT for %r.", engine)
+        logger.info("Verifying SELECT LIMIT.")
         for table, cols in self.TABLES.items():
             for limit in (0, 2, (2, 1), (-1, 1), (None, 1), (None, None), (-1, None)):
                 LIMIT = next(v for v in [limit if isinstance(limit, int) else limit[0]])
@@ -260,7 +267,7 @@ class TestAPI(unittest.TestCase):
                                  "Unexpected value from %s.select(limit=%s)." % (label(obj), limit))
 
         DATAS = copy.deepcopy(self.DATAS)
-        logger.info("Verifying UPDATE arguments for %r.", engine)
+        logger.info("Verifying UPDATE arguments.")
         for table in DATAS:
             for i, data in enumerate(DATAS[table]):
                 # Set alternating values for later ORDER BY verifying
@@ -270,7 +277,7 @@ class TestAPI(unittest.TestCase):
                 row = obj.fetchone(table, where=data)
                 self.assertEqual(row, data, "Unexpected value from %s.select()." % label(obj))
 
-        logger.info("Verifying ORDER BY arguments for %r.", engine)
+        logger.info("Verifying ORDER BY arguments.")
         for table in DATAS:
             ORDERS = [  # [(argument value, [(col, direction), ])]
                 (Column("id"),                    [("id",  False), ]),
@@ -283,6 +290,7 @@ class TestAPI(unittest.TestCase):
                 (["val DESC", ("id", True)],      [("val", True),  ("id",  True)]),
             ]
             for order, sorts in ORDERS:
+                logger.debug("Verifying ORDER BY %r", order)
                 reverse = "val" == sorts[0][0] and sorts[0][1]
                 expected_order = sorted(DATAS[table],
                     key=lambda x: [-x[k] if "id" == k and desc and not reverse else x[k]
@@ -291,10 +299,11 @@ class TestAPI(unittest.TestCase):
                 self.assertEqual(obj.fetchall(table, order=order), expected_order,
                                  "Unexpected value from %s.select(order=%r)." % (label(obj), order))
 
-        logger.info("Verifying GROUP BY arguments for %r.", engine)
+        logger.info("Verifying GROUP BY arguments.")
         for table in DATAS:
             expected_ids = all_ids = [x["id"] for x in DATAS[table]]
             for group in ("id", Column("id"), "id, val", ["id"], [Column("id"), "val"], 1):
+                logger.debug("Verifying GROUP BY %r", group)
                 rows = obj.fetchall(table, group=group)
                 self.assertEqual(set(x["id"] for x in rows), set(expected_ids),
                                  "Unexpected value from %s.select(group=%r)." % (label(obj), group))
@@ -307,26 +316,28 @@ class TestAPI(unittest.TestCase):
             obj.executescript("DROP TABLE %s" % table)
 
 
-    def verify_transactions(self, engine):
+    def verify_transactions(self):
         """Verifies transactions."""
-        logger.info("Verifying transactions for %s.", engine)
+        logger.info("Verifying transactions.")
 
         for table, cols in self.TABLES.items():
             dblite.executescript("DROP TABLE IF EXISTS %s" % table)
             dblite.executescript("CREATE TABLE %s (%s)" %
                               (table, ", ".join("%(name)s %(type)s" % c for c in cols)))
 
-        logger.info("Verifying commit and rollback for %s.", engine)
+        logger.info("Verifying commit and rollback.")
         with dblite.transaction() as tx:
             for table, datas in self.DATAS.items():
                 tx.insert(table, datas[0])
                 row = tx.fetchone(table, id=datas[0]["id"])
                 self.assertEqual(row, datas[0], "Unexpected value from %s.select()." % label(tx))
+            logger.debug("Verifying mid-transaction commit.")
             tx.commit()
             for table, datas in self.DATAS.items():
                 tx.insert(table, datas[1])
                 row = tx.fetchone(table, id=datas[1]["id"])
                 self.assertEqual(row, datas[1], "Unexpected value from %s.select()." % label(tx))
+            logger.debug("Verifying mid-transaction rollback.")
             tx.rollback()
             for table, datas in self.DATAS.items():
                 row = tx.fetchone(table, id=datas[1]["id"])
@@ -336,7 +347,7 @@ class TestAPI(unittest.TestCase):
                 row = tx.fetchone(table, id=datas[1]["id"])
                 self.assertEqual(row, datas[1], "Unexpected value from %s.select()." % label(tx))
 
-        logger.info("Verifying raising Rollback for %s.", engine)
+        logger.info("Verifying raising Rollback.")
         with dblite.transaction() as tx:
             for table, datas in self.DATAS.items():
                 rows = tx.fetchall(table)
@@ -349,7 +360,7 @@ class TestAPI(unittest.TestCase):
                 rows = tx.fetchall(table)
                 self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
 
-        logger.info("Verifying Transaction(commit=False) for %s.", engine)
+        logger.info("Verifying Transaction(commit=False).")
         with dblite.transaction(commit=False) as tx:
             for table in self.DATAS:
                 tx.delete(table)
@@ -360,23 +371,26 @@ class TestAPI(unittest.TestCase):
                 rows = tx.fetchall(table)
                 self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
 
-        logger.info("Verifying Transaction.close() for %s.", engine)
+        logger.info("Verifying Transaction.close().")
         with dblite.transaction() as tx:
             for table, datas in self.DATAS.items():
                 tx.delete(table, datas[0])
             tx.close(commit=False)
+        logger.debug("Verifying Transaction(commit=False).close().")
         with dblite.transaction(commit=False) as tx:
             for table, datas in self.DATAS.items():
                 rows = tx.fetchall(table)
                 self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
                 tx.delete(table, datas[0])
             tx.close()
+        logger.debug("Verifying Transaction(commit=False).close(commit=True).")
         with dblite.transaction(commit=False) as tx:
             for table, datas in self.DATAS.items():
                 rows = tx.fetchall(table)
                 self.assertEqual(rows, datas[:2], "Unexpected value from %s.select()." % label(tx))
                 tx.delete(table, datas[0])
             tx.close(commit=True)
+        logger.debug("Verifying Transaction(commit=True).close(commit=None).")
         with dblite.transaction() as tx:
             for table, datas in self.DATAS.items():
                 rows = tx.fetchall(table)
@@ -388,11 +402,15 @@ class TestAPI(unittest.TestCase):
                 rows = tx.fetchall(table)
                 self.assertEqual(rows, [], "Unexpected value from %s.select()." % label(tx))
             tx.close()
+        logger.debug("Verifying Transaction.close() denying further queries.")
+        with self.assertRaises(Exception,
+                               msg="Unexpected success for fetch after closing transaction."):
+            tx.fetchone(table)
 
         for table in self.DATAS:
             dblite.execute("DROP TABLE %s" % table)
 
-        logger.info("Verifying Transaction property decorators for %s.", engine)
+        logger.info("Verifying Transaction property decorators.")
         with dblite.transaction() as tx:
             self.assertFalse(tx.closed, "Unexpected value from %s.closed." % label(tx))
             self.assertIsNotNone(tx.cursor, "Unexpected value from %s.cursor." % label(tx))
@@ -401,35 +419,43 @@ class TestAPI(unittest.TestCase):
         self.assertTrue(tx.closed, "Unexpected value from %s.closed." % label(tx))
         self.assertIsNone(tx.cursor, "Unexpected value from %s.cursor." % label(tx))
 
-        logger.info("Verifying Transaction.quote() for %s.", engine)
+        logger.info("Verifying Transaction.quote().")
         with dblite.transaction() as tx:
             for value, same in [("WHERE", False), ("one two", False), ("abcd", True)]:
                 result = tx.quote(value)
+                logger.debug("Verifying Transaction.quote(%r).", value)
                 self.assertEqual(result == value, same, "Unexpected value from %s.quote(%r): %r." %
                                  (label(tx), value, result))
                 if same:
                     result = tx.quote(value, force=True)
+                    logger.debug("Verifying Transaction.quote(%r, force=True).", value)
                     self.assertNotEqual(result, value,
                                         "Unexpected value from %s.quote(%r, force=True): %r." %
                                         (label(tx), value, result))
 
 
-    def verify_exclusive_transactions(self, engine):
+    def verify_exclusive_transactions(self):
         """Verifies exclusive transactions being exclusive."""
-        logger.info("Verifying exclusive transactions for %s.", engine)
+        logger.info("Verifying exclusive transactions.")
 
-        DELAY = 3
+        DELAY = 1
         def waiter(semaphore):
             """Opens transaction and sleeps for a bit."""
             with dblite.transaction(exclusive=True):
+                logger.debug("Entered exclusive transaction in background thread.")
                 semaphore.set()
                 time.sleep(DELAY)
+            logger.debug("Exited exclusive transaction in background thread.")
 
         semaphore = threading.Event()
+        logger.debug("Firing up background thread for first transaction.")
         threading.Thread(target=waiter, args=(semaphore, )).start()
+        logger.debug("Waiting for background thread to run.")
         semaphore.wait()
         t1 = time.time()
+        logger.debug("Opening exclusive transaction in main thread.")
         with dblite.transaction(exclusive=True):
+            logger.debug("Entered exclusive transaction in main thread.")
             t2 = time.time()
         self.assertLessEqual(t1, t2 - DELAY, "Exclusive transaction did not exclude.")
 
