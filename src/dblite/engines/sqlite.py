@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    27.11.2022
+@modified    28.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -21,7 +21,7 @@ import threading
 
 from six import binary_type, integer_types, string_types
 
-from .. import api
+from .. import api, util
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class Queryable(api.Queryable):
 
         def parse_members(i, col, op, val):
             """Returns (col, op, val, argkey)."""
-            col = api.nameify(col, quote, table)
+            col = util.nameify(col, quote, table)
             key = "%sW%s" % (re.sub(r"\W+", "_", col), i)
             if "EXPR" == col.upper():
                 # ("EXPR", ("SQL", val))
@@ -91,23 +91,23 @@ class Queryable(api.Queryable):
         def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
 
         action = action.upper()
-        tablesql = api.nameify(table, quote)
-        cols   = ", ".join(api.nameify(x, quote, table) for x in listify(cols)) or "*"
-        group  = ", ".join(api.nameify(x, quote, table) for x in listify(group) if x is not None) 
+        tablesql = util.nameify(table, quote)
+        cols   = ", ".join(util.nameify(x, quote, table) for x in listify(cols)) or "*"
+        group  = ", ".join(util.nameify(x, quote, table) for x in listify(group) if x is not None)
         where  = [where] if isinstance(where, string_types) else where
-        where  = api.keyvalues(where, quote)
+        where  = util.keyvalues(where, quote)
         order  = [order] if isinstance(order, string_types) else order
         order  = [order] if isinstance(order, (list, tuple)) \
                  and len(order) == 2 and isinstance(order[1], bool) else order
         limit  = [limit] if isinstance(limit, string_types + integer_types) else limit
-        values = api.keyvalues(values, quote)
+        values = util.keyvalues(values, quote)
         sql    = "SELECT %s FROM %s" % (cols, tablesql) if "SELECT" == action else ""
         sql    = "DELETE FROM %s"    % (tablesql)       if "DELETE" == action else sql
         sql    = "INSERT INTO %s"    % (tablesql)       if "INSERT" == action else sql
         sql    = "UPDATE %s"         % (tablesql)       if "UPDATE" == action else sql
         args   = {}
         if kwargs and action in ("SELECT", "DELETE", "UPDATE"): where  += list(kwargs.items())
-        if kwargs and action in ("INSERT", ):                   values += list(kwargs.items()) 
+        if kwargs and action in ("INSERT", ):                   values += list(kwargs.items())
 
         if "INSERT" == action:
             keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, _) in enumerate(values)]
@@ -154,7 +154,7 @@ class Queryable(api.Queryable):
         if order:
             sql += " ORDER BY "
             for i, col in enumerate(listify(order)):
-                name = api.nameify(col[0] if isinstance(col, (list, tuple)) else col, quote, table)
+                name = util.nameify(col[0] if isinstance(col, (list, tuple)) else col, quote, table)
                 sort = col[1] if name != col and isinstance(col, (list, tuple)) and len(col) > 1 \
                        else ""
                 if not isinstance(sort, string_types): sort = "DESC" if sort else ""

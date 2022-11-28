@@ -45,9 +45,9 @@ class TestTransformers(unittest.TestCase):
     ## Table test data, as {table name: [{row}]}
     DATAS = {
         "test": [
-            {"id": 1, "dt": datetime.datetime.now(dblite.api.UTC),
+            {"id": 1, "dt": datetime.datetime.now(dblite.util.UTC),
              "val": {"nested": {"value": [1, 2]}}},
-            {"id": 2, "dt": datetime.datetime.now(dblite.api.UTC),
+            {"id": 2, "dt": datetime.datetime.now(dblite.util.UTC),
              "val": {"nested": [None, False, 1.1, 2.2]}},
         ],
     }
