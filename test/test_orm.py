@@ -9,10 +9,11 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     25.11.2022
-@modified    28.11.2022
+@modified    30.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
+import contextlib
 import datetime
 import logging
 import unittest
@@ -120,7 +121,7 @@ class TestORM(unittest.TestCase):
     ## Database schema to use, `%(pktype)s` will be replaced with engine-specific type
     SCHEMA = [
         "CREATE TABLE devices (id %(pktype)s PRIMARY KEY, name TEXT, type TEXT, description TEXT)",
-        'CREATE TABLE "restaurant bookings" ("group" TEXT, "table" TEXT, "date" TIMESTAMP)',
+        'CREATE TABLE "restaurant bookings" ("group" TEXT, "table" TEXT, "daTe" TIMESTAMP)',
     ]
 
     ## Statements to run on schema cleanup
@@ -165,8 +166,8 @@ class TestORM(unittest.TestCase):
 
         for engine, (opts, kwargs) in self._connections.items():
             logger.info("Verifying Object-Relational Mapping support for %s.", engine)
-            schema = ";".join(self.SCHEMA) % dict(pktype=self.PKTYPES[engine])
-            dblite.init(opts, **kwargs).executescript(schema)
+            sql = ";".join(self.SCHEMA_CLEANUP + self.SCHEMA)
+            dblite.init(opts, **kwargs).executescript(sql % dict(pktype=self.PKTYPES[engine]))
             self.verify_class(engine)
             self.verify_slots(engine)
             self.verify_slotsdict(engine)
@@ -323,12 +324,31 @@ class TestORM(unittest.TestCase):
         """Tests auto-quoting class and attribute names"""
         logger.info("Verifying auto-quoting class and attribute names for %r.", engine)
 
-        booking = Booking("Charity", "Table 16", datetime.datetime(2022, 12, 30, 18, 30))
-        dblite.insert(Booking, booking)
-        expected = (booking.group, booking.table, None)
+        val1 = Booking("Charity",  "Table 16", datetime.datetime(2022, 12, 30, 18, 30))
+        val2 = Booking("MotoClub", "Table 17", datetime.datetime(2022, 12, 30, 19))
+        val3 = Booking("Acme INC", "Table 18", datetime.datetime(2022, 12, 30, 19))
+        DATAS = [val1, val2, val3]
+        dblite.insert(Booking, val1)
+        expected = (val1.group, val1.table, None)
         for entry in dblite.fetchall(Booking, (Booking.group, Booking.table), order=Booking.group):
             received = (entry.group, entry.table, entry.date)
             self.assertEqual(received, expected, "Unexpected value from dblite.fetchall().")
+
+        dblite.insert(Booking, [(getattr(Booking, k), getattr(val2, k)) for k in Booking._fields])
+        dblite.insert(Booking, { getattr(Booking, k): getattr(val3, k)  for k in Booking._fields})
+        self.assertEqual(dblite.fetchall(Booking, order=Booking.table), DATAS,
+                         "Unexpected value from dblite.fetchall().")
+        for i, booking in enumerate(list(DATAS)):
+            updated = Booking(booking.group, booking.table, datetime.datetime.now())
+            values = [(Booking.date, updated.date)] if i else {Booking.date:   updated.date}
+            where  = {Booking.table: booking.table} if i else [(Booking.table, booking.table)]
+            dblite.update(Booking, values, where)
+            self.assertEqual(dblite.fetchone(Booking, where=where), updated,
+                             "Unexpected value from dblite.fetchone().")
+            DATAS[i] = updated
+        group = (Booking.group, Booking.table, Booking.date)
+        for i, entry in enumerate(dblite.select(Booking, group=group, order=Booking.table)):
+            self.assertEqual(entry, DATAS[i], "Unexpected value from dblite.select().")
 
 
 
