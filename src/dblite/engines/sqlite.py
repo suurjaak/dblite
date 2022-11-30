@@ -266,7 +266,8 @@ class Database(api.Database, Queryable):
             try: os.makedirs(os.path.dirname(self.path))
             except Exception: pass
         conn = sqlite3.connect(self.path, **args)
-        conn.row_factory = lambda cursor, row: dict(sqlite3.Row(cursor, row))
+        rowtype = dict if sys.version_info > (3, ) else collections.OrderedDict
+        conn.row_factory = lambda cursor, row: rowtype(sqlite3.Row(cursor, row))
         self.connection = conn
 
 
