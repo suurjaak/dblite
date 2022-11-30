@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    2ˇ8.11.2022
+@modified    30.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -475,7 +475,7 @@ class TypeCursor(object):
         """
         self.__cursor = cursor
         self.__cls    = callable
-        self._logged = False
+        self.__logged = False
         for name, value in inspect.getmembers(cursor):
             if not hasattr(self, name):  # Monkey-patch cursor members to self
                 setattr(self, name, value)
@@ -496,22 +496,13 @@ class TypeCursor(object):
 
     def __factory(self, row):
         """Returns row constructed with callable, or original row if all argument options failed."""
-        errors = []
-        try: return self.__cls(**row)          # Constructed with keyword args as row keys-values
-        except Exception as e: errors.append(e)
-        try: return self.__cls(*row.values())  # Constructed with positional args as row values
-        except Exception as e: errors.append(e)
-        try: return self.__cls(row)            # Constructed with row as single arg
-        except Exception as e: errors.append(e)
-        if issubclass(self.__cls, tuple) and hasattr(self.__cls, "_fields"):
-            # collections.namedtuple: populate any missing fields with None
-            try: return self.__cls(**dict({k: None for k in self.__cls._fields}, **row))
-            except Exception as e: errors.append(e)
-        if not self._logged:
+        result, errors = util.factory(self.__cls, row)
+        if result is row and not self.__logged:
             logger.warning("Failed to instantiate %s with keywords, posargs, and dictionary. "
                            "Returning dictionary.\n%s", self.__cls, "\n".join(map(repr, errors)))
-            self._logged = True
-        return row
+            self.__logged = True
+        return result
+
 
 
 __all__ = [

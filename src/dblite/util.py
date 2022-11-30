@@ -46,17 +46,48 @@ class StaticTzInfo(datetime.tzinfo):
 UTC = StaticTzInfo("UTC", StaticTzInfo.ZERO)
 
 
+
+def factory(ctor, data):
+    """
+    Returns object constructed with data dictionary.
+
+    @param   ctor  callable like a class, declared args are matched case-insensitively
+                   for positional arguments if keyword argument invocation fails
+    @param   data  data dictionary with string keys
+    @return        (result, [error strings])
+    """
+    errors = []
+    try: return ctor(**data), []          # Constructed with keyword args as data keys-values
+    except Exception as e: errors.append(e)
+    try: return ctor(*data.values()), []  # Constructed with positional args as data values
+    except Exception as e: errors.append(e)
+    try: return ctor(data), []            # Constructed with data as single arg
+    except Exception as e: errors.append(e)
+    if is_namedtuple(ctor):               # Populate any missing fields with None
+        try: return ctor(**dict({k: None for k in ctor._fields}, **data)), []
+        except Exception as e: errors.append(e)
+        try: return ctor(*map(data.get, ctor._fields)), []
+        except Exception as e: errors.append(e)
+    return data, errors
+
+
 def is_dataobject(obj):
     """Returns whether input is a data object: namedtuple, or has attributes or slots."""
-    if isinstance(obj, tuple) and hasattr(obj, "_asdict") and hasattr(obj, "_fields"):
-        return True    # collections.namedtuple
+    if is_namedtuple(obj):
+        return True  # collections.namedtuple
     if getattr(obj, "__slots__", None):
-        return True    # __slots__
+        return True  # __slots__
     if any(isinstance(v, property) for _, v in inspect.getmembers(type(obj))):
-        return True    # Declared properties
+        return True  # Declared properties
     if getattr(obj, "__dict__", None):
-        return True    # Plain object
+        return True  # Plain object
     return False
+
+
+def is_namedtuple(obj):
+    """Returns whether input is a namedtuple class or instance."""
+    return (isinstance(obj, tuple) or inspect.isclass(obj) and issubclass(obj, tuple)) \
+           and hasattr(obj, "_asdict") and hasattr(obj, "_fields")
 
 
 def json_dumps(data, indent=2, sort_keys=True):
@@ -116,7 +147,7 @@ def keyvalues(obj, namefmt=None):
                       else original argument as single item in list if not already a list
     """
     namefmt = namefmt if callable(namefmt) else lambda x: x
-    if isinstance(obj, tuple) and hasattr(obj, "_asdict") and hasattr(obj, "_fields"):
+    if is_namedtuple(obj):
         return [(namefmt(k), getattr(obj, k)) for k in obj._fields]  # collections.namedtuple
     if getattr(obj, "__slots__", None):
         return [(namefmt(k), getattr(obj, k)) for k in obj.__slots__
@@ -192,6 +223,7 @@ def parse_datetime(s):
 
 
 __all__ = [
-    "StaticTzInfo", "UTC", "is_dataobject", "json_dumps", "json_loads",
+    "StaticTzInfo", "UTC",
+    "factory", "is_dataobject", "is_namedtuple", "json_dumps", "json_loads",
     "keyvalues", "load_modules", "nameify", "parse_datetime",
 ]
