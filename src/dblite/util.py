@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     28.11.2022
-@modified    28.11.2022
+@modified    30.11.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -120,14 +120,14 @@ def keyvalues(obj, namefmt=None):
         return [(namefmt(k), getattr(obj, k)) for k in obj._fields]  # collections.namedtuple
     if getattr(obj, "__slots__", None):
         return [(namefmt(k), getattr(obj, k)) for k in obj.__slots__
-                if hasattr(obj, k)]                                 # __slots__
+                if hasattr(obj, k)]                                  # __slots__
     if any(isinstance(v, property) for _, v in inspect.getmembers(type(obj))):
         return [(namefmt(k), getattr(obj, k)) for k, v in inspect.getmembers(type(obj))
-                if isinstance(v, property)]                         # Declared properties
+                if isinstance(v, property)]                          # Declared properties
     if getattr(obj, "__dict__", None):
         return [(namefmt(k), v) for k, v in vars(obj).items()]       # Plain object
     if isinstance(obj, six.moves.collections_abc.Mapping):
-        return list(obj.items())                                    # dictionary
+        return list(obj.items())                                     # dictionary
     return list(obj) if isinstance(obj, (list, tuple)) else [obj]
 
 
@@ -152,8 +152,8 @@ def nameify(val, namefmt=None, parent=None):
 
     @param   val      a primitive like string, or a named object like a class,
                       or a class property or member or data descriptor
-    @param   parent   the parent class object if value is a class member or property
     @param   namefmt  function(name) to apply on name extracted from class or object, if any
+    @param   parent   the parent class object if value is a class member or property
     @return           string
     """
     namefmt = namefmt if callable(namefmt) else lambda x: x
@@ -162,7 +162,7 @@ def nameify(val, namefmt=None, parent=None):
     if inspect.isdatadescriptor(val):
         if hasattr(val, "__name__"): return namefmt(val.__name__)  # __slots__ entry
         return next(namefmt(k) for k, v in inspect.getmembers(parent) if v is val)
-    return six.text_type(val)
+    return val if isinstance(val, six.string_types) else six.text_type(val)
 
 
 def parse_datetime(s):

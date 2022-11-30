@@ -8,11 +8,12 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    28.11.2022
+@modified    30.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
 from contextlib import contextmanager
+import inspect
 import logging
 import re
 import threading
@@ -49,6 +50,22 @@ RESERVED_KEYWORDS = [
 ]
 
 
+class Identifier(object):
+    """Wrapper for table and column names from data objects."""
+    def __init__(self, name): self.name = name
+    def __eq__(self, other):
+        """Supports comparing to strings or other Identifier instances."""
+        if isinstance(other, type(self)): return self.name == other.name
+        return isinstance(other, string_types) and (self.name == other)
+    def __str__(self):
+        """Returns quoted name."""
+        return self.quote(self.name)
+    @staticmethod
+    def quote(name):
+        """Returns quoted name."""
+        return quote(name, force=not name.islower())  # Must quote if not lowercase
+
+
 class Queryable(api.Queryable):
 
     # Recognized binary operators for makeSQL
@@ -75,7 +92,9 @@ class Queryable(api.Queryable):
 
         def cast(col, val):
             """Returns column value cast to correct type for use in psycopg."""
-            self._load_schema()
+            col = col.name if isinstance(col, Identifier) else \
+                  col if isinstance(col, string_types) else \
+                  self._match_name(util.nameify(col, parent=table), tablename)
             field = tablename in self._structure and self._structure[tablename]["fields"].get(col)
             if field and "array" == field["type"]:
                 return list(listify(val)) # Values for array fields must be lists
@@ -87,12 +106,16 @@ class Queryable(api.Queryable):
 
         def parse_members(i, col, op, val):
             """Returns (col, op, val, argkey)."""
-            col = util.nameify(col, quote, table)
+            if isinstance(col, Identifier): col, colsql, pure = col.name, text_type(col), False
+            elif not isinstance(col, string_types):
+                col = self._match_name(util.nameify(col, parent=table), tablename)
+                colsql, pure = Identifier.quote(col), False
+            else: colsql, pure = col, True
             key = "%sW%s" % (re.sub(r"\W+", "_", col), i)
-            if "EXPR" == col.upper():
+            if "EXPR" == col.upper() and pure:
                 # ("EXPR", ("SQL", val))
                 col, op, val, key = val[0], "EXPR", val[1], "EXPRW%s" % i
-            elif col.count("?") == argcount(val):
+            elif col.count("?") == argcount(val) and pure:
                 # ("any SQL with ? placeholders", val)
                 op, val, key = "EXPR", listify(val), "EXPRW%s" % i
             elif isinstance(val, (list, tuple)) and len(val) == 2 \
@@ -107,54 +130,62 @@ class Queryable(api.Queryable):
             if op in ("IN", "NOT IN") and not val: # IN -> ANY, to avoid error on empty array
                 col = "%s%s = ANY('{}')" % ("" if "IN" == op else "NOT ", col)
                 op = "EXPR"
-            return col, op, val, key
+            return colsql, op, cast(col, val), key
         def argcount(x): return len(x) if isinstance(x, (list, set, tuple)) else 1
         def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
 
+        def column(val, sql=False):
+            """Returns column name from string/property/Identifier, quoted if object and `sql`."""
+            if inspect.isdatadescriptor(val): val = util.nameify(val, wrapper(sql=sql), table)
+            if isinstance(val, Identifier): return text_type(val) if sql else val.name
+            return val if isinstance(val, string_types) else text_type(val)
 
-        wherenames = [] if isinstance(where, string_types) else [k for k, _ in util.keyvalues(where)]
-        valuenames, values0 = [k for k, _ in util.keyvalues(values)], values
+        def wrapper(column=True, sql=False):
+            """Returns function producing Identifier or SQL-ready name string."""
+            def inner(name):
+                val = Identifier(self._match_name(name, table=tablename if column else None))
+                return text_type(val) if sql else val
+            return inner
 
+        self._load_schema()
+        values0 = values
         action = action.upper()
-        tablename, tablesql = util.nameify(table), util.nameify(table, quote)
-        cols   = ", ".join(util.nameify(x, quote, table) for x in listify(cols)) or "*"
-        group  = ", ".join(util.nameify(x, quote, table) for x in listify(group) if x is not None)
-        where  = [where] if isinstance(where, string_types) else where
-        where  = util.keyvalues(where, quote)
+        where, group, order, limit, values = (() if x is None else x
+                                              for x in (where, group, order, limit, values))
+        n = util.nameify(table, wrapper(column=False))
+        tablename, tablesql = (n.name, text_type(n)) if isinstance(n, Identifier) else (n, n)
+        cols   = ", ".join(util.nameify(x, wrapper(sql=True), table) for x in listify(cols)) or "*"
+        group  = ", ".join(util.nameify(x, wrapper(sql=True), table) for x in listify(group))
+        where  = util.keyvalues(where, wrapper())
         order  = [order] if isinstance(order, string_types) else order
         order  = [order] if isinstance(order, (list, tuple)) \
                  and len(order) == 2 and isinstance(order[1], bool) else order
         limit  = [limit] if isinstance(limit, string_types + integer_types) else limit
-        values = util.keyvalues(values, quote)
+        values = util.keyvalues(values, wrapper())
         sql    = "SELECT %s FROM %s" % (cols, tablesql) if "SELECT" == action else ""
         sql    = "DELETE FROM %s"    % (tablesql)       if "DELETE" == action else sql
         sql    = "INSERT INTO %s"    % (tablesql)       if "INSERT" == action else sql
         sql    = "UPDATE %s"         % (tablesql)       if "UPDATE" == action else sql
         args   = {}
-        if kwargs and action in ("SELECT", "DELETE", "UPDATE"):
-            where, wherenames = where + list(kwargs.items()), wherenames + list(kwargs)
-        if kwargs and action in ("INSERT", ):
-            values, valuenames = values + list(kwargs.items()), valuenames + list(kwargs)
+        if kwargs and action in ("SELECT", "DELETE", "UPDATE"): where  += list(kwargs.items())
+        if kwargs and action in ("INSERT", ):                   values += list(kwargs.items())
 
         if "INSERT" == action:
-            self._load_schema()
             pk = self._structure.get(tablename, {}).get("key")
             if pk and util.is_dataobject(values0):  # Can't avoid giving primary key if data object
-                values, valuenames = zip(*((kv, nv) for kv, nv in zip(values, valuenames)
-                                           if nv != (pk, None)))  # Discard NULL primary key
-            values = [x for x in values if x != (pk, None)] if pk else values
-            keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, v) in enumerate(values)]
-            args.update((n, cast(valuenames[i], v))
-                        for i, (n, (_, v)) in enumerate(zip(keys, values)))
-            cols, vals = ", ".join(k for k, _ in values), ", ".join("%%(%s)s" % n for n in keys)
+                values = [(k, v) for k, v in values if k != pk or v is not None]  # Discard NULL pk
+            keys = ["%sI%s" % (re.sub(r"\W+", "_", column(k)), i) for i, (k, _) in enumerate(values)]
+            args.update((a, cast(k, v)) for i, (a, (k, v)) in enumerate(zip(keys, values)))
+            cols = ", ".join(column(k, sql=True) for k, _ in values)
+            vals = ", ".join("%%(%s)s" % s for s in keys)
             sql += " (%s) VALUES (%s)" % (cols, vals)
-            if pk: sql += " RETURNING %s AS id" % (quote(pk))
+            if pk: sql += " RETURNING %s AS id" % Identifier.quote(pk)
         if "UPDATE" == action:
             sql += " SET "
             for i, (col, val) in enumerate(values):
-                key = "%sU%s" % (re.sub(r"\W+", "_", col), i)
-                sql += (", " if i else "") + "%s = %%(%s)s" % (col, key)
-                args[key] = cast(valuenames[i], val)
+                key = "%sU%s" % (re.sub(r"\W+", "_", column(col)), i)
+                sql += (", " if i else "") + "%s = %%(%s)s" % (column(col, sql=True), key)
+                args[key] = cast(col, val)
         if where:
             sql += " WHERE "
             for i, clause in enumerate(where):
@@ -177,7 +208,7 @@ class Queryable(api.Queryable):
                     op = {"=": "IS", "!=": "IS NOT", "<>": "IS NOT"}.get(op, op)
                     sql += (" AND " if i else "") + "%s %s NULL" % (col, op)
                 else:
-                    args[key] = cast(wherenames[i], val)
+                    args[key] = val
                     sql += (" AND " if i else "") + "%s %s %%(%s)s" % (col, op, key)
         if group:
             sql += " GROUP BY " + group
@@ -228,6 +259,24 @@ class Queryable(api.Queryable):
             self._structure = {}  # Avoid recursion on first query
             self._structure.update(query_schema(self, keys=True))
 
+
+    def _match_name(self, name, table=None):
+        """
+        Returns proper-cased name from schema lookup, or same value if no match.
+
+        @parma   name     name of table/view or field, from data object or property
+        @param   table    name of table to match field for, if not matching table name
+        """
+        container = self._structure.get(table, {}).get("fields") if table else self._structure
+        if name not in container or {}:  # Check for case differences
+            namelc = name.lower()
+            if namelc in container:      # Normal lower-case name present
+                name = namelc
+            elif namelc == name:         # Name from data is lowercase, check for single cased
+                variants = [n for n in container if n.lower() == namelc]
+                if len(variants) == 1:
+                    name = variants[0]
+        return name
 
 
 class Database(api.Database, Queryable):

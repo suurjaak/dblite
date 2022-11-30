@@ -8,10 +8,11 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    28.11.2022
+@modified    30.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
+import inspect
 import logging
 import os
 import re
@@ -19,7 +20,7 @@ import sqlite3
 import sys
 import threading
 
-from six import binary_type, integer_types, string_types
+from six import binary_type, integer_types, string_types, text_type
 
 from .. import api, util
 
@@ -90,11 +91,17 @@ class Queryable(api.Queryable):
         def argcount(x): return len(x) if isinstance(x, (list, set, tuple)) else 1
         def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
 
+        def column(val, sql=False):
+            """Returns column name from string/property, quoted if object and `sql`."""
+            if inspect.isdatadescriptor(val): val = util.nameify(val, quote if sql else None, table)
+            return val if isinstance(val, string_types) else text_type(val)
+
         action = action.upper()
+        where, group, order, limit, values = (() if x is None else x
+                                              for x in (where, group, order, limit, values))
         tablesql = util.nameify(table, quote)
         cols   = ", ".join(util.nameify(x, quote, table) for x in listify(cols)) or "*"
-        group  = ", ".join(util.nameify(x, quote, table) for x in listify(group) if x is not None)
-        where  = [where] if isinstance(where, string_types) else where
+        group  = ", ".join(util.nameify(x, quote, table) for x in listify(group))
         where  = util.keyvalues(where, quote)
         order  = [order] if isinstance(order, string_types) else order
         order  = [order] if isinstance(order, (list, tuple)) \
@@ -110,15 +117,16 @@ class Queryable(api.Queryable):
         if kwargs and action in ("INSERT", ):                   values += list(kwargs.items())
 
         if "INSERT" == action:
-            keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, _) in enumerate(values)]
+            keys = ["%sI%s" % (re.sub(r"\W+", "_", column(k)), i) for i, (k, _) in enumerate(values)]
             args.update((n, cast(k, v)) for n, (k, v) in zip(keys, values))
-            cols, vals = ", ".join(k for k, _ in values), ", ".join(":%s" % n for n in keys)
+            cols = ", ".join(column(k, sql=True) for k, _ in values)
+            vals = ", ".join(":%s" % n for n in keys)
             sql += " (%s) VALUES (%s)" % (cols, vals)
         if "UPDATE" == action:
             sql += " SET "
             for i, (col, val) in enumerate(values):
-                key = "%sU%s" % (re.sub(r"\W+", "_", col), i)
-                sql += (", " if i else "") + "%s = :%s" % (col, key)
+                key = "%sU%s" % (re.sub(r"\W+", "_", column(col)), i)
+                sql += (", " if i else "") + "%s = :%s" % (column(col, sql=True), key)
                 args[key] = cast(col, val)
         if where:
             sql += " WHERE "
