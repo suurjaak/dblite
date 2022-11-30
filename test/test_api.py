@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    28.11.2022
+@modified    30.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -250,6 +250,9 @@ class TestAPI(unittest.TestCase):
             for where in (example, list(example.items())):
                 self.assertEqual(obj.fetchone(table, where=where), example,
                                  "Unexpected value from %s.select(where=%s)." % (label(obj), where))
+            where = {Column(k): v for k, v in example.items()}
+            self.assertEqual(obj.fetchone(table, where=where), example,
+                             "Unexpected value from %s.select(where=%s)." % (label(obj), where))
 
         logger.info("Verifying SELECT LIMIT.")
         for table, cols in self.TABLES.items():
