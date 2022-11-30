@@ -15,6 +15,7 @@ Released under the MIT License.
 ------------------------------------------------------------------------------
 """
 import collections
+import contextlib
 import copy
 import logging
 import os
@@ -92,19 +93,20 @@ class TestAPI(unittest.TestCase):
     def test_api(self):
         """Tests dblite API."""
         for i, (engine, (opts, kwargs)) in enumerate(self._connections.items()):
-            if i: logger.info("-" * 60)
-            logger.info("Verifying dblite API for %s.", engine)
-            self.verify_general_api(opts, kwargs, engine)
-            self.verify_query_api(dblite)
-            dblite.close()
-            with dblite.init() as db:
-                self.verify_query_api(db)
-            with dblite.transaction() as tx:
-                self.verify_query_api(tx)
-            self.verify_query_args(dblite)
-            self.verify_transactions()
-            self.verify_exclusive_transactions()
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
+            with self.subTest(engine) if hasattr(self, "subTest") else contextlib.nested():  # Py3/2
+                if i: logger.info("-" * 60)
+                logger.info("Verifying dblite API for %s.", engine)
+                self.verify_general_api(opts, kwargs, engine)
+                self.verify_query_api(dblite)
+                dblite.close()
+                with dblite.init() as db:
+                    self.verify_query_api(db)
+                with dblite.transaction() as tx:
+                    self.verify_query_api(tx)
+                self.verify_query_args(dblite)
+                self.verify_transactions()
+                self.verify_exclusive_transactions()
 
 
     def verify_general_api(self, opts, kwargs, engine):

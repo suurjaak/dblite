@@ -164,18 +164,20 @@ class TestORM(unittest.TestCase):
         """Tests support for object-relational mapping."""
         logger.info("Verifying Object-Relational Mapping support.")
 
-        for engine, (opts, kwargs) in self._connections.items():
-            logger.info("Verifying Object-Relational Mapping support for %s.", engine)
-            sql = ";".join(self.SCHEMA_CLEANUP + self.SCHEMA)
-            dblite.init(opts, **kwargs).executescript(sql % dict(pktype=self.PKTYPES[engine]))
-            self.verify_class(engine)
-            self.verify_slots(engine)
-            self.verify_slotsdict(engine)
-            self.verify_namedtuple(engine)
-            self.verify_quote(engine)
-            dblite.executescript(";".join(self.SCHEMA_CLEANUP))
-            dblite.close()
+        for i, (engine, (opts, kwargs)) in enumerate(self._connections.items()):
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
+            with self.subTest(engine) if hasattr(self, "subTest") else contextlib.nested():  # Py3/2
+                if i: logger.info("-" * 60)
+                logger.info("Verifying Object-Relational Mapping support for %s.", engine)
+                sql = ";".join(self.SCHEMA_CLEANUP + self.SCHEMA)
+                dblite.init(opts, **kwargs).executescript(sql % dict(pktype=self.PKTYPES[engine]))
+                self.verify_class(engine)
+                self.verify_slots(engine)
+                self.verify_slotsdict(engine)
+                self.verify_namedtuple(engine)
+                self.verify_quote(engine)
+                dblite.executescript(";".join(self.SCHEMA_CLEANUP))
+                dblite.close()
 
 
     def verify_class(self, engine):

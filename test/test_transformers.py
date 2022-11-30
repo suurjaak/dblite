@@ -11,14 +11,14 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     22.11.2022
-@modified    22.11.2022
+@modified    30.11.2022
 ------------------------------------------------------------------------------
 """
 import collections
+import contextlib
 import datetime
 import json
 import logging
-import os
 import unittest
 
 import dblite
@@ -79,23 +79,18 @@ class TestTransformers(unittest.TestCase):
         dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
 
 
-    def tearDown(self):
-        """Deletes temoorary files."""
-        try: os.remove(self._path)
-        except Exception: pass
-        super(TestTransformers, self).tearDown()
-
-
     def test_transformers(self):
         """Tests adapters and converters."""
         logger.info("Verifying transformer functions.")
-        for engine, (opts, kwargs) in self._connections.items():
-            dblite.init(opts, **kwargs)
-            dblite.register_adapter(json.dumps, dict)
-            dblite.register_converter(json.loads, "JSON")
-            self.verify_transformers(engine)
-            dblite.close()
+        for i, (engine, (opts, kwargs)) in enumerate(self._connections.items()):
             dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
+            with self.subTest(engine) if hasattr(self, "subTest") else contextlib.nested():  # Py3/2
+                if i: logger.info("-" * 60)
+                dblite.init(opts, **kwargs)
+                dblite.register_adapter(json.dumps, dict)
+                dblite.register_converter(json.loads, "JSON")
+                self.verify_transformers(engine)
+                dblite.close()
 
 
     def verify_transformers(self, engine):
