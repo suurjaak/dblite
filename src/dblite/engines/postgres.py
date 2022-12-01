@@ -68,7 +68,7 @@ class Identifier(object):
 
 class Queryable(api.Queryable):
 
-    # Recognized binary operators for makeSQL
+    ## Recognized binary operators for makeSQL()
     OPS = ("!=", "!~", "!~*", "#", "%", "&", "*", "+", "-", "/", "<", "<<",
            "<=", "<>", "<@", "=", ">", ">=", ">>", "@>", "^", "|", "||", "&&", "~",
            "~*", "ANY", "ILIKE", "IN", "IS", "IS NOT", "LIKE", "NOT ILIKE", "NOT IN",

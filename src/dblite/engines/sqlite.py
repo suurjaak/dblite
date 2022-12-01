@@ -46,6 +46,7 @@ RESERVED_KEYWORDS = [
 
 class Queryable(api.Queryable):
 
+    ## Recognized binary operators for makeSQL()
     OPS = ["||", "*", "/", "%", "+", "-", "<<", ">>", "&", "|", "<", "<=", ">",
            ">=", "=", "==", "!=", "<>", "IS", "IS NOT", "IN", "NOT IN", "LIKE",
            "GLOB", "MATCH", "REGEXP", "AND", "OR"]

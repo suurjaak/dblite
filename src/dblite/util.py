@@ -180,7 +180,7 @@ def load_modules():
 
 def nameify(val, namefmt=None, parent=None):
     """
-    Returns value as table or column name string, for use in SQL statements.
+    Returns value as table or column name string.
 
     @param   val      a primitive like string, or a named object like a class,
                       or a class property or member or data descriptor

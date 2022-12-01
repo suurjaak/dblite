@@ -49,7 +49,7 @@ def init(opts=None, engine=None, **kwargs):
 def fetchall(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     """
     Convenience wrapper for database SELECT and fetch all.
-    Arguments have the same meaning as in `select()`.
+    Arguments have the same meaning as in select().
     """
     return init().fetchall(table, cols, where, group, order, limit, **kwargs)
 
@@ -57,7 +57,7 @@ def fetchall(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
 def fetchone(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     """
     Convenience wrapper for database SELECT and fetch one.
-    Arguments have the same meaning as in `select()`.
+    Arguments have the same meaning as in select().
     """
     return init().fetchone(table, cols, where, group, order, limit, **kwargs)
 
@@ -66,8 +66,8 @@ def insert(table, values=(), **kwargs):
     """
     Convenience wrapper for database INSERT, returns inserted row ID.
     Keyword arguments are added to VALUES.
-    `table` argument has the same meaning as in `select()`.
-    Column names can be data-class properies as in `select()`.
+    `table` argument has the same meaning as in select().
+    Column names can be data-class properies as in select().
 
     @param   values  column values to insert, as dict or a sequence of key-value tuples
                      or a data object
@@ -104,8 +104,8 @@ def select(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
 def update(table, values, where=(), **kwargs):
     """
     Convenience wrapper for database UPDATE, returns affected row count.
-    Arguments have the same meaning as in `select()`.
-    Column names can be data-class properies as in `select()`.
+    Arguments have the same meaning as in select().
+    Column names can be data-class properies as in select().
 
     @param   values  column values to set, as dict or a sequence of key-value tuples
                      or a data object
@@ -116,7 +116,7 @@ def update(table, values, where=(), **kwargs):
 def delete(table, where=(), **kwargs):
     """
     Convenience wrapper for database DELETE, returns affected row count.
-    Arguments have the same meaning as in `select()`.
+    Arguments have the same meaning as in select().
     """
     return init().delete(table, where, **kwargs)
 
@@ -429,7 +429,7 @@ class Rollback(Exception):
 
 
 # ---------------------------------- detail ----------------------------------
-
+# \cond HIDDENSYMBOLS
 class Engines(object):
     """Database engine broker."""
 
@@ -518,7 +518,7 @@ class TypeCursor(object):
                            "Returning dictionary.\n%s", self.__cls, "\n".join(map(repr, errors)))
             self.__logged = True
         return result
-
+# \endcond
 
 
 __all__ = [

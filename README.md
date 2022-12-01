@@ -63,7 +63,7 @@ with dblite.transaction(commit=False) as tx:
     tx.commit()  # Commits uncommitted actions
     tx.insert("test", val="will be rolled back")
     tx.rollback()  # Rolls back uncommitted actions
-    tx.insert("test", val="will roll back automatically: no autocommit")
+    tx.insert("test", val="will be rolled back automatically by Transaction")
 ```
 
 Queries directly on the Database object use autocommit mode.
@@ -206,7 +206,7 @@ dblite.fetchall("test", limit=(None, 10))
 
 ### Name quoting
 
-Table and column names are not quoted automatically. Names with whitespace
+Table and column name strings are not quoted automatically. Names with whitespace
 or non-alphanumeric characters or reserved words can be quoted with `Database.quote()`
 and `Transaction.quote()`:
 
@@ -220,6 +220,9 @@ with dblite.init("my.sqlite") as db:
 ```
 
 Note that in Postgres, quoted identifiers are case-sensitive.
+
+Table and column names from data classes and class members *are* quoted
+automatically if their values need escaping.
 
 
 Adapters and converters
@@ -326,8 +329,7 @@ Device.__name__ = "devices"  # cls.__name__ will be used as table name
 
 dblite.init(":memory:").executescript(schema)
 
-device = Device()
-device.name = "lidar"
+device = Device(name="lidar")
 device.id = dblite.insert(Device, device)
 
 device.name = "solid-state lidar"
@@ -367,9 +369,6 @@ for device in dblite.fetchall(Device, order=Device.name):
 
 dblite automatically quotes table and column names in queries when using objects as arguments.
 
-In Postgres, it looks up schema definition from the database to ensure properly cased
-names in queries, as cased names for Postgres tables and columns must use the declared form.
-
 ```python
 schema = 'CREATE TABLE "restaurant bookings" ("group" TEXT, "table" TEXT, "daTe" TIMESTAMP)'
 Booking = collections.namedtuple("_", ("group", "table", "date"))
@@ -385,6 +384,9 @@ dblite.insert(Booking, booking2)
 for booking in dblite.fetchall(Booking, order=Booking.date):
     print(booking.date, booking.group, booking.table)
 ```
+
+In Postgres, schema definition is looked up from the database to ensure properly cased
+names in queries, as cased names for Postgres tables and columns must use the declared form.
 
 For more thorough examples on using objects, see [test/test_orm.py](test/test_orm.py).
 
