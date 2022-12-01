@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     28.11.2022
-@modified    30.11.2022
+@modified    01.12.2022
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -144,7 +144,8 @@ def keyvalues(obj, namefmt=None):
     @param   obj      mapping or namedtuple or object with attributes or slots
     @param   namefmt  function(key) to apply on extracted keys, if any
     @return           [(key, value)] if available,
-                      else original argument as single item in list if not already a list
+                      else original argument as list if list/set/tuple,
+                      else list with a single item
     """
     namefmt = namefmt if callable(namefmt) else lambda x: x
     if is_namedtuple(obj):
@@ -159,7 +160,7 @@ def keyvalues(obj, namefmt=None):
         return [(namefmt(k), v) for k, v in vars(obj).items()]       # Plain object
     if isinstance(obj, six.moves.collections_abc.Mapping):
         return list(obj.items())                                     # dictionary
-    return list(obj) if isinstance(obj, (list, tuple)) else [obj]
+    return list(obj) if isinstance(obj, (list, set, tuple)) else [obj]
 
 
 def load_modules():

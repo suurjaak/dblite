@@ -237,11 +237,13 @@ class TestAPI(unittest.TestCase):
         logger.info("Verifying SELECT columns.")
         for table, cols in self.TABLES.items():
             for col in (", ".join(sorted(c["name"] for c in cols)),
-                        [Column(c["name"]) for c in cols], "*",
+                        [Column(c["name"]) for c in cols],
+                        "*",
+                        {c["name"]: 0 for c in cols},
                         [c["name"] for c in cols], [c["name"] for c in cols][::2]):
                 row = obj.fetchone(table, col)
-                received = set(row) if isinstance(col, list) else ", ".join(sorted(row))
-                expected = set(map(str, col)) if isinstance(col, list) else \
+                received = set(row) if isinstance(col, (dict, list)) else ", ".join(sorted(row))
+                expected = set(map(str, col)) if isinstance(col, (dict, list)) else \
                            ", ".join(sorted(c["name"] for c in cols)) if col == "*" else col
                 self.assertEqual(received, expected,
                                  "Unexpected value from %s.select(cols)." % label(obj))
@@ -303,6 +305,8 @@ class TestAPI(unittest.TestCase):
                 ([Column("val"), "id DESC"],      [("val", False), ("id",  True)]),
                 (["val", (Column("id"), "DESC")], [("val", False), ("id",  True)]),
                 (["val DESC", ("id", True)],      [("val", True),  ("id",  True)]),
+                (collections.OrderedDict([("val", False), ("id", True)]), 
+                                                  [("val", False), ("id",  True)]),
             ]
             for order, sorts in ORDERS:
                 logger.debug("Verifying ORDER BY %r", order)

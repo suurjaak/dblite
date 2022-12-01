@@ -49,7 +49,7 @@ def init(opts=None, engine=None, **kwargs):
 def fetchall(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     """
     Convenience wrapper for database SELECT and fetch all.
-    Keyword arguments are added to WHERE.
+    Arguments have the same meaning as in `select()`.
     """
     return init().fetchall(table, cols, where, group, order, limit, **kwargs)
 
@@ -57,7 +57,7 @@ def fetchall(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
 def fetchone(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     """
     Convenience wrapper for database SELECT and fetch one.
-    Keyword arguments are added to WHERE.
+    Arguments have the same meaning as in `select()`.
     """
     return init().fetchone(table, cols, where, group, order, limit, **kwargs)
 
@@ -66,6 +66,11 @@ def insert(table, values=(), **kwargs):
     """
     Convenience wrapper for database INSERT, returns inserted row ID.
     Keyword arguments are added to VALUES.
+    `table` argument has the same meaning as in `select()`.
+    Column names can be data-class properies as in `select()`.
+
+    @param   values  column values to insert, as dict or a sequence of key-value tuples
+                     or a data object
     """
     return init().insert(table, values, **kwargs)
 
@@ -74,14 +79,21 @@ def select(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     """
     Convenience wrapper for database SELECT, returns database cursor.
 
-    @param   table   table name or expression to select from
+    Column names in `where/cols/group/order` arguments can be data-class properties,
+    like `order=MyClass.my_attribute`.
+
+    @param   table   table/view name or expression to select from,
+                     or a data class with `__name__` used for table name
     @param   where   columns or expressions to select by, as dict or a sequence
-                     of key-value tuples; value can specify operator
+                     of key-value tuples or a data object; value can specify operator
                      e.g. `{"mycolumn": ("IN", [1, 2, 3])}`
     @param   cols    columns to select if not all, as string or a sequence of stringables
+                     or a dict with stringable keys
     @param   group   columns to GROUP BY, as string or a sequence of stringables
+                     or a dict with stringable keys
     @param   order   columns to ORDER BY, as string, a sequence of stringables,
-                     or a combination of column names and direction flags
+                     or a combination of column names and direction flags,
+                     or a dict with column name keys and direction flag values
     @param   limit   LIMIT .. OFFSET.. values, as integer or a sequence of integers;
                      None or -1 disables LIMIT or OFFSET
     @param   kwargs  additional arguments added to WHERE clause
@@ -92,7 +104,11 @@ def select(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
 def update(table, values, where=(), **kwargs):
     """
     Convenience wrapper for database UPDATE, returns affected row count.
-    Keyword arguments are added to WHERE.
+    Arguments have the same meaning as in `select()`.
+    Column names can be data-class properies as in `select()`.
+
+    @param   values  column values to set, as dict or a sequence of key-value tuples
+                     or a data object
     """
     return init().update(table, values, where, **kwargs)
 
@@ -100,7 +116,7 @@ def update(table, values, where=(), **kwargs):
 def delete(table, where=(), **kwargs):
     """
     Convenience wrapper for database DELETE, returns affected row count.
-    Keyword arguments are added to WHERE.
+    Arguments have the same meaning as in `select()`.
     """
     return init().delete(table, where, **kwargs)
 

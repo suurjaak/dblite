@@ -1,9 +1,10 @@
 CHANGELOG
 =========
 
-1.2.0, 2022-11-30
+1.2.0, 2022-12-01
 -----------------
 - support data classes and objects in query arguments and results
+- support dictionaries for column/group/order arguments
 - return SQLite rows as OrderedDict in Py2
 - log generated SQL at half DEBUG level
 

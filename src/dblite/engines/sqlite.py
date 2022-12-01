@@ -88,8 +88,11 @@ class Queryable(api.Queryable):
                     # ("col", ("SQL with ? placeholders", val))
                     col, val, op = "%s = %s" % (col, val[0]), listify(val[1]), "EXPR"
             return col, op, val, key
-        def argcount(x): return len(x) if isinstance(x, (list, set, tuple)) else 1
-        def listify(x) : return x if isinstance(x, (list, tuple)) else [x]
+        def argcount(x)  : return len(x) if isinstance(x, (list, set, tuple)) else 1
+        def listify(x)   : return x if isinstance(x, (list, tuple)) else \
+                                  list(x) if isinstance(x, set) else [x]
+        def keylistify(x): return x if isinstance(x, (list, tuple)) else \
+                                  list(x) if isinstance(x, (dict, set)) else [x]
 
         def column(val, sql=False):
             """Returns column name from string/property, quoted if object and `sql`."""
@@ -100,10 +103,10 @@ class Queryable(api.Queryable):
         where, group, order, limit, values = (() if x is None else x
                                               for x in (where, group, order, limit, values))
         tablesql = util.nameify(table, quote)
-        cols   = ", ".join(util.nameify(x, quote, table) for x in listify(cols)) or "*"
-        group  = ", ".join(util.nameify(x, quote, table) for x in listify(group))
+        cols   = ", ".join(util.nameify(x, quote, table) for x in keylistify(cols)) or "*"
+        group  = ", ".join(util.nameify(x, quote, table) for x in keylistify(group))
         where  = util.keyvalues(where, quote)
-        order  = [order] if isinstance(order, string_types) else order
+        order  = list(order.items()) if isinstance(order, dict) else listify(order)
         order  = [order] if isinstance(order, (list, tuple)) \
                  and len(order) == 2 and isinstance(order[1], bool) else order
         limit  = [limit] if isinstance(limit, string_types + integer_types) else limit
@@ -161,7 +164,7 @@ class Queryable(api.Queryable):
             sql += " GROUP BY " + group
         if order:
             sql += " ORDER BY "
-            for i, col in enumerate(listify(order)):
+            for i, col in enumerate(order):
                 name = util.nameify(col[0] if isinstance(col, (list, tuple)) else col, quote, table)
                 sort = col[1] if name != col and isinstance(col, (list, tuple)) and len(col) > 1 \
                        else ""
