@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    30.11.2022
+@modified    01.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -249,16 +249,26 @@ class TestAPI(unittest.TestCase):
         logger.info("Verifying SELECT WHERE.")
         for table, cols in self.TABLES.items():
             example = self.DATAS[table][0]
-            for where in (example, list(example.items())):
+            WHERES = [
+                example,
+                list(example.items()),
+                {Column(k): v for k, v in example.items()},
+                [("id", "IN", [example["id"]])],
+                "id = %s" % example["id"],
+                [("val", ("!=", None)), ("EXPR", ("id >= ? OR id <= ?", [example["id"]]*2))],
+                {"id": example["id"], "val": ("NOT IN", [])},
+                [("id", example["id"]), ("val", "LIKE", "%%%s%%" % example["val"])],
+                [("id", "=", example["id"]), ("LENGTH(val)", len(example["val"]))],
+            ]
+            for where in WHERES:
+                logger.debug("Verifying WHERE %r", (where, ))
                 self.assertEqual(obj.fetchone(table, where=where), example,
                                  "Unexpected value from %s.select(where=%s)." % (label(obj), where))
-            where = {Column(k): v for k, v in example.items()}
-            self.assertEqual(obj.fetchone(table, where=where), example,
-                             "Unexpected value from %s.select(where=%s)." % (label(obj), where))
 
         logger.info("Verifying SELECT LIMIT.")
         for table, cols in self.TABLES.items():
             for limit in (0, 2, (2, 1), (-1, 1), (None, 1), (None, None), (-1, None)):
+                logger.debug("Verifying LIMIT %r", (limit, ))
                 LIMIT = next(v for v in [limit if isinstance(limit, int) else limit[0]])
                 LIMIT = len(self.DATAS[table]) if LIMIT in (-1, None) else LIMIT
                 OFFSET = (0 if isinstance(limit, int) or limit[1] is None or limit[1] < 0 else limit[1])
