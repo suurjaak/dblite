@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    30.11.2022
+@modified    01.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -99,7 +99,7 @@ class Queryable(api.Queryable):
             if field and "array" == field["type"]:
                 return list(listify(val)) # Values for array fields must be lists
             elif field and val is not None:
-                return self._adapt_value(val, field["type"])
+                val = self._adapt_value(val, field["type"])
             if isinstance(val, (list, set)):
                 return tuple(val) # Sequence parameters for IN etc must be tuples
             return val
@@ -114,7 +114,7 @@ class Queryable(api.Queryable):
             key = "%sW%s" % (re.sub(r"\W+", "_", col), i)
             if "EXPR" == col.upper() and pure:
                 # ("EXPR", ("SQL", val))
-                col, op, val, key = val[0], "EXPR", val[1], "EXPRW%s" % i
+                colsql, op, val, key = val[0], "EXPR", val[1], "EXPRW%s" % i
             elif col.count("?") == argcount(val) and pure:
                 # ("any SQL with ? placeholders", val)
                 op, val, key = "EXPR", listify(val), "EXPRW%s" % i
@@ -126,9 +126,9 @@ class Queryable(api.Queryable):
                     op, val = tmp, val[1]
                 elif val[0].count("?") == argcount(val[1]):
                     # ("col", ("SQL with ? placeholders", val))
-                    col, val, op = "%s = %s" % (col, val[0]), listify(val[1]), "EXPR"
+                    colsql, val, op = "%s = %s" % (col, val[0]), listify(val[1]), "EXPR"
             if op in ("IN", "NOT IN") and not val: # IN -> ANY, to avoid error on empty array
-                col = "%s%s = ANY('{}')" % ("" if "IN" == op else "NOT ", col)
+                colsql = "%s%s = ANY('{}')" % ("" if "IN" == op else "NOT ", colsql)
                 op = "EXPR"
             return colsql, op, cast(col, val), key
         def argcount(x): return len(x) if isinstance(x, (list, set, tuple)) else 1
