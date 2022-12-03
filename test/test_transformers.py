@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     22.11.2022
-@modified    30.11.2022
+@modified    03.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -71,7 +71,7 @@ class TestTransformers(unittest.TestCase):
             return
         opts, kwargs = self.ENGINES["postgres"]
         try:
-            dblite.init(opts, **kwargs)
+            dblite.init(opts, **kwargs).close()
         except psycopg2.Error as e:
             logger.warning("Skip testing postgres, connection failed with:\n%s", e)
         else:
