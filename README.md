@@ -12,6 +12,7 @@ Full API documentation available at https://suurjaak.github.io/dblite.
 - [Queries](#queries)
   - [Name quoting](#name-quoting)
 - [Adapters and converters](#adapters-and-converters)
+- [Row factories](#row-factories)
 - [Object-relational mapping](#object-relational-mapping)
 - [SQLite](#sqlite)
 - [Postgres](#postgres)
@@ -241,6 +242,35 @@ dblite.executescript("CREATE TABLE test (id INTEGER PRIMARY KEY, data JSON)")
 dblite.insert("test", id=1, data={"some": {"nested": ["data", 1, 2]}})
 dblite.fetchone("test")  # `data` is auto-converted to Python dictionary
 ```
+
+
+Row factories
+-------------
+
+A custom row factory can be specified, to return results as desired type instead of dictionaries.
+
+```python
+def kvfactory(cursor, row):  # Returns row as [(colname, value), ].
+    return list(zip([c[0] for c in cursor.description], row))
+
+dblite.init(":memory:")
+dblite.register_row_factory(kvfactory)
+dblite.executescript("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
+for row in dblite.select("sqlite_master"):
+    print(row)  # Prints [("type", "table"), ("name", "test"), ..]
+```
+
+Row factory can also be specified per Database:
+
+```python
+db = dblite.init(":memory:")
+db.row_factory = lambda cursor, row: row
+db.executescript("CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)")
+for row in db.select("sqlite_master"):
+    print(row)  # Prints ("table", "test", ..)
+```
+
+Database row factory overrides the globally registered factory, if any.
 
 
 Object-relational mapping
@@ -499,6 +529,7 @@ API
 | `dblite.transaction()`                  | returns `dblite.Transaction` context manager
 | `dblite.register_adapter()`             | registers function to auto-adapt given Python types to database types in query parameters
 | `dblite.register_converter()`           | registers function to auto-convert given database types to Python in query results
+| `dblite.register_row_factory()`         | registers function to produce query results as custom type
 |                                         | |
 | **dblite.Database**                     | |
 | `Database.fetchall()`                   | runs `SELECT`, returns all rows
@@ -514,6 +545,7 @@ API
 | `Database.close()`                      | closes the database and all pending transactions, if open
 | `Database.closed`                       | whether database is not open
 | `Database.cursor`                       | database engine cursor object
+| `Database.row_factory`                  | custom row factory, as `function(cursor, row tuple)`
 |                                         | |
 | **dblite.Transaction**                  | |
 | `Transaction.fetchall()`                | runs `SELECT`, returns all rows

@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    30.11.2022
+@modified    04.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -218,10 +218,13 @@ class Database(api.Database, Queryable):
                          like `detect_types=sqlite3.PARSE_COLNAMES`
         """
         super(Database, self).__init__()
-        self.connection = None
-        self.path       = opts
-        self._kwargs    = kwargs
-        self._txs       = []  # [Transaction, ]
+        self.connection   = None
+        self.path         = opts
+        self._kwargs      = kwargs
+        rowtype = dict if sys.version_info > (3, ) else collections.OrderedDict
+        self._def_factory = lambda cursor, row: rowtype(sqlite3.Row(cursor, row))
+        self._row_factory = None
+        self._txs         = []  # [Transaction, ]
 
 
     def __enter__(self):
@@ -270,8 +273,7 @@ class Database(api.Database, Queryable):
             try: os.makedirs(os.path.dirname(self.path))
             except Exception: pass
         conn = sqlite3.connect(self.path, **args)
-        rowtype = dict if sys.version_info > (3, ) else collections.OrderedDict
-        conn.row_factory = lambda cursor, row: rowtype(sqlite3.Row(cursor, row))
+        conn.row_factory = self._def_factory if self._row_factory is None else self._row_factory
         self.connection = conn
 
 
@@ -299,6 +301,26 @@ class Database(api.Database, Queryable):
     def cursor(self):
         """Database engine cursor object, or `None` if closed."""
         return self.connection.cursor() if self.connection else None
+
+
+    @property
+    def row_factory(self):
+        """The custom row factory, if any, as `function(cursor, row tuple)`."""
+        return self._row_factory
+
+
+    @row_factory.setter
+    def row_factory(self, row_factory):
+        """
+        Sets custom row factory, as `function(cursor, row tuple)`, or `None` to reset to default.
+
+       `cursor.description` is a sequence of 7-element tuples, as `(column name, None, None, ..)`.
+        """
+        if row_factory == self._row_factory: return
+        self._row_factory = row_factory
+        if self.connection:
+            factory = self._def_factory if self._row_factory is None else self._row_factory
+            self.connection.row_factory = factory
 
 
     def transaction(self, commit=True, exclusive=True, **kwargs):

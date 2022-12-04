@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    30.11.2022
+@modified    04.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -199,6 +199,21 @@ def register_converter(transformer, typenames, engine=None):
     Engines.get(engine).register_converter(transformer, typenames)
 
 
+def register_row_factory(row_factory, engine=None):
+    """
+    Registers function to produce query results as custom type.
+
+    Registration is global per engine; affects future connections and the current default database.
+
+    @param   row_factory  function(cursor, row tuple) returning row as desired type
+                          or `None` to reset to default. `cursor.description` is a sequence of
+                          7-element tuples, as `(column name, ..engine-specific elements..)`.
+    @param   engine       database engine to register for, defaults to first initialized
+    """
+    Engines.register_row_factory(row_factory, engine)
+
+
+
 class Queryable(object):
     """Abstract base for Database and Transaction."""
 
@@ -359,6 +374,23 @@ class Database(Queryable):
         """
         raise NotImplementedError()
 
+    @property
+    def row_factory(self):
+        """The custom row factory, if any, as `function(cursor, row tuple)`."""
+        raise NotImplementedError()
+
+    @row_factory.setter
+    def row_factory(self, row_factory):
+        """
+        Sets custom row factory, as `function(cursor, row tuple)`, or `None` to reset to default.
+
+       `cursor.description` is a sequence of 7-element tuples,
+        first element being column name and the rest engine-specific.
+
+        Overrides globally registered row factory, if any.
+        """
+        raise NotImplementedError()
+
 
 class Transaction(Queryable):
     """
@@ -439,6 +471,9 @@ class Engines(object):
     ## Default Database instances as {engine name: Database}
     DATABASES = collections.OrderedDict()
 
+    ## Row factory functions as {engine name: function(cursor, row)}
+    ROW_FACTORIES = {}
+
     @classmethod
     def factory(cls, opts, engine=None, **kwargs):
         """
@@ -465,6 +500,8 @@ class Engines(object):
             engine = next(n for n, m in cls.MODULES.items() if m.autodetect(opts))
         db = cls.DATABASES[engine] if opts is None else cls.MODULES[engine].Database(opts, **kwargs)
         cls.DATABASES.setdefault(engine, db)
+        if cls.ROW_FACTORIES.get(engine) and db.closed and db.row_factory is None:
+            db.row_factory = cls.ROW_FACTORIES[engine]
         db.open()
         return db
 
@@ -479,6 +516,14 @@ class Engines(object):
     def populate(cls):
         """Populates Database engines, if not already populated."""
         if cls.MODULES is None: cls.MODULES = util.load_modules()
+
+    @classmethod
+    def register_row_factory(cls, row_factory, engine):
+        """Registers row factory for engine, and current engine default database if any."""
+        engine = engine.lower() if engine else next(iter(cls.DATABASES))
+        if row_factory is None: cls.ROW_FACTORIES.pop(engine, None)
+        else: cls.ROW_FACTORIES[engine] = row_factory
+        if cls.DATABASES.get(engine): cls.DATABASES[engine].row_factory = row_factory
 
 
 class TypeCursor(object):
@@ -525,4 +570,5 @@ __all__ = [
     "Database", "Rollback", "Transaction",
     "init", "fetchall", "fetchone", "insert", "select", "update", "delete", "execute",
     "executescript", "close", "transaction", "register_adapter", "register_converter",
+    "register_row_factory",
 ]

@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    01.12.2022
+@modified    04.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -260,7 +260,10 @@ class Queryable(api.Queryable):
         """Populates table structure from database if uninitialized or forced."""
         if self._structure is None or force:
             self._structure = {}  # Avoid recursion on first query
-            self._structure.update(query_schema(self, keys=True))
+
+            self.cursor.factory, factory0 = None, self.cursor.factory  # Ensure dict rows
+            try: self._structure.update(query_schema(self, keys=True))
+            finally: self.cursor.factory = factory0
 
 
     def _match_name(self, name, table=None):
@@ -271,11 +274,11 @@ class Queryable(api.Queryable):
         @param   table    name of table to match field for, if not matching table name
         """
         container = self._structure.get(table, {}).get("fields") if table else self._structure
-        if name not in container or {}:  # Check for case differences
+        if name not in (container or {}):  # Check for case differences
             namelc = name.lower()
-            if namelc in container:      # Normal lower-case name present
+            if namelc in container:        # Normal lower-case name present
                 name = namelc
-            elif namelc == name:         # Name from data is lowercase, check for single cased
+            elif namelc == name:           # Name from data is lowercase, check for single cased
                 variants = [n for n in container if n.lower() == namelc]
                 if len(variants) == 1:
                     name = variants[0]
@@ -321,12 +324,13 @@ class Database(api.Database, Queryable):
         """
 
         ## Data Source Name, as URL like `"postgresql://user@host/dbname"`
-        self.dsn        = make_db_url(opts)
-        self._kwargs    = kwargs
-        self._cursor    = None
-        self._cursorctx = None
-        self._txs       = []  # [Transaction, ]
-        self._structure = None  # Database schema as {table or view name: {"fields": {..}, ..}}
+        self.dsn          = make_db_url(opts)
+        self._kwargs      = kwargs
+        self._cursor      = None
+        self._cursorctx   = None
+        self._txs         = []  # [Transaction, ]
+        self._row_factory = None
+        self._structure   = None  # Database schema as {table or view name: {"fields": {..}, ..}}
 
 
     def __enter__(self):
@@ -409,6 +413,25 @@ class Database(api.Database, Queryable):
         return self._cursor
 
 
+    @property
+    def row_factory(self):
+        """The custom row factory, if any, as `function(cursor, row tuple)`."""
+        return self._row_factory
+
+
+    @row_factory.setter
+    def row_factory(self, row_factory):
+        """
+        Sets custom row factory, as `function(cursor, row tuple)`, or `None` to reset to default.
+
+        `cursor.description` is a sequence of 7-element tuples,
+        as `(name, type_code, display_size, internal_size, precision, scale, null_ok)`.
+        """
+        if row_factory == self._row_factory: return
+        self._row_factory = row_factory
+        if self._cursor: self._cursor.factory = row_factory
+
+
     def transaction(self, commit=True, exclusive=False, **kwargs):
         """
         Returns a transaction context manager.
@@ -438,7 +461,7 @@ class Database(api.Database, Queryable):
         @param   lazy        if true, returns a named server-side cursor that fetches rows
                              iteratively in batches; only supports making a single query
         @param   itersize    batch size in rows for server-side cursor
-        @return              psycopg2.extras.RealDictCursor
+        @return              psycopg2 Cursor
         """
         connection = self.POOLS[self].getconn()
         try:
@@ -479,7 +502,7 @@ class Database(api.Database, Queryable):
             if db in cls.POOLS: return
 
             args = minconn, maxconn, db.dsn
-            kwargs.update(cursor_factory=psycopg2.extras.RealDictCursor)
+            kwargs.update(cursor_factory=db._cursor_factory)
             cls.POOLS[db] = psycopg2.pool.ThreadedConnectionPool(*args, **kwargs)
 
 
@@ -495,6 +518,11 @@ class Database(api.Database, Queryable):
                 wrap = lambda x, c, f=transformer: f(x)  # psycopg invokes callback(value, cursor)
                 TYPE = psycopg2.extensions.new_type((oid, ), typename, wrap)
                 psycopg2.extensions.register_type(TYPE)
+
+
+    def _cursor_factory(self, *args, **kwargs):
+        """Returns a new RowFactoryCursor."""
+        return RowFactoryCursor(self._row_factory, *args, **kwargs)
 
 
     def _notify(self, tx):
@@ -646,6 +674,37 @@ class Transaction(api.Transaction, Queryable):
         """
         if self._lazy: return self._db._load_schema(force=force)
         return super(Transaction, self)._load_schema(force=force)
+
+
+
+class RowFactoryCursor(psycopg2.extensions.cursor if psycopg2 else object):
+    """A cursor that generates result rows via given factory callable."""
+
+    def __init__(self, row_factory, *args, **kwargs):
+        self.factory = row_factory
+        super(RowFactoryCursor, self).__init__(*args, **kwargs)
+
+    def fetchone(self):
+        row = super(RowFactoryCursor, self).fetchone()
+        return row if row is None else self.row_factory(row)
+
+    def fetchmany(self, size=None):
+        rows = super(RowFactoryCursor, self).fetchmany(size)
+        return [self.row_factory(row) for row in rows]
+
+    def fetchall(self):
+        rows = super(RowFactoryCursor, self).fetchall()
+        return [self.row_factory(row) for row in rows]
+
+    def __next__(self): return self.row_factory(super(RowFactoryCursor, self).__next__())
+    def next(self):     return self.__next__()
+
+    def row_factory(self, row):
+        """Returns value constructed with custom row factory, or `RealDictRow` if `None`."""
+        if self.factory is not None:
+            return self.factory(self, row)
+        return psycopg2.extras.RealDictRow(zip([x[0] for x in self.description], row))
+
 
 
 def autodetect(opts):
