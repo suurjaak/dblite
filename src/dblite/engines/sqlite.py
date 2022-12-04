@@ -208,6 +208,9 @@ class Database(api.Database, Queryable):
     ## Mutexes for exclusive actions, as {Database instance: lock}
     MUTEX = collections.defaultdict(threading.RLock)
 
+    ## Registered row factory
+    ROW_FACTORY = None
+
 
     def __init__(self, opts=":memory:", **kwargs):
         """
@@ -223,8 +226,8 @@ class Database(api.Database, Queryable):
         self._kwargs      = kwargs
         rowtype = dict if sys.version_info > (3, ) else collections.OrderedDict
         self._def_factory = lambda cursor, row: rowtype(sqlite3.Row(cursor, row))
-        self._row_factory = None
-        self._txs         = []  # [Transaction, ]
+        self._row_factory = None  # None if default, False if explicitly default, or func(cur, row)
+        self._txs         = []    # [Transaction, ]
 
 
     def __enter__(self):
@@ -272,9 +275,10 @@ class Database(api.Database, Queryable):
         if ":memory:" != self.path and not os.path.exists(self.path):
             try: os.makedirs(os.path.dirname(self.path))
             except Exception: pass
-        conn = sqlite3.connect(self.path, **args)
-        conn.row_factory = self._def_factory if self._row_factory is None else self._row_factory
-        self.connection = conn
+        self.connection = sqlite3.connect(self.path, **args)
+        row_factory = self.ROW_FACTORY if self._row_factory is None else self._row_factory
+        if row_factory in (False, None): row_factory = self._def_factory
+        self.connection.row_factory = row_factory
 
 
     def close(self, commit=None):
@@ -306,7 +310,7 @@ class Database(api.Database, Queryable):
     @property
     def row_factory(self):
         """The custom row factory, if any, as `function(cursor, row tuple)`."""
-        return self._row_factory
+        return None if self._row_factory in (False, None) else self._row_factory
 
 
     @row_factory.setter
@@ -316,10 +320,9 @@ class Database(api.Database, Queryable):
 
        `cursor.description` is a sequence of 7-element tuples, as `(column name, None, None, ..)`.
         """
-        if row_factory == self._row_factory: return
-        self._row_factory = row_factory
+        self._row_factory = False if row_factory is None else row_factory
         if self.connection:
-            factory = self._def_factory if self._row_factory is None else self._row_factory
+            factory = self._def_factory if self._row_factory is False else self._row_factory
             self.connection.row_factory = factory
 
 
@@ -529,7 +532,12 @@ def register_converter(transformer, typenames):
     for n in typenames: sqlite3.register_converter(n, transformer)
 
 
+def register_row_factory(row_factory):
+    """Registers custom row factory, as or `None` to reset to default."""
+    Database.ROW_FACTORY = row_factory
+
+
 __all__ = [
     "RESERVED_KEYWORDS", "Database", "Transaction",
-    "autodetect", "quote", "register_adapter", "register_converter",
+    "autodetect", "quote", "register_adapter", "register_converter", "register_row_factory",
 ]

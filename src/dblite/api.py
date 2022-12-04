@@ -471,9 +471,6 @@ class Engines(object):
     ## Default Database instances as {engine name: Database}
     DATABASES = collections.OrderedDict()
 
-    ## Row factory functions as {engine name: function(cursor, row)}
-    ROW_FACTORIES = {}
-
     @classmethod
     def factory(cls, opts, engine=None, **kwargs):
         """
@@ -500,8 +497,6 @@ class Engines(object):
             engine = next(n for n, m in cls.MODULES.items() if m.autodetect(opts))
         db = cls.DATABASES[engine] if opts is None else cls.MODULES[engine].Database(opts, **kwargs)
         cls.DATABASES.setdefault(engine, db)
-        if cls.ROW_FACTORIES.get(engine) and db.closed and db.row_factory is None:
-            db.row_factory = cls.ROW_FACTORIES[engine]
         db.open()
         return db
 
@@ -521,8 +516,7 @@ class Engines(object):
     def register_row_factory(cls, row_factory, engine):
         """Registers row factory for engine, and current engine default database if any."""
         engine = engine.lower() if engine else next(iter(cls.DATABASES))
-        if row_factory is None: cls.ROW_FACTORIES.pop(engine, None)
-        else: cls.ROW_FACTORIES[engine] = row_factory
+        cls.MODULES[engine].register_row_factory(row_factory)
         if cls.DATABASES.get(engine): cls.DATABASES[engine].row_factory = row_factory
 
 

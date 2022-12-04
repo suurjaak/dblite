@@ -308,6 +308,9 @@ class Database(api.Database, Queryable):
     ## Connection pools, as {Database: psycopg2.pool.ConnectionPool}
     POOLS = {}
 
+    ## Registered row factory
+    ROW_FACTORY = None
+
 
     def __init__(self, opts, **kwargs):
         """
@@ -329,8 +332,8 @@ class Database(api.Database, Queryable):
         self._kwargs      = kwargs
         self._cursor      = None
         self._cursorctx   = None
-        self._txs         = []  # [Transaction, ]
-        self._row_factory = None
+        self._txs         = []    # [Transaction, ]
+        self._row_factory = None  # None if default, False if explicitly default, or func(cur, row)
         self._structure   = None  # Database schema as {table or view name: {"fields": {..}, ..}}
 
 
@@ -417,7 +420,7 @@ class Database(api.Database, Queryable):
     @property
     def row_factory(self):
         """The custom row factory, if any, as `function(cursor, row tuple)`."""
-        return self._row_factory
+        return None if self._row_factory in (False, None) else self._row_factory
 
 
     @row_factory.setter
@@ -428,8 +431,7 @@ class Database(api.Database, Queryable):
         `cursor.description` is a sequence of 7-element tuples,
         as `(name, type_code, display_size, internal_size, precision, scale, null_ok)`.
         """
-        if row_factory == self._row_factory: return
-        self._row_factory = row_factory
+        self._row_factory = False if row_factory is None else row_factory
         if self._cursor: self._cursor.factory = row_factory
 
 
@@ -523,7 +525,9 @@ class Database(api.Database, Queryable):
 
     def _cursor_factory(self, *args, **kwargs):
         """Returns a new RowFactoryCursor."""
-        return RowFactoryCursor(self._row_factory, *args, **kwargs)
+        factory = self._row_factory
+        if factory in (False, None): factory = None if factory is False else self.ROW_FACTORY
+        return RowFactoryCursor(factory, *args, **kwargs)
 
 
     def _notify(self, tx):
@@ -683,6 +687,7 @@ class RowFactoryCursor(psycopg2.extensions.cursor if psycopg2 else object):
 
     def __init__(self, row_factory, *args, **kwargs):
         self.factory = row_factory
+        self.rowtype = dict if sys.version_info > (3, ) else collections.OrderedDict
         super(RowFactoryCursor, self).__init__(*args, **kwargs)
 
     def fetchone(self):
@@ -702,10 +707,8 @@ class RowFactoryCursor(psycopg2.extensions.cursor if psycopg2 else object):
 
     def row_factory(self, row):
         """Returns value constructed with custom row factory, or as dict if no factory."""
-        if self.factory is not None:
-            return self.factory(self, row)
-        rowtype = dict if sys.version_info > (3, ) else collections.OrderedDict
-        return rowtype(zip([x[0] for x in self.description], row))
+        if self.factory not in (False, None): return self.factory(self, row)
+        return self.rowtype(zip([x[0] for x in self.description], row))
 
 
 
@@ -871,6 +874,11 @@ def register_converter(transformer, typenames):
     Database.CONVERTERS.update({n: transformer for n in typenames if n not in ("JSON", "JSONB")})
 
 
+def register_row_factory(row_factory):
+    """Registers custom row factory, as or `None` to reset to default."""
+    Database.ROW_FACTORY = row_factory
+
+
 
 if psycopg2:
     try:
@@ -881,5 +889,5 @@ if psycopg2:
 
 __all__ = [
     "RESERVED_KEYWORDS", "Database", "Transaction",
-    "autodetect", "quote", "register_adapter", "register_converter",
+    "autodetect", "quote", "register_adapter", "register_converter", "register_row_factory",
 ]
