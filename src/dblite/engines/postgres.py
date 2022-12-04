@@ -16,6 +16,7 @@ from contextlib import contextmanager
 import inspect
 import logging
 import re
+import sys
 import threading
 
 from six.moves import urllib_parse
@@ -700,10 +701,11 @@ class RowFactoryCursor(psycopg2.extensions.cursor if psycopg2 else object):
     def next(self):     return self.__next__()
 
     def row_factory(self, row):
-        """Returns value constructed with custom row factory, or `RealDictRow` if `None`."""
+        """Returns value constructed with custom row factory, or as dict if no factory."""
         if self.factory is not None:
             return self.factory(self, row)
-        return psycopg2.extras.RealDictRow(zip([x[0] for x in self.description], row))
+        rowtype = dict if sys.version_info > (3, ) else collections.OrderedDict
+        return rowtype(zip([x[0] for x in self.description], row))
 
 
 

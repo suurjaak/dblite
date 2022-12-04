@@ -6,7 +6,7 @@ CHANGELOG
 - support data classes and objects in query arguments and results
 - support dictionaries for column/group/order arguments
 - support custom row factories
-- return SQLite rows as OrderedDict in Py2
+- return rows as OrderedDict in Py2 and dict in Py3 in all engines
 - log generated SQL at half DEBUG level
 
 1.1.0, 2022-11-25
