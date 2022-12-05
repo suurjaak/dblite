@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    04.12.2022
+@modified    05.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -224,6 +224,7 @@ class Database(api.Database, Queryable):
         self.connection   = None
         self.path         = opts
         self._kwargs      = kwargs
+        self._isolevel    = None  # Connection isolation level, None is auto-commit
         rowtype = dict if sys.version_info > (3, ) else collections.OrderedDict
         self._def_factory = lambda cursor, row: rowtype(sqlite3.Row(cursor, row))
         self._row_factory = None  # None if default, False if explicitly default, or func(cur, row)
@@ -276,6 +277,7 @@ class Database(api.Database, Queryable):
             try: os.makedirs(os.path.dirname(self.path))
             except Exception: pass
         self.connection = sqlite3.connect(self.path, **args)
+        self._isolevel = self.connection.isolation_level
         row_factory = self.ROW_FACTORY if self._row_factory is None else self._row_factory
         if row_factory in (False, None): row_factory = self._def_factory
         self.connection.row_factory = row_factory
@@ -345,6 +347,7 @@ class Database(api.Database, Queryable):
     def _notify(self, tx):
         """Notifies database of transaction closing."""
         if tx in self._txs: self._txs.remove(tx)
+        if not self._txs and self.connection: self.connection.isolation_level = self._isolevel
 
 
 
@@ -369,7 +372,6 @@ class Transaction(api.Transaction, Queryable):
         self._db         = db
         self._exitcommit = commit
         self._enterstack = 0  # Number of levels the transaction context is nested at
-        self._isolevel0  = db.connection.isolation_level
         self._exclusive  = True if exclusive is None else exclusive
         self._closed     = False
         self._cursor     = None
@@ -397,7 +399,6 @@ class Transaction(api.Transaction, Queryable):
             if depth < 1:
                 self._cursor = None
                 self._closed = True
-                self._db.connection.isolation_level = self._isolevel0
                 self._db._notify(self)
             if self._exclusive: Database.MUTEX[self._db].release()
 
@@ -415,7 +416,6 @@ class Transaction(api.Transaction, Queryable):
         elif commit or self._exitcommit: self.commit()
         self._cursor = None
         self._closed = True
-        self._db.connection.isolation_level = self._isolevel0
         self._db._notify(self)
 
     def execute(self, sql, args=()):

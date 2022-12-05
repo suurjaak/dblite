@@ -1,11 +1,12 @@
 CHANGELOG
 =========
 
-1.2.0, 2022-12-03
+1.2.0, 2022-12-05
 -----------------
 - support data classes and objects in query arguments and results
 - support dictionaries for column/group/order arguments
 - support custom row factories
+- fix concurrent SQLite transactions not restoring connection isolation level
 - return rows as OrderedDict in Py2 and dict in Py3 in all engines
 - log generated SQL at half DEBUG level
 
