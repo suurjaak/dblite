@@ -67,7 +67,8 @@ with dblite.transaction(commit=False) as tx:
     tx.insert("test", val="will be rolled back automatically by Transaction")
 ```
 
-Queries directly on the Database object use autocommit mode.
+Queries directly on the Database object use autocommit mode:
+every action query gets committed immediately.
 
 Database instances are usable as context managers:
 
@@ -88,9 +89,9 @@ dblite.fetchall("sqlite_master")
 
 # Create default database for Postgres
 dblite.init("postgresql://user@localhost/mydb")
-# All module-level queries use the very first created: SQLite
+# All module-level queries use the very first database created
 dblite.fetchone("sqlite_master")
-# Access the second default Database
+# Access the second default Database by engine name
 dblite.init(engine="postgres").fetchall("information_schema.columns")
 
 # Grab references to either
@@ -222,8 +223,9 @@ with dblite.init("my.sqlite") as db:
 
 Note that in Postgres, quoted identifiers are case-sensitive.
 
-Table and column names from data classes and class members *are* quoted
-automatically if their values need escaping.
+Table and column names that were given as data classes and class members,
+*are* quoted automatically if their values need escaping,
+see [name quoting in objects](#name-quoting-in-objects).
 
 
 Adapters and converters
@@ -281,7 +283,7 @@ various types of data classes.
 
 If data attributes have been declared as properties on the class,
 the class properties can be used directly in dblite in place of column names,
-e.g. for `ORDER BY`.
+e.g. for `ORDER BY` clause.
 
 (Such data descriptor properties are automatically available for
 `property` attributes, classes with `__slots__`, and namedtuples).
@@ -395,7 +397,7 @@ for device in dblite.fetchall(Device, order=Device.name):
     dblite.delete(Device, device)
 ```
 
-### Name quoting
+### Name quoting with objects
 
 dblite automatically quotes table and column names in queries when using objects as arguments.
 
