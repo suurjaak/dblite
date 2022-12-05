@@ -9,7 +9,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     25.11.2022
-@modified    03.12.2022
+@modified    05.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -105,7 +105,7 @@ class ClassDevice(object):
 ClassDevice.__name__ = "devices"
 
 
-Booking = collections.namedtuple("_", ("group", "table", "date"))
+Booking = collections.namedtuple("_", ("group", "table", "when", "patron"))
 Booking.__name__ = "restaurant bookings"
 
 
@@ -121,7 +121,8 @@ class TestORM(unittest.TestCase):
     ## Database schema to use, `%(pktype)s` will be replaced with engine-specific type
     SCHEMA = [
         "CREATE TABLE devices (id %(pktype)s PRIMARY KEY, name TEXT, type TEXT, description TEXT)",
-        'CREATE TABLE "restaurant bookings" ("group" TEXT, "table" TEXT, "daTe" TIMESTAMP)',
+        'CREATE TABLE "restaurant bookings" '
+                                '("group" TEXT, "table" TEXT, "when" TIMESTAMP, "PATRON" BOOLEAN)',
     ]
 
     ## Statements to run on schema cleanup
@@ -182,143 +183,90 @@ class TestORM(unittest.TestCase):
 
     def verify_class(self, engine):
         """Tests support for simple data classes."""
-        logger.info("Verifying support for data classes for %r.", engine)
-        Device = ClassDevice
-
-        logger.debug("Verifying inserting objects.")
-        device = Device()
-        device.name = "lidar"
-        device.id = dblite.insert(Device, device)
-        self.assertIsInstance(device.id, int, "Unexpected value from dblite.insert().")
-
-        logger.debug("Verifying querying objects.")
-        device = dblite.fetchone(Device, name=device.name)
-        self.assertIsInstance(device, Device, "Unexpected value from dblite.fetchone().")
-        for x in dblite.select(Device):
-            self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchall().")
-
-        logger.debug("Verifying updating objects.")
-        device.name = "front lidar"
-        device.type = "lidar"
-        device.description = "16-beam solid state"
-        dblite.update(Device, device, id=device.id)
-
-        logger.debug("Verifying querying objects.")
-        devices = dblite.fetchall(Device, where={Device.type: device.type})
-        for x in devices:
-            self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchall().")
-        self.assertEqual([vars(x) for x in devices], [vars(device)],
-                         "Unexpected value from dblite.fetchall().")
-
-        devices = dblite.fetchall(Device, order=Device.name)
-
-        logger.debug("Verifying deleting objects.")
-        dblite.delete(Device, device)
-        self.assertFalse(dblite.fetchone(Device), "Unexpected value from dblite.fetchone().")
+        logger.info("Verifying support for data classes for %s.", engine)
+        cls, vals = ClassDevice, vars
+        self.verify_object_interface("data classes", cls, cls, vals)
 
 
     def verify_slots(self, engine):
         """Tests support for classes with __slots__."""
-        logger.info("Verifying support for slot classes for %r.", engine)
-        Device = SlotDevice
-
-        logger.debug("Verifying inserting objects.")
-        device = Device(name="lidar")
-        device.id = dblite.insert(Device, device)
-        self.assertIsInstance(device.id, int, "Unexpected value from dblite.insert().")
-
-        logger.debug("Verifying querying objects.")
-        device = dblite.fetchone(Device, name=device.name)
-        self.assertIsInstance(device, Device, "Unexpected value from dblite.fetchone().")
-        for x in dblite.select(Device):
-            self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchall().")
-
-        logger.debug("Verifying updating objects.")
-        device.name = "front lidar"
-        device.type = "lidar"
-        device.description = "16-beam solid state"
-        dblite.update(Device, device, id=device.id)
-
-        logger.debug("Verifying querying objects.")
-        devices = dblite.fetchall(Device, where={Device.type: device.type})
-        for x in devices:
-            self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchall().")
-        self.assertEqual([[getattr(x, k) for  k in FIELDS] for x in devices],
-                         [[getattr(device, k) for  k in FIELDS]],
-                         "Unexpected value from dblite.fetchall().")
-
-        devices = dblite.fetchall(Device, order=Device.name)
-
-        logger.debug("Verifying deleting objects.")
-        dblite.delete(Device, device)
-        self.assertFalse(dblite.fetchone(Device), "Unexpected value from dblite.fetchone().")
+        logger.info("Verifying support for slot classes for %s.", engine)
+        cls, vals = SlotDevice, lambda x: [getattr(x, k) for k in FIELDS]
+        self.verify_object_interface("slot classes", cls, cls, vals)
 
 
     def verify_slotsdict(self, engine):
         """Tests support for dict classes with __slots__."""
-        logger.info("Verifying support for slot classes derived from dict for %r.", engine)
-        Device = SlotDictDevice
-
-        logger.debug("Verifying inserting objects.")
-        device = Device(name="lidar")
-        device.id = dblite.insert(Device, device)
-        self.assertIsInstance(device.id, int, "Unexpected value from dblite.insert().")
-
-        logger.debug("Verifying querying objects.")
-        device = dblite.fetchone(Device, name=device.name)
-        self.assertIsInstance(device, Device, "Unexpected value from dblite.fetchone().")
-        for x in dblite.select(Device):
-            self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchall().")
-
-        logger.debug("Verifying updating objects.")
-        device.name = "front lidar"
-        device.update(type="lidar", description="16-beam solid state")
-        dblite.update(Device, device, {Device.id: device.id})
-
-        logger.debug("Verifying querying objects.")
-        devices = dblite.fetchall(Device, where={Device.type: device.type})
-        for x in devices:
-            self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchall().")
-        self.assertEqual(devices, [device], "Unexpected value from dblite.fetchall().")
-
-        devices = dblite.fetchall(Device, order=Device.name)
-
-        logger.debug("Verifying deleting objects.")
-        dblite.delete(Device, device)
-        self.assertFalse(dblite.fetchone(Device), "Unexpected value from dblite.fetchone().")
+        logger.info("Verifying support for slot classes derived from dict for %s.", engine)
+        cls, vals = SlotDictDevice, lambda x: {k: v for k, v in x.items() if v is not None}
+        def ctor(*a, **kw):
+            return cls(**dict(zip(FIELDS, [None] * len(FIELDS)), **dict(zip(FIELDS, a), **kw)))
+        self.verify_object_interface("slot classes derived from dict", cls, ctor, vals)
 
 
     def verify_namedtuple(self, engine):
         """Tests support for namedtuples."""
-        logger.info("Verifying support for namedtuples for %r.", engine)
-        Device = TupleDevice
+        logger.info("Verifying support for namedtuples for %s.", engine)
+        cls, vals = TupleDevice, lambda x: x
+        def ctor(*a, **kw):
+            return cls(**dict(zip(FIELDS, [None] * len(FIELDS)), **dict(zip(FIELDS, a), **kw)))
+        self.verify_object_interface("namedtuples", cls, ctor, vals)
 
-        logger.debug("Verifying inserting namedtuples.")
-        device = Device(id=None, name="lidar", type=None, description=None)
+
+    def verify_object_interface(self, label, cls, ctor, extract):
+        """Generic function to test support for specific type of data class."""
+        Device = cls
+        vals = lambda x: x if x is None else extract(x)
+
+        logger.debug("Verifying inserting %s.", label)
+        device = ctor(name="lidar", type="lidar")
         device_id = dblite.insert(Device, device)
         self.assertIsInstance(device_id, int, "Unexpected value from dblite.insert().")
+        device = ctor(id=device_id, name=device.name, type=device.type)
 
-        logger.debug("Verifying querying namedtuples.")
-        device = dblite.fetchone(Device, name=device.name)
-        self.assertIsInstance(device, Device, "Unexpected value from dblite.fetchone().")
+        logger.debug("Verifying querying %s.", label)
+        x = dblite.fetchone(Device, name=device.name)
+        self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchone().")
+        self.assertEqual(vals(x), vals(device), "Unexpected value from dblite.fetchone().")
         for x in dblite.select(Device):
-            self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchall().")
+            self.assertIsInstance(x, Device, "Unexpected value from dblite.select().")
+            self.assertEqual(vals(x), vals(device), "Unexpected value from dblite.select().")
 
-        logger.debug("Verifying updating namedtuples.")
-        device = Device(id=device_id, name="front lidar", type="lidar", description="16-beam solid state")
+        logger.debug("Verifying updating %s.", label)
+        device = ctor(id=device.id, name="front lidar", type=device.type,
+                      description="16-beam solid state")
         dblite.update(Device, device, id=device_id)
 
-        logger.debug("Verifying querying namedtuples.")
-        devices = dblite.fetchall(Device, where={Device.type: device.type})
-        for x in devices:
+        logger.debug("Verifying querying %s.", label)
+        for x in dblite.fetchall(Device, where={Device.type: device.type}):
             self.assertIsInstance(x, Device, "Unexpected value from dblite.fetchall().")
-        self.assertEqual([x._asdict() for x in devices], [device._asdict()],
-                         "Unexpected value from dblite.fetchall().")
+            self.assertEqual(vals(x), vals(device), "Unexpected value from dblite.fetchall().")
 
-        devices = dblite.fetchall(Device, order=Device.name)
+        device2 = ctor(name="radar", type="radar", description="UMRR-96")
+        device2_id = dblite.insert(Device, device2)
+        device2 = ctor(device2_id, device2.name, device2.type, device2.description)
 
-        logger.debug("Verifying deleting namedtuples.")
+        expected = [device2, device]
+        for i, x in enumerate(dblite.fetchall(Device, order={Device.name: True})):
+            self.assertEqual(vals(x), vals(expected[i]), "Unexpected value from dblite.fetchall().")
+
+        for where, expected in [
+            (device2, device2),
+            ({Device.name: device.name, Device.type: ("!=", device2.type),
+              Device.description: ("IN", [device.description, device2.description])}, device),
+            ([(Device.name, device.name), (Device.name, "IN", [device.name, device2.name]),
+              (Device.name, ("!=", None))], device),
+            ([(Device.name, device2.name), (Device.type, "nosuch")], None),
+        ]:
+            received = dblite.fetchone(Device, where=where)
+            self.assertEqual(vals(received), vals(expected),
+                             "Unexpected value from dblite.fetchone().")
+
+        logger.debug("Verifying deleting %s.", label)
         dblite.delete(Device, device)
+        x = dblite.fetchone(Device)
+        self.assertEqual(vals(x), vals(device2), "Unexpected value from dblite.fetchone().")
+        dblite.delete(Device)
         self.assertFalse(dblite.fetchone(Device), "Unexpected value from dblite.fetchone().")
 
 
@@ -326,14 +274,14 @@ class TestORM(unittest.TestCase):
         """Tests auto-quoting class and attribute names"""
         logger.info("Verifying auto-quoting class and attribute names for %r.", engine)
 
-        val1 = Booking("Charity",  "Table 16", datetime.datetime(2022, 12, 30, 18, 30))
-        val2 = Booking("MotoClub", "Table 17", datetime.datetime(2022, 12, 30, 19))
-        val3 = Booking("Acme INC", "Table 18", datetime.datetime(2022, 12, 30, 19))
+        val1 = Booking("Charity",  "Table 16", datetime.datetime(2022, 12, 30, 18, 30), False)
+        val2 = Booking("MotoClub", "Table 17", datetime.datetime(2022, 12, 30, 19),     True)
+        val3 = Booking("Acme INC", "Table 18", datetime.datetime(2022, 12, 30, 19),     True)
         DATAS = [val1, val2, val3]
         dblite.insert(Booking, val1)
-        expected = (val1.group, val1.table, None)
+        expected = (val1.group, val1.table, None, None)
         for entry in dblite.fetchall(Booking, (Booking.group, Booking.table), order=Booking.group):
-            received = (entry.group, entry.table, entry.date)
+            received = (entry.group, entry.table, entry.when, entry.patron)
             self.assertEqual(received, expected, "Unexpected value from dblite.fetchall().")
 
         dblite.insert(Booking, [(getattr(Booking, k), getattr(val2, k)) for k in Booking._fields])
@@ -341,14 +289,14 @@ class TestORM(unittest.TestCase):
         self.assertEqual(dblite.fetchall(Booking, order=Booking.table), DATAS,
                          "Unexpected value from dblite.fetchall().")
         for i, booking in enumerate(list(DATAS)):
-            updated = Booking(booking.group, booking.table, datetime.datetime.now())
-            values = [(Booking.date, updated.date)] if i else {Booking.date:   updated.date}
+            updated = Booking(booking.group, booking.table, datetime.datetime.now(), booking.patron)
+            values = [(Booking.when, updated.when)] if i else {Booking.when:   updated.when}
             where  = {Booking.table: booking.table} if i else [(Booking.table, booking.table)]
             dblite.update(Booking, values, where)
             self.assertEqual(dblite.fetchone(Booking, where=where), updated,
                              "Unexpected value from dblite.fetchone().")
             DATAS[i] = updated
-        group = (Booking.group, Booking.table, Booking.date)
+        group = (Booking.group, Booking.table, Booking.when, Booking.patron)
         for i, entry in enumerate(dblite.select(Booking, group=group, order=Booking.table)):
             self.assertEqual(entry, DATAS[i], "Unexpected value from dblite.select().")
 

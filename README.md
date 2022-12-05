@@ -400,25 +400,28 @@ for device in dblite.fetchall(Device, order=Device.name):
 dblite automatically quotes table and column names in queries when using objects as arguments.
 
 ```python
-schema = 'CREATE TABLE "restaurant bookings" ("group" TEXT, "table" TEXT, "daTe" TIMESTAMP)'
-Booking = collections.namedtuple("_", ("group", "table", "date"))
+schema = 'CREATE TABLE "restaurant bookings" ("group" TEXT, "table" TEXT, "when" TIMESTAMP, "PATRON" BOOLEAN)'
+Booking = collections.namedtuple("_", ("group", "table", "when", "patron"))
 Booking.__name__ = "restaurant bookings"
 
 dblite.init(":memory:").executescript(schema)
 
-booking1 = Booking("Squirrel Charity", "Table 16", datetime.datetime(2022, 12, 30, 18, 30))
-booking2 = Booking("The Three Henrys", "Table 23", datetime.datetime(2022, 12, 30, 19))
+booking1 = Booking("Squirrel Charity", "Table 16", datetime.datetime(2022, 12, 30, 20, 30), False)
+booking2 = Booking("The Three Henrys", "Table 23", datetime.datetime(2022, 12, 30, 19, 00), True)
 dblite.insert(Booking, booking1)
 dblite.insert(Booking, booking2)
 
-for booking in dblite.fetchall(Booking, order=Booking.date):
-    print(booking.date, booking.group, booking.table)
+for booking in dblite.fetchall(Booking, order=Booking.when):
+    print(booking.when, booking.group, booking.table, booking.patron)
 ```
+
+For more thorough examples on using objects, see [test/test_orm.py](test/test_orm.py).
 
 In Postgres, schema definition is looked up from the database to ensure properly cased
 names in queries, as cased names for Postgres tables and columns must use the declared form.
 
-For more thorough examples on using objects, see [test/test_orm.py](test/test_orm.py).
+If there is no exact match for the Python name in database, falls back to lower-case name,
+or if name is lower-case, falls back to cased name if database has a single matching cased name.
 
 
 SQLite
@@ -427,7 +430,7 @@ SQLite
 SQLite connection parameter needs to be a valid path or a path-like object,
 or the special `":memory:"` for transient in-memory database.
 
-Connections flags default to `check_same_thread=False, detect_types=sqlite3.PARSE_DECLTYPES`,
+Connection flags default to `check_same_thread=False, detect_types=sqlite3.PARSE_DECLTYPES`,
 can be overridden on init:
 
 ```python
