@@ -8,9 +8,10 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     28.11.2022
-@modified    01.12.2022
+@modified    05.12.2022
 ------------------------------------------------------------------------------
 """
+import collections
 import datetime
 import decimal
 import glob
@@ -148,8 +149,14 @@ def keyvalues(obj, namefmt=None):
                       else list with a single item
     """
     namefmt = namefmt if callable(namefmt) else lambda x: x
+    if type(obj) in (dict, collections.defaultdict, collections.OrderedDict):
+        return list(obj.items())                                     # dictionary
+    if isinstance(obj, (list, set)):
+        return list(obj)                                             # list/set
     if is_namedtuple(obj):
         return [(namefmt(k), getattr(obj, k)) for k in obj._fields]  # collections.namedtuple
+    if isinstance(obj, tuple):
+        return list(obj)                                             # tuple
     if getattr(obj, "__slots__", None):
         return [(namefmt(k), getattr(obj, k)) for k in obj.__slots__
                 if hasattr(obj, k)]                                  # __slots__
@@ -160,7 +167,7 @@ def keyvalues(obj, namefmt=None):
         return [(namefmt(k), v) for k, v in vars(obj).items()]       # Plain object
     if isinstance(obj, six.moves.collections_abc.Mapping):
         return list(obj.items())                                     # dictionary
-    return list(obj) if isinstance(obj, (list, set, tuple)) else [obj]
+    return [obj]
 
 
 def load_modules():
@@ -188,13 +195,15 @@ def nameify(val, namefmt=None, parent=None):
     @param   parent   the parent class object if value is a class member or property
     @return           string
     """
+    if isinstance(val, six.string_types):
+        return val
     namefmt = namefmt if callable(namefmt) else lambda x: x
     if inspect.isclass(val):
         return namefmt(val.__name__)
     if inspect.isdatadescriptor(val):
         if hasattr(val, "__name__"): return namefmt(val.__name__)  # __slots__ entry
         return next(namefmt(k) for k, v in inspect.getmembers(parent) if v is val)
-    return val if isinstance(val, six.string_types) else six.text_type(val)
+    return six.text_type(val)
 
 
 def parse_datetime(s):
