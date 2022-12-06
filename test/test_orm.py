@@ -253,8 +253,13 @@ class TestORM(unittest.TestCase):
             self.assertEqual(vals(x), vals(device), "Unexpected value from dblite.fetchall().")
 
         device2 = ctor(name="radar", type="radar", description="UMRR-96")
-        device2_id = dblite.insert(Device, device2)
+        device2_id = dblite.insert(Device, {Device.name: device2.name, "type": device2.type},
+                                   description=device2.description)
         device2 = ctor(device2_id, device2.name, device2.type, device2.description)
+
+        device2 = ctor(device2.id, device2.name, device2.type, "UMRR-96 v2")
+        v = dblite.update(Device, {Device.description: device2.description}, {Device.id: device2.id})
+        self.assertEqual(v, 1, "Unexpected value from dblite.update().")
 
         expected = [device2, device]
         for i, x in enumerate(dblite.fetchall(Device, order={Device.name: True})):
