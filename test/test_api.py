@@ -302,23 +302,23 @@ class TestAPI(unittest.TestCase):
         logger.info("Verifying ORDER BY arguments.")
         for table in DATAS:
             ORDERS = [  # [(argument value, [(col, direction), ])]
-                (Column("id"),                    [("id",  False), ]),
-                ("id ASC",                        [("id",  False), ]),
-                ("id DESC",                       [("id",  True),  ]),
+                (Column("id"),                    [("id",  True), ]),
+                ("id ASC",                        [("id",  True), ]),
+                ("id DESC",                       [("id",  False), ]),
                 ([Column("id"), True],            [("id",  True),  ]),
-                ("val, id DESC",                  [("val", False), ("id",  True)]),
-                ([Column("val"), "id DESC"],      [("val", False), ("id",  True)]),
-                (["val", (Column("id"), "DESC")], [("val", False), ("id",  True)]),
-                (["val DESC", ("id", True)],      [("val", True),  ("id",  True)]),
+                ("val, id DESC",                  [("val", True),  ("id", False)]),
+                ([Column("val"), "id DESC"],      [("val", True),  ("id", False)]),
+                (["val", (Column("id"), "DESC")], [("val", True),  ("id", False)]),
+                (["val DESC", ("id", True)],      [("val", False), ("id", True)]),
                 (collections.OrderedDict([("val", False), ("id", True)]), 
-                                                  [("val", False), ("id",  True)]),
+                                                  [("val", False), ("id", True)]),
             ]
             for order, sorts in ORDERS:
                 logger.debug("Verifying ORDER BY %r", order)
-                reverse = "val" == sorts[0][0] and sorts[0][1]
+                reverse = ("val" == sorts[0][0]) and not sorts[0][1]
                 expected_order = sorted(DATAS[table],
-                    key=lambda x: [-x[k] if "id" == k and desc and not reverse else x[k]
-                                   for k, desc in sorts], reverse=reverse
+                    key=lambda x: [-x[k] if "id" == k and asc == reverse else x[k]
+                                   for k, asc in sorts], reverse=reverse
                 )
                 self.assertEqual(obj.fetchall(table, order=order), expected_order,
                                  "Unexpected value from %s.select(order=%r)." % (label(obj), order))

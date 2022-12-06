@@ -62,17 +62,17 @@ class SlotDict(dict):
         if key in self.__slots__ or key in type(self).__dict__:
             self[key] = value
             return
-        raise AttributeError("type object %r has no attribute %r" %(type(self).__name__, key))
+        raise AttributeError("setattr: type object %r has no attribute %r" % (type(self).__name__, key))
 
     def __delattr__(self, name):
         if name in self.__slots__:
             del self[name]
             return
-        raise AttributeError("type object %r has no attribute %r" %(type(self).__name__, name))
+        raise AttributeError("type object %r has no attribute %r" % (type(self).__name__, name))
 
     def __setitem__(self, key, value):
         if key not in self.__slots__:
-            raise AttributeError("type object %r has no attribute %r" % (type(self).__name__, key))
+            raise AttributeError("setitem: type object %r has no attribute %r" % (type(self).__name__, key))
         dict.__setitem__(self, key, value)
 
 class SlotDictDevice(SlotDict):
@@ -262,7 +262,7 @@ class TestORM(unittest.TestCase):
         self.assertEqual(v, 1, "Unexpected value from dblite.update().")
 
         expected = [device2, device]
-        for i, x in enumerate(dblite.fetchall(Device, order={Device.name: True})):
+        for i, x in enumerate(dblite.fetchall(Device, order={Device.name: False})):
             self.assertEqual(vals(x), vals(expected[i]), "Unexpected value from dblite.fetchall().")
 
         for where, expected in [

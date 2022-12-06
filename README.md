@@ -160,7 +160,7 @@ dblite.fetchall("test", where=[("id < ? OR id > ?", [1, 2]), ("val", 3)])
 
 
 Argument for key-value parameters, like `WHERE` or `VALUES`,
-can be a mapping, or a sequence of key-value pairs:
+can be a dict, or a sequence of key-value pairs:
 
 ```python
 # Result: SET val = 'done' WHERE id = 1
@@ -183,12 +183,11 @@ dblite.fetchall("test", group=("id", "val"))
 # Result: SELECT * FROM test ORDER BY id
 dblite.fetchall("test", order="id")
 dblite.fetchall("test", order="id ASC")
-dblite.fetchall("test", order=("id", False))
-dblite.fetchall("test", order={"id": False})
+dblite.fetchall("test", order=("id", True))
 # Result: SELECT * FROM test ORDER BY id ASC val DESC
 dblite.fetchall("test", order="id, val DESC")
-dblite.fetchall("test", order=["id", ("val", True)])
-dblite.fetchall("test", order=[("id", False), ("val", True)])
+dblite.fetchall("test", order=["id", ("val", False)])
+dblite.fetchall("test", order=[("id", True), ("val", False)])
 dblite.fetchall("test", order=[("id", "ASC"), ("val", "DESC")])
 ```
 
@@ -397,7 +396,7 @@ for device in dblite.fetchall(Device, order=Device.name):
     dblite.delete(Device, device)
 ```
 
-### Name quoting with objects
+### Name quoting in objects
 
 dblite automatically quotes table and column names in queries when using objects as arguments.
 
@@ -421,7 +420,6 @@ For more thorough examples on using objects, see [test/test_orm.py](test/test_or
 
 In Postgres, schema definition is looked up from the database to ensure properly cased
 names in queries, as cased names for Postgres tables and columns must use the declared form.
-
 If there is no exact match for the Python name in database, falls back to lower-case name,
 or if name is lower-case, falls back to cased name if database has a single matching cased name.
 
@@ -492,7 +490,7 @@ Postgres transactions can specify database table schema name up front:
 dblite.init("host=localhost user=postgres dbname=mydb")
 with dblite.transaction(schema="information_schema") as tx:
     for row in tx.fetchall("columns", table_schema="public",
-                           order="table_name, dtd_identifier"):
+                           order="table_name, ordinal_position"):
         print(row["table_name"], row["column_name"], row["data_type"])
 ```
 

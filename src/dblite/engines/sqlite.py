@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    05.12.2022
+@modified    06.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -169,7 +169,7 @@ class Queryable(api.Queryable):
                 name = util.nameify(col[0] if isinstance(col, (list, tuple)) else col, quote, table)
                 sort = col[1] if name != col and isinstance(col, (list, tuple)) and len(col) > 1 \
                        else ""
-                if not isinstance(sort, string_types): sort = "DESC" if sort else ""
+                if not isinstance(sort, string_types): sort = "" if sort else "DESC"
                 sql += (", " if i else "") + name + (" " if sort else "") + sort
         if limit:
             limit = [None if isinstance(v, integer_types) and v < 0 else v for v in limit]

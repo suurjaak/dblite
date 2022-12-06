@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    04.12.2022
+@modified    06.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -93,7 +93,9 @@ def select(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
                      or a dict with stringable keys
     @param   order   columns to ORDER BY, as string, a sequence of stringables,
                      or a combination of column names and direction flags,
-                     or a dict with column name keys and direction flag values
+                     or a dict with column name keys and direction flag values.
+                     Direction flag can be string like `"ASC"`,
+                     or truthy/falsy for ascending/descending.
     @param   limit   LIMIT .. OFFSET.. values, as integer or a sequence of integers;
                      None or -1 disables LIMIT or OFFSET
     @param   kwargs  additional arguments added to WHERE clause
