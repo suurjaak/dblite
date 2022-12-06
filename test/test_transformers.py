@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     22.11.2022
-@modified    03.12.2022
+@modified    06.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -79,6 +79,16 @@ class TestTransformers(unittest.TestCase):
         dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
 
 
+    def tearDown(self):
+        """Drops created tables from Postgres."""
+        try:
+            opts, kwargs = self._connections["postgres"]
+            with dblite.init(opts, "postgres", **kwargs) as db:
+                for table in self.TABLES: db.executescript("DROP TABLE IF EXISTS %s" % table)
+        except Exception: pass
+        super(TestTransformers, self).tearDown()
+
+
     def test_transformers(self):
         """Tests adapters and converters."""
         logger.info("Verifying transformer functions.")
@@ -109,6 +119,8 @@ class TestTransformers(unittest.TestCase):
                 row = dblite.fetchone(table, id=data["id"])
                 row["dt"], data["dt"] = (x["dt"].replace(tzinfo=None) for x in (row, data))
                 self.assertEqual(row, data, "Unexpected value from dblite.select().")
+
+            dblite.executescript("DROP TABLE %s" % table)
 
 
 

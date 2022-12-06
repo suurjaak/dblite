@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     22.11.2022
-@modified    22.11.2022
+@modified    06.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -58,6 +58,16 @@ class TestPostgres(unittest.TestCase):
         for k, v in os.environ.items():
             if not k.startswith("PG"): continue  # for k, v
             self._env[k[2:].lower()] = v
+
+
+    def tearDown(self):
+        """Drops created tables."""
+        try:
+            with dblite.init(self._env) as db:
+                for table in self.TABLES: db.executescript("DROP TABLE IF EXISTS %s" % table)
+        except Exception: pass
+        super(TestPostgres, self).tearDown()
+
 
     def test_postgres(self):
         """Tests Postgres-specific aspects."""

@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    03.12.2022
+@modified    06.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -84,8 +84,13 @@ class TestAPI(unittest.TestCase):
 
 
     def tearDown(self):
-        """Deletes temoorary files."""
+        """Deletes temoorary files and tables."""
         try: os.remove(self._path)
+        except Exception: pass
+        try:
+            opts, kwargs = self._connections["postgres"]
+            with dblite.init(opts, "postgres", **kwargs) as db:
+                for table in self.TABLES: db.executescript("DROP TABLE IF EXISTS %s" % table)
         except Exception: pass
         super(TestAPI, self).tearDown()
 
@@ -208,7 +213,7 @@ class TestAPI(unittest.TestCase):
                 obj.fetchone(table)
 
         if isinstance(obj, dblite.api.Transaction):
-            obj.close()
+            obj.close()  # Close the re-created transaction
 
 
     def verify_query_args(self, obj):
@@ -441,8 +446,8 @@ class TestAPI(unittest.TestCase):
         logger.info("Verifying Transaction.quote().")
         with dblite.transaction() as tx:
             for value, same in [("WHERE", False), ("one two", False), ("abcd", True)]:
-                result = tx.quote(value)
                 logger.debug("Verifying Transaction.quote(%r).", value)
+                result = tx.quote(value)
                 self.assertEqual(result == value, same, "Unexpected value from %s.quote(%r): %r." %
                                  (label(tx), value, result))
                 if same:

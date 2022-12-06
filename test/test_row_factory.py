@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     04.12.2022
-@modified    04.12.2022
+@modified    06.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -78,8 +78,13 @@ class TestRowFactory(unittest.TestCase):
 
 
     def tearDown(self):
-        """Deletes temoorary files."""
+        """Deletes temoorary files and tables."""
         try: os.remove(self._path)
+        except Exception: pass
+        try:
+            opts, kwargs = self._connections["postgres"]
+            with dblite.init(opts, "postgres", **kwargs) as db:
+                for table in self.TABLES: db.executescript("DROP TABLE IF EXISTS %s" % table)
         except Exception: pass
         super(TestRowFactory, self).tearDown()
 

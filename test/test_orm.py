@@ -9,7 +9,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     25.11.2022
-@modified    05.12.2022
+@modified    06.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -159,6 +159,16 @@ class TestORM(unittest.TestCase):
         else:
             self._connections["postgres"] = (opts, kwargs)
         dblite.api.Engines.DATABASES.clear()  # Clear cache of default databases
+
+
+    def tearDown(self):
+        """Drops created tables from Postgres."""
+        try:
+            opts, kwargs = self._connections["postgres"]
+            with dblite.init(opts, "postgres", **kwargs) as db:
+                db.executescript(";".join(self.SCHEMA_CLEANUP))
+        except Exception: pass
+        super(TestORM, self).tearDown()
 
 
     def test_orm(self):
