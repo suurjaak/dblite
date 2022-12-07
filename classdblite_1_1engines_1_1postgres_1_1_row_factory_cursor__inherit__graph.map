@@ -1,0 +1,4 @@
+<map id="dblite.engines.postgres.RowFactoryCursor" name="dblite.engines.postgres.RowFactoryCursor">
+<area shape="rect" id="node1" title="A cursor that generates result rows via given factory callable." alt="" coords="5,95,184,136"/>
+<area shape="rect" id="node2" title=" " alt="" coords="13,5,176,47"/>
+</map>

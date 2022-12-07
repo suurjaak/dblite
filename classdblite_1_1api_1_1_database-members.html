@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -102,18 +102,19 @@ $(document).ready(function(){initNavTree('classdblite_1_1api_1_1_database.html',
   <tr><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#af48e9574ac9de1fa437c47aea0fd9ecb">fetchall</a>(self, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#afa925d1cb5144096cffef68fc5165785">fetchone</a>(self, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
   <tr><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a05b66cbf94dd567179cf585fc5ef5324">insert</a>(self, table, values=(), **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a778d653a1958e9cae7de52f4d770486b">makeSQL</a>(self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=())</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#af8d9ba92b47956397fe4524fd65854fd">makeSQL</a>(self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=(), kwargs=None)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
   <tr><td class="entry"><a class="el" href="classdblite_1_1api_1_1_database.html#ac68cafe0ed5bd0c45bb5271f4e7deb1d">open</a>(self)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_database.html">dblite.api.Database</a></td><td class="entry"></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5">quote</a>(cls, value, force=False)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a0c95d2a975337f01751899f6af37f4b7">select</a>(self, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classdblite_1_1api_1_1_database.html#a95232e0715e749349cdbd54dfd7b5361">transaction</a>(self, commit=True, exclusive=None, **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_database.html">dblite.api.Database</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#acb856fb2c60668d53a47f58350065581">update</a>(self, table, values, where=(), **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
+  <tr><td class="entry"><a class="el" href="classdblite_1_1api_1_1_database.html#a55981a36bc39c90f412ea1283715b293">row_factory</a></td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_database.html">dblite.api.Database</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a0c95d2a975337f01751899f6af37f4b7">select</a>(self, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
+  <tr><td class="entry"><a class="el" href="classdblite_1_1api_1_1_database.html#a95232e0715e749349cdbd54dfd7b5361">transaction</a>(self, commit=True, exclusive=None, **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_database.html">dblite.api.Database</a></td><td class="entry"></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html#acb856fb2c60668d53a47f58350065581">update</a>(self, table, values, where=(), **kwargs)</td><td class="entry"><a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td><td class="entry"></td></tr>
 </table></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Fri Nov 25 2022 21:27:56 for dblite by
+    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>

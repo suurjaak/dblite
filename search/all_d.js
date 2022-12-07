@@ -1,6 +1,8 @@
 var searchData=
 [
-  ['query_5fschema_54',['query_schema',['../namespacedblite_1_1engines_1_1postgres.html#a9857575fd339f0d4861639ab56aa6bb3',1,'dblite::engines::postgres']]],
-  ['queryable_55',['Queryable',['../classdblite_1_1engines_1_1sqlite_1_1_queryable.html',1,'dblite.engines.sqlite.Queryable'],['../classdblite_1_1api_1_1_queryable.html',1,'dblite.api.Queryable'],['../classdblite_1_1engines_1_1postgres_1_1_queryable.html',1,'dblite.engines.postgres.Queryable']]],
-  ['quote_56',['quote',['../classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5',1,'dblite.api.Queryable.quote()'],['../classdblite_1_1engines_1_1postgres_1_1_queryable.html#a8d4b87bac2af873236552ab709f26710',1,'dblite.engines.postgres.Queryable.quote()'],['../classdblite_1_1engines_1_1sqlite_1_1_queryable.html#a20ac56873bd166432c392cd3da9f11b1',1,'dblite.engines.sqlite.Queryable.quote()'],['../namespacedblite_1_1engines_1_1postgres.html#a88f7951cd0e48638ef8fc026bdac91bb',1,'dblite.engines.postgres.quote()'],['../namespacedblite_1_1engines_1_1sqlite.html#a4e50f0ea3ac98ead624a73aed7f04999',1,'dblite.engines.sqlite.quote()']]]
+  ['parse_5fdatetime_55',['parse_datetime',['../namespacedblite_1_1util.html#af05eb5011ff90d008bbb6c5fdd358284',1,'dblite::util']]],
+  ['path_56',['path',['../classdblite_1_1engines_1_1sqlite_1_1_database.html#a7f3336ba33877c9ce37540abd4707e5a',1,'dblite::engines::sqlite::Database']]],
+  ['pool_5fsize_57',['POOL_SIZE',['../classdblite_1_1engines_1_1postgres_1_1_database.html#a731ced9614fd8496db48031f8b5131ab',1,'dblite::engines::postgres::Database']]],
+  ['pools_58',['POOLS',['../classdblite_1_1engines_1_1postgres_1_1_database.html#ab9d88a24f514bf06d097fa19a372f09f',1,'dblite::engines::postgres::Database']]],
+  ['postgres_2epy_59',['postgres.py',['../postgres_8py.html',1,'']]]
 ];

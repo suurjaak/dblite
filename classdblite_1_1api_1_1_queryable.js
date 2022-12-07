@@ -6,7 +6,7 @@ var classdblite_1_1api_1_1_queryable =
     [ "fetchall", "classdblite_1_1api_1_1_queryable.html#af48e9574ac9de1fa437c47aea0fd9ecb", null ],
     [ "fetchone", "classdblite_1_1api_1_1_queryable.html#afa925d1cb5144096cffef68fc5165785", null ],
     [ "insert", "classdblite_1_1api_1_1_queryable.html#a05b66cbf94dd567179cf585fc5ef5324", null ],
-    [ "makeSQL", "classdblite_1_1api_1_1_queryable.html#a778d653a1958e9cae7de52f4d770486b", null ],
+    [ "makeSQL", "classdblite_1_1api_1_1_queryable.html#af8d9ba92b47956397fe4524fd65854fd", null ],
     [ "quote", "classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5", null ],
     [ "select", "classdblite_1_1api_1_1_queryable.html#a0c95d2a975337f01751899f6af37f4b7", null ],
     [ "update", "classdblite_1_1api_1_1_queryable.html#acb856fb2c60668d53a47f58350065581", null ],

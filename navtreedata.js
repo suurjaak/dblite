@@ -25,10 +25,19 @@ var NAVTREE =
   [ "dblite", "index.html", [
     [ "API", "index.html#autotoc_md0", null ],
     [ "Usage", "index.html#autotoc_md1", null ],
-    [ "Queries", "index.html#autotoc_md2", null ],
+    [ "Queries", "index.html#autotoc_md2", [
+      [ "Name quoting", "index.html#autotoc_md3", null ]
+    ] ],
     [ "Adapters and converters", "index.html#autotoc_md4", null ],
-    [ "SQLite", "index.html#autotoc_md5", null ],
-    [ "Postgres", "index.html#autotoc_md6", null ],
+    [ "Row factories", "index.html#autotoc_md5", null ],
+    [ "Object-relational mapping", "index.html#autotoc_md6", [
+      [ "Data classes", "index.html#autotoc_md7", null ],
+      [ "Classes with slots", "index.html#autotoc_md8", null ],
+      [ "namedtuple", "index.html#autotoc_md9", null ],
+      [ "Name quoting in objects", "index.html#autotoc_md10", null ]
+    ] ],
+    [ "SQLite", "index.html#autotoc_md11", null ],
+    [ "Postgres", "index.html#autotoc_md12", null ],
     [ "Packages", "namespaces.html", [
       [ "Packages", "namespaces.html", "namespaces_dup" ],
       [ "Package Functions", "namespacemembers.html", [

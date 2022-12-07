@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -159,9 +159,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7d89ab21f412a533e9631a0aae8636d9 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a7d89ab21f412a533e9631a0aae8636d9">insert</a> (self, table, values=(), **kwargs)</td></tr>
 <tr class="memdesc:a7d89ab21f412a533e9631a0aae8636d9 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database INSERT, returns inserted row ID.  <a href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a7d89ab21f412a533e9631a0aae8636d9">More...</a><br /></td></tr>
 <tr class="separator:a7d89ab21f412a533e9631a0aae8636d9 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acb3a145b287354915596426174bac1f2 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#acb3a145b287354915596426174bac1f2">makeSQL</a> (self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=())</td></tr>
-<tr class="memdesc:acb3a145b287354915596426174bac1f2 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (SQL statement string, parameter dict).  <a href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#acb3a145b287354915596426174bac1f2">More...</a><br /></td></tr>
-<tr class="separator:acb3a145b287354915596426174bac1f2 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abad8287c0c6e2f624e6a11ec86b2c853 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#abad8287c0c6e2f624e6a11ec86b2c853">makeSQL</a> (self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=(), kwargs=None)</td></tr>
+<tr class="memdesc:abad8287c0c6e2f624e6a11ec86b2c853 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (SQL statement string, parameter dict).  <a href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#abad8287c0c6e2f624e6a11ec86b2c853">More...</a><br /></td></tr>
+<tr class="separator:abad8287c0c6e2f624e6a11ec86b2c853 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d4b87bac2af873236552ab709f26710 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a8d4b87bac2af873236552ab709f26710">quote</a> (cls, value, force=False)</td></tr>
 <tr class="memdesc:a8d4b87bac2af873236552ab709f26710 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns identifier in quotes and proper-escaped for queries, if value needs quoting (has non-alphanumerics, starts with number, or is reserved).  <a href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a8d4b87bac2af873236552ab709f26710">More...</a><br /></td></tr>
 <tr class="separator:a8d4b87bac2af873236552ab709f26710 inherit pub_methods_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -193,6 +193,7 @@ Properties</h2></td></tr>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_static_attribs_classdblite_1_1engines_1_1postgres_1_1_queryable"><td colspan="2" onclick="javascript:toggleInherit('pub_static_attribs_classdblite_1_1engines_1_1postgres_1_1_queryable')"><img src="closed.png" alt="-"/>&#160;Static Public Attributes inherited from <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html">dblite.engines.postgres.Queryable</a></td></tr>
 <tr class="memitem:a2d8fbdac6a242a3bf8c08938806a9d09 inherit pub_static_attribs_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memItemLeft" align="right" valign="top">tuple&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a2d8fbdac6a242a3bf8c08938806a9d09">OPS</a></td></tr>
+<tr class="memdesc:a2d8fbdac6a242a3bf8c08938806a9d09 inherit pub_static_attribs_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Recognized binary operators for <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#abad8287c0c6e2f624e6a11ec86b2c853" title="Returns (SQL statement string, parameter dict).">makeSQL()</a>  <a href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a2d8fbdac6a242a3bf8c08938806a9d09">More...</a><br /></td></tr>
 <tr class="separator:a2d8fbdac6a242a3bf8c08938806a9d09 inherit pub_static_attribs_classdblite_1_1engines_1_1postgres_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -200,7 +201,7 @@ Additional Inherited Members</h2></td></tr>
 <p>Supports server-side cursors; those can only be used for making a single query.</p>
 <p>Must be closed explicitly if not used as context manager in a with-block. Block can be exited early by raising Rollback. </p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00456">456</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00563">563</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a7e91cbc5dee2a1adb8d90b3d9bf80618"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7e91cbc5dee2a1adb8d90b3d9bf80618">&#9670;&nbsp;</a></span>__init__()</h2>
@@ -277,7 +278,7 @@ Additional Inherited Members</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00473">473</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00580">580</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -302,7 +303,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_transaction.html#ab312ab0f101521d83a9f1fd68df28ce6">dblite.api.Transaction</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00484">484</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00591">591</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -348,7 +349,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_transaction.html#ae245f679f757caeb5ba0acce23682f8a">dblite.api.Transaction</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00497">497</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00604">604</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -388,7 +389,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_transaction.html#a51d459c29d8d04b61ff4ac4d8856f24b">dblite.api.Transaction</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00520">520</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00627">627</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -412,7 +413,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_transaction.html#a5c6bb98a718b0fe9cdc300fdc109437b">dblite.api.Transaction</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00556">556</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00663">663</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -459,7 +460,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_queryable.html#af0c0354db6fb29f49ed45da1cffd6b14">dblite.api.Queryable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00538">538</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00645">645</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -499,7 +500,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_queryable.html#a466f4245622b781c890d96c6dea0af07">dblite.api.Queryable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00551">551</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00658">658</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -523,7 +524,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_transaction.html#ae67fc3701db8782784515a9478a8778c">dblite.api.Transaction</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00560">560</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00667">667</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -550,7 +551,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Whether transaction is currently not open. </p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00566">566</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00673">673</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -576,7 +577,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html" title="Convenience wrapper around psycopg2.ConnectionPool and Cursor.">Database</a> engine cursor object, or `None` if closed. </p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00573">573</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00680">680</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -602,7 +603,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Returns transaction <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html" title="Convenience wrapper around psycopg2.ConnectionPool and Cursor.">Database</a> instance. </p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00582">582</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00689">689</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -615,7 +616,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacedblite.html">dblite</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1engines.html">engines</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1engines_1_1postgres.html">postgres</a></li><li class="navelem"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_transaction.html">Transaction</a></li>
-    <li class="footer">Generated on Fri Nov 25 2022 21:27:56 for dblite by
+    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>

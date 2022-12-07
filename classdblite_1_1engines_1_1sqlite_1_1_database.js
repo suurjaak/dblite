@@ -11,6 +11,8 @@ var classdblite_1_1engines_1_1sqlite_1_1_database =
     [ "connection", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a6667a9ce0d214cc3fa90e25b2f15f200", null ],
     [ "MUTEX", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a5fab29bdfd921fa57a3e4e4d5e437a33", null ],
     [ "path", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a7f3336ba33877c9ce37540abd4707e5a", null ],
+    [ "ROW_FACTORY", "classdblite_1_1engines_1_1sqlite_1_1_database.html#acfb1f74403ca03e86778c38fe497f653", null ],
     [ "closed", "classdblite_1_1engines_1_1sqlite_1_1_database.html#af117c502a1f36224fdb26236148c1b42", null ],
-    [ "cursor", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a9ac1b7390e9e3e28905065157130860a", null ]
+    [ "cursor", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a9ac1b7390e9e3e28905065157130860a", null ],
+    [ "row_factory", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a507748fb2b4d33e113e4c609583ffadc", null ]
 ];

@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -97,6 +97,14 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
 </ul>
 </li>
 <li><a href="#adapters-and-converters">Adapters and converters</a></li>
+<li><a href="#row-factories">Row factories</a></li>
+<li><a href="#object-relational-mapping">Object-relational mapping</a><ul>
+<li><a href="#data-classes">Data classes</a></li>
+<li><a href="#classes-with-slots">Classes with slots</a></li>
+<li><a href="#namedtuple">namedtuple</a></li>
+<li><a href="#name-quoting-in-objects">Name quoting in objects</a></li>
+</ul>
+</li>
 <li><a href="#sqlite">SQLite</a></li>
 <li><a href="#postgres">Postgres</a></li>
 </ul>
@@ -133,35 +141,39 @@ API</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a4187d66095bf5c0463aded129c6bc880" title="Registers function to auto-convert given database types to Python in query results.">dblite.register_converter()</a></code> </td><td class="markdownTableBodyNone">registers function to auto-convert given database types to Python in query results  </td></tr>
 <tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a0b37aaf39d1e947e373a90b5e32a7d2c" title="Registers function to produce query results as custom type.">dblite.register_row_factory()</a></code> </td><td class="markdownTableBodyNone">registers function to produce query results as custom type  </td></tr>
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><b>dblite.Database</b> </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a1643c7653efcf6100cc672df1bc59234" title="Convenience wrapper for database SELECT and fetch all.">Database.fetchall()</a></code> </td><td class="markdownTableBodyNone">runs <code>SELECT</code>, returns all rows  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a9d0403d96b093a60701f765de0f1dc13" title="Convenience wrapper for database SELECT and fetch one.">Database.fetchone()</a></code> </td><td class="markdownTableBodyNone">runs <code>SELECT</code>, returns a single row, or <code>None</code>  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#ac2830d87b7ef903efae946ef44f15fa8" title="Convenience wrapper for database INSERT, returns inserted row ID.">Database.insert()</a></code> </td><td class="markdownTableBodyNone"><code>INSERT</code> a single row into table, returns inserted ID  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#ad5d53b2d8e81a5dfb1c5b750b896c6d9" title="Convenience wrapper for database SELECT, returns database cursor.">Database.select()</a></code> </td><td class="markdownTableBodyNone">runs <code>SELECT</code>, returns cursor  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a96bcd45247e5044ca3c4bb0321271368" title="Convenience wrapper for database UPDATE, returns affected row count.">Database.update()</a></code> </td><td class="markdownTableBodyNone"><code>UPDATE</code> table, returns affected row count  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#ac138b8780a7056b6690835e45e6f0c7d" title="Convenience wrapper for database DELETE, returns affected row count.">Database.delete()</a></code> </td><td class="markdownTableBodyNone"><code>DELETE</code> from table, returns affected row count  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a93fa6dc495fe1cef39bb09417ad4afcf" title="Executes the SQL statement and returns database cursor.">Database.execute()</a></code> </td><td class="markdownTableBodyNone">executes SQL with arguments, returns cursor  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a4a96ce331b02a3cfbebcd94b16508f70" title="Executes the SQL as script of any number of statements.">Database.executescript()</a></code> </td><td class="markdownTableBodyNone">executes SQL as a script of one or more SQL statements  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#aa6ca49ff7108d313c2a159bceb4a9824" title="Returns a transaction context manager.">Database.transaction()</a></code> </td><td class="markdownTableBodyNone">returns <code>dblite.Transaction</code> context manager  </td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code><a class="el" href="classdblite_1_1api_1_1_database.html#ac68cafe0ed5bd0c45bb5271f4e7deb1d">Database.open()</a></code> </td><td class="markdownTableBodyNone">opens database connection if not already open  </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a3409a60def4d192a3d1758f337b69489" title="Closes the default database connection, if any.">Database.close()</a></code> </td><td class="markdownTableBodyNone">closes the database and all pending transactions, if open  </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code><a class="el" href="classdblite_1_1api_1_1_queryable.html#a57270e6d7b99c314c5f2d516e913052f">Database.closed</a></code> </td><td class="markdownTableBodyNone">whether database is not open  </td></tr>
+<td class="markdownTableBodyNone"><code><a class="el" href="namespacedblite_1_1api.html#a3409a60def4d192a3d1758f337b69489" title="Closes the default database connection, if any.">Database.close()</a></code> </td><td class="markdownTableBodyNone">closes the database and all pending transactions, if open  </td></tr>
 <tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code><a class="el" href="classdblite_1_1api_1_1_queryable.html#a57270e6d7b99c314c5f2d516e913052f">Database.closed</a></code> </td><td class="markdownTableBodyNone">whether database is not open  </td></tr>
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code><a class="el" href="classdblite_1_1api_1_1_queryable.html#afdf844befc3e040137d70e553440b165">Database.cursor</a></code> </td><td class="markdownTableBodyNone">database engine cursor object  </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code><a class="el" href="classdblite_1_1api_1_1_database.html#a55981a36bc39c90f412ea1283715b293">Database.row_factory</a></code> </td><td class="markdownTableBodyNone">custom row factory, as <code>function(cursor, row tuple)</code>  </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
@@ -233,8 +245,8 @@ Usage</h1>
 <div class="line">    tx.commit()  # Commits uncommitted actions</div>
 <div class="line">    tx.insert(&quot;test&quot;, val=&quot;will be rolled back&quot;)</div>
 <div class="line">    tx.rollback()  # Rolls back uncommitted actions</div>
-<div class="line">    tx.insert(&quot;test&quot;, val=&quot;will roll back automatically: no autocommit&quot;)</div>
-</div><!-- fragment --><p>Queries directly on the Database object use autocommit mode.</p>
+<div class="line">    tx.insert(&quot;test&quot;, val=&quot;will be rolled back automatically by Transaction&quot;)</div>
+</div><!-- fragment --><p>Queries directly on the Database object use autocommit mode: every action query gets committed immediately.</p>
 <p>Database instances are usable as context managers:</p>
 <div class="fragment"><div class="line">with dblite.init(&quot;my.sqlite&quot;) as db:  # File will be closed on exiting block</div>
 <div class="line">    db.executescript(&quot;CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)&quot;)</div>
@@ -304,11 +316,11 @@ Queries</h1>
 </div><!-- fragment --><div class="fragment"><div class="line"># Result: SELECT * FROM test ORDER BY id</div>
 <div class="line">dblite.fetchall(&quot;test&quot;, order=&quot;id&quot;)</div>
 <div class="line">dblite.fetchall(&quot;test&quot;, order=&quot;id ASC&quot;)</div>
-<div class="line">dblite.fetchall(&quot;test&quot;, order=(&quot;id&quot;, False))</div>
+<div class="line">dblite.fetchall(&quot;test&quot;, order=(&quot;id&quot;, True))</div>
 <div class="line"># Result: SELECT * FROM test ORDER BY id ASC val DESC</div>
 <div class="line">dblite.fetchall(&quot;test&quot;, order=&quot;id, val DESC&quot;)</div>
-<div class="line">dblite.fetchall(&quot;test&quot;, order=[&quot;id&quot;, (&quot;val&quot;, True)])</div>
-<div class="line">dblite.fetchall(&quot;test&quot;, order=[(&quot;id&quot;, False), (&quot;val&quot;, True)])</div>
+<div class="line">dblite.fetchall(&quot;test&quot;, order=[&quot;id&quot;, (&quot;val&quot;, False)])</div>
+<div class="line">dblite.fetchall(&quot;test&quot;, order=[(&quot;id&quot;, True), (&quot;val&quot;, False)])</div>
 <div class="line">dblite.fetchall(&quot;test&quot;, order=[(&quot;id&quot;, &quot;ASC&quot;), (&quot;val&quot;, &quot;DESC&quot;)])</div>
 </div><!-- fragment --><div class="fragment"><div class="line"># Result: SELECT * FROM test LIMIT 2 OFFSET 0</div>
 <div class="line">dblite.fetchall(&quot;test&quot;, limit=2)</div>
@@ -321,9 +333,9 @@ Queries</h1>
 <div class="line">dblite.fetchall(&quot;test&quot;, limit=(-1, 10))</div>
 <div class="line">dblite.fetchall(&quot;test&quot;, limit=(None, 10))</div>
 </div><!-- fragment --><p><a class="anchor" id="name-quoting"></a> </p>
-<h3><a class="anchor" id="autotoc_md3"></a>
-Name quoting</h3>
-<p>Table and column names are not quoted automatically. Names with whitespace or non-alphanumeric characters or reserved words can be quoted with <code><a class="el" href="namespacedblite_1_1engines_1_1postgres.html#a88f7951cd0e48638ef8fc026bdac91bb" title="Returns identifier in quotes and proper-escaped for queries, if value needs quoting (has non-alphanum...">Database.quote()</a></code> and <code><a class="el" href="namespacedblite_1_1engines_1_1postgres.html#a88f7951cd0e48638ef8fc026bdac91bb" title="Returns identifier in quotes and proper-escaped for queries, if value needs quoting (has non-alphanum...">Transaction.quote()</a></code>:</p>
+<h2><a class="anchor" id="autotoc_md3"></a>
+Name quoting</h2>
+<p>Table and column name strings are not quoted automatically. Names with whitespace or non-alphanumeric characters or reserved words can be quoted with <code><a class="el" href="namespacedblite_1_1engines_1_1postgres.html#a88f7951cd0e48638ef8fc026bdac91bb" title="Returns identifier in quotes and proper-escaped for queries, if value needs quoting (has non-alphanum...">Database.quote()</a></code> and <code><a class="el" href="namespacedblite_1_1engines_1_1postgres.html#a88f7951cd0e48638ef8fc026bdac91bb" title="Returns identifier in quotes and proper-escaped for queries, if value needs quoting (has non-alphanum...">Transaction.quote()</a></code>:</p>
 <div class="fragment"><div class="line">with dblite.init(&quot;my.sqlite&quot;) as db:</div>
 <div class="line">    db.executescript(&quot;CREATE TABLE test (id INTEGER PRIMARY KEY, %s TEXT)&quot; %</div>
 <div class="line">                     db.quote(&quot;my column&quot;))</div>
@@ -331,6 +343,7 @@ Name quoting</h3>
 <div class="line">    for row in db.select(&quot;test&quot;):</div>
 <div class="line">        print(row[&quot;my column&quot;])</div>
 </div><!-- fragment --><p>Note that in Postgres, quoted identifiers are case-sensitive.</p>
+<p>Table and column names that were given as data classes and class members, <em>are</em> quoted automatically if their values need escaping, see <a href="#name-quoting-in-objects">name quoting in objects</a>.</p>
 <p><a class="anchor" id="adapters-and-converters"></a> </p>
 <h1><a class="anchor" id="autotoc_md4"></a>
 Adapters and converters</h1>
@@ -342,11 +355,155 @@ Adapters and converters</h1>
 <div class="line">dblite.executescript(&quot;CREATE TABLE test (id INTEGER PRIMARY KEY, data JSON)&quot;)</div>
 <div class="line">dblite.insert(&quot;test&quot;, id=1, data={&quot;some&quot;: {&quot;nested&quot;: [&quot;data&quot;, 1, 2]}})</div>
 <div class="line">dblite.fetchone(&quot;test&quot;)  # `data` is auto-converted to Python dictionary</div>
-</div><!-- fragment --><p><a class="anchor" id="sqlite"></a> </p>
+</div><!-- fragment --><p><a class="anchor" id="row-factories"></a> </p>
 <h1><a class="anchor" id="autotoc_md5"></a>
+Row factories</h1>
+<p>A custom row factory can be specified, to return results as desired type instead of dictionaries.</p>
+<div class="fragment"><div class="line">def kvfactory(cursor, row):  # Returns row as [(colname, value), ].</div>
+<div class="line">    return list(zip([c[0] for c in cursor.description], row))</div>
+<div class="line"> </div>
+<div class="line">dblite.init(&quot;:memory:&quot;)</div>
+<div class="line">dblite.register_row_factory(kvfactory)</div>
+<div class="line">dblite.executescript(&quot;CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)&quot;)</div>
+<div class="line">for row in dblite.select(&quot;sqlite_master&quot;):</div>
+<div class="line">    print(row)  # Prints [(&quot;type&quot;, &quot;table&quot;), (&quot;name&quot;, &quot;test&quot;), ..]</div>
+</div><!-- fragment --><p>Row factory can also be specified per Database:</p>
+<div class="fragment"><div class="line">db = dblite.init(&quot;:memory:&quot;)</div>
+<div class="line">db.row_factory = lambda cursor, row: row</div>
+<div class="line">db.executescript(&quot;CREATE TABLE test (id INTEGER PRIMARY KEY, val TEXT)&quot;)</div>
+<div class="line">for row in db.select(&quot;sqlite_master&quot;):</div>
+<div class="line">    print(row)  # Prints (&quot;table&quot;, &quot;test&quot;, ..)</div>
+</div><!-- fragment --><p>Database row factory overrides the globally registered factory, if any.</p>
+<p><a class="anchor" id="object-relational-mapping"></a> </p>
+<h1><a class="anchor" id="autotoc_md6"></a>
+Object-relational mapping</h1>
+<p>dblite uses dictionaries as rows by default, but can just as easily operate with various types of data classes and objects, using classes in place of table names and objects in place of data dictionaries.</p>
+<p>And if data attributes have been declared as properties on the class, the class properties can be used directly in dblite in place of column names, e.g. for <code>ORDER BY</code> clause.</p>
+<p>(Such data descriptor properties are automatically available for <code>property</code> attributes, classes with <code>__slots__</code>, and namedtuples).</p>
+<p><a class="anchor" id="data-classes"></a> </p>
+<h2><a class="anchor" id="autotoc_md7"></a>
+Data classes</h2>
+<div class="fragment"><div class="line">schema = &quot;CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)&quot;</div>
+<div class="line">class Device(object):</div>
+<div class="line">    def __init__(self, id=None, name=None):</div>
+<div class="line">        self._id   = id</div>
+<div class="line">        self._name = name</div>
+<div class="line"> </div>
+<div class="line">    def get_id(self): return self._id</div>
+<div class="line">    def set_id(self, id): self._id = id</div>
+<div class="line">    id = property(get_id, set_id)</div>
+<div class="line"> </div>
+<div class="line">    def get_name(self): return self._name</div>
+<div class="line">    def set_name(self, name): self._name = name</div>
+<div class="line">    name = property(get_name, set_name)</div>
+<div class="line">Device.__name__ = &quot;devices&quot;  # cls.__name__ will be used as table name</div>
+<div class="line"> </div>
+<div class="line">dblite.init(&quot;:memory:&quot;).executescript(schema)</div>
+<div class="line"> </div>
+<div class="line">device = Device(name=&quot;lidar&quot;)</div>
+<div class="line">device.id = dblite.insert(Device, device)</div>
+<div class="line"> </div>
+<div class="line">device.name = &quot;solid-state lidar&quot;</div>
+<div class="line">dblite.update(Device, device, {Device.id: device.id})</div>
+<div class="line"> </div>
+<div class="line">device = dblite.fetchone(Device, Device.id, where=device)</div>
+<div class="line">print(device.name)  # Will be None as we only selected Device.id</div>
+<div class="line"> </div>
+<div class="line">for device in dblite.fetchall(Device, order=Device.name):</div>
+<div class="line">    print(device.id, device.name)</div>
+<div class="line">    dblite.delete(Device, device)</div>
+</div><!-- fragment --><p>It is also possible to use very simple data classes with no declared properties.</p>
+<div class="fragment"><div class="line">schema = &quot;CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)&quot;</div>
+<div class="line">class Device(object):</div>
+<div class="line">    def __init__(self, id=None, name=None):</div>
+<div class="line">        self.id   = id</div>
+<div class="line">        self.name = name</div>
+<div class="line">Device.__name__ = &quot;devices&quot;  # cls.__name__ will be used as table name</div>
+<div class="line"> </div>
+<div class="line">dblite.init(&quot;:memory:&quot;).executescript(schema)</div>
+<div class="line"> </div>
+<div class="line">device = Device(name=&quot;lidar&quot;)</div>
+<div class="line">device.id = dblite.insert(Device, device)</div>
+<div class="line"> </div>
+<div class="line">device.name = &quot;solid-state lidar&quot;</div>
+<div class="line">dblite.update(Device, device, id=device.id)</div>
+<div class="line"> </div>
+<div class="line">device = dblite.fetchone(Device, &quot;id&quot;, where=device)</div>
+<div class="line">print(device.name)  # Will be None as we only selected Device.id</div>
+<div class="line"> </div>
+<div class="line">for device in dblite.fetchall(Device, order=&quot;name&quot;):</div>
+<div class="line">    print(device.id, device.name)</div>
+<div class="line">    dblite.delete(Device, device)</div>
+</div><!-- fragment --><p><a class="anchor" id="classes-with-slots"></a> </p>
+<h2><a class="anchor" id="autotoc_md8"></a>
+Classes with slots</h2>
+<div class="fragment"><div class="line">schema = &quot;CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)&quot;</div>
+<div class="line">class Device(object):</div>
+<div class="line">    __slots__ = (&quot;id&quot;, &quot;name&quot;)</div>
+<div class="line">    def __init__(self, id=None, name=None):</div>
+<div class="line">        self.id   = id</div>
+<div class="line">        self.name = name</div>
+<div class="line">Device.__name__ = &quot;devices&quot;  # cls.__name__ will be used as table name</div>
+<div class="line"> </div>
+<div class="line">dblite.init(&quot;:memory:&quot;).executescript(schema)</div>
+<div class="line"> </div>
+<div class="line">device = Device(name=&quot;lidar&quot;)</div>
+<div class="line">device.id = dblite.insert(Device, device)</div>
+<div class="line"> </div>
+<div class="line">device.name = &quot;solid-state lidar&quot;</div>
+<div class="line">dblite.update(Device, device, id=device.id)</div>
+<div class="line"> </div>
+<div class="line">device = dblite.fetchone(Device, Device.id, where=device)</div>
+<div class="line">print(device.name)  # Will be None as we only selected Device.id</div>
+<div class="line"> </div>
+<div class="line">for device in dblite.fetchall(Device, order=Device.name):</div>
+<div class="line">    print(device.id, device.name)</div>
+<div class="line">    dblite.delete(Device, device)</div>
+</div><!-- fragment --><p><a class="anchor" id="namedtuple"></a> </p>
+<h2><a class="anchor" id="autotoc_md9"></a>
+namedtuple</h2>
+<p>Works with both <code>collections.namedtuple</code> and <code>typing.NamedTuple</code>.</p>
+<div class="fragment"><div class="line">schema = &quot;CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)&quot;</div>
+<div class="line">Device = collections.namedtuple(&quot;devices&quot;, (&quot;id&quot;, &quot;name&quot;))</div>
+<div class="line"> </div>
+<div class="line">dblite.init(&quot;:memory:&quot;).executescript(schema)</div>
+<div class="line"> </div>
+<div class="line">device = Device(id=None, name=&quot;lidar&quot;)</div>
+<div class="line">device_id = dblite.insert(Device, device)</div>
+<div class="line"> </div>
+<div class="line">device = Device(id=device_id, name=&quot;solid-state lidar&quot;)</div>
+<div class="line">dblite.update(Device, device, {Device.id: device_id})</div>
+<div class="line"> </div>
+<div class="line">device = dblite.fetchone(Device, Device.id, where=device)</div>
+<div class="line">print(device.name)  # Will be None as we only selected Device.id</div>
+<div class="line"> </div>
+<div class="line">for device in dblite.fetchall(Device, order=Device.name):</div>
+<div class="line">    print(device.id, device.name)</div>
+<div class="line">    dblite.delete(Device, device)</div>
+</div><!-- fragment --><p><a class="anchor" id="name-quoting-in-objects"></a> </p>
+<h2><a class="anchor" id="autotoc_md10"></a>
+Name quoting in objects</h2>
+<p>dblite automatically quotes table and column names in queries when using objects as arguments.</p>
+<div class="fragment"><div class="line">schema = &#39;CREATE TABLE &quot;restaurant bookings&quot; (&quot;group&quot; TEXT, &quot;table&quot; TEXT, &quot;when&quot; TIMESTAMP, &quot;PATRON&quot; BOOLEAN)&#39;</div>
+<div class="line">Booking = collections.namedtuple(&quot;_&quot;, (&quot;group&quot;, &quot;table&quot;, &quot;when&quot;, &quot;patron&quot;))</div>
+<div class="line">Booking.__name__ = &quot;restaurant bookings&quot;</div>
+<div class="line"> </div>
+<div class="line">dblite.init(&quot;:memory:&quot;).executescript(schema)</div>
+<div class="line"> </div>
+<div class="line">booking1 = Booking(&quot;Squirrel Charity&quot;, &quot;Table 16&quot;, datetime.datetime(2022, 12, 30, 20, 30), False)</div>
+<div class="line">booking2 = Booking(&quot;The Three Henrys&quot;, &quot;Table 23&quot;, datetime.datetime(2022, 12, 30, 19, 00), True)</div>
+<div class="line">dblite.insert(Booking, booking1)</div>
+<div class="line">dblite.insert(Booking, booking2)</div>
+<div class="line"> </div>
+<div class="line">for booking in dblite.fetchall(Booking, order=Booking.date):</div>
+<div class="line">    print(booking.when, booking.group, booking.table, booking.patron)</div>
+</div><!-- fragment --><p>For more thorough examples on using objects, see <code>test/test_orm.py</code>.</p>
+<p>In Postgres, schema definition is looked up from the database to ensure properly cased names in queries, as cased names for Postgres tables and columns must use the declared form. If there is no exact match for the Python name in database, falls back to lower-case name, or if name is lower-case, falls back to cased name if database has a single matching cased name.</p>
+<p><a class="anchor" id="sqlite"></a> </p>
+<h1><a class="anchor" id="autotoc_md11"></a>
 SQLite</h1>
 <p>SQLite connection parameter needs to be a valid path or a path-like object, or the special <code>":memory:"</code> for transient in-memory database.</p>
-<p>Connections flags default to <code>check_same_thread=False, detect_types=sqlite3.PARSE_DECLTYPES</code>, can be overridden on init:</p>
+<p>Connection flags default to <code>check_same_thread=False, detect_types=sqlite3.PARSE_DECLTYPES</code>, can be overridden on init:</p>
 <div class="fragment"><div class="line">dblite.init(&quot;/path/to/my.db&quot;, detect_types=False)</div>
 </div><!-- fragment --><p>Note that SQLite connections do not support multiple concurrent isolated transactions, transaction state is shared per connection. To mitigate this, Transaction contexts in SQLite default to exclusive access:</p>
 <div class="fragment"><div class="line">dblite.init(&quot;:memory:&quot;)</div>
@@ -358,7 +515,7 @@ SQLite</h1>
 <div class="line">    print(&quot;Will only be doing SELECT queries, no need for exclusion.&quot;)</div>
 <div class="line">    tx.fetchall(&quot;test&quot;)</div>
 </div><!-- fragment --><p><a class="anchor" id="postgres"></a> </p>
-<h1><a class="anchor" id="autotoc_md6"></a>
+<h1><a class="anchor" id="autotoc_md12"></a>
 Postgres</h1>
 <p>Postgres connection parameters can be:</p><ul>
 <li>Postgres URI scheme <code>"postgresql://user:pass@hostname:port/dbname?parameter1=val1&amp;.."</code></li>
@@ -379,7 +536,7 @@ Postgres</h1>
 <div class="fragment"><div class="line">dblite.init(&quot;host=localhost user=postgres dbname=mydb&quot;)</div>
 <div class="line">with dblite.transaction(schema=&quot;information_schema&quot;) as tx:</div>
 <div class="line">    for row in tx.fetchall(&quot;columns&quot;, table_schema=&quot;public&quot;,</div>
-<div class="line">                           order=&quot;table_name, dtd_identifier&quot;):</div>
+<div class="line">                           order=&quot;table_name, ordinal_position&quot;):</div>
 <div class="line">        print(row[&quot;table_name&quot;], row[&quot;column_name&quot;], row[&quot;data_type&quot;])</div>
 </div><!-- fragment --><p>Postgres transactions support server-side cursors for iterative data access, fetching and materializing rows in batches:</p>
 <div class="fragment"><div class="line">dblite.init(&quot;host=localhost user=postgres dbname=bigdata&quot;)</div>
@@ -391,14 +548,14 @@ Postgres</h1>
 <div class="line">with Transaction(lazy=True, itersize=100) as tx:</div>
 <div class="line">    for i, row in enumerate(tx.select(&quot;some really huge table&quot;)):</div>
 <div class="line">        print(&quot;Processing row #%s&quot; % i)</div>
-</div><!-- fragment --><p>Note that <code><a class="el" href="namespacedblite_1_1api.html#a4a96ce331b02a3cfbebcd94b16508f70" title="Executes the SQL as script of any number of statements.">executescript()</a></code> in Postgres forces an internal reload of schema metadata, allowing `insert()´ to return inserted primary key value for newly created tables, and query parameters to be auto-cast to expected column types. </p>
+</div><!-- fragment --><p>Note that <code><a class="el" href="namespacedblite_1_1api.html#a4a96ce331b02a3cfbebcd94b16508f70" title="Executes the SQL as script of any number of statements.">executescript()</a></code> in Postgres forces an internal reload of schema metadata, allowing <a class="el" href="namespacedblite_1_1api.html#ac2830d87b7ef903efae946ef44f15fa8" title="Convenience wrapper for database INSERT, returns inserted row ID.">insert()</a> to return inserted primary key value for newly created tables, and query parameters to be auto-cast to expected column types. </p>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Fri Nov 25 2022 21:27:56 for dblite by
+    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>

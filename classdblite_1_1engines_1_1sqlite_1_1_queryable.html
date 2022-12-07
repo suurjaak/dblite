@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -108,9 +108,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:abf9698e70d4c47fc91057497a5d8d347"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#abf9698e70d4c47fc91057497a5d8d347">insert</a> (self, table, values=(), **kwargs)</td></tr>
 <tr class="memdesc:abf9698e70d4c47fc91057497a5d8d347"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database INSERT, returns inserted row ID.  <a href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#abf9698e70d4c47fc91057497a5d8d347">More...</a><br /></td></tr>
 <tr class="separator:abf9698e70d4c47fc91057497a5d8d347"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae869f9422797bc1b160ee994d2c2be4d"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ae869f9422797bc1b160ee994d2c2be4d">makeSQL</a> (self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=())</td></tr>
-<tr class="memdesc:ae869f9422797bc1b160ee994d2c2be4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (SQL statement string, parameter dict).  <a href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ae869f9422797bc1b160ee994d2c2be4d">More...</a><br /></td></tr>
-<tr class="separator:ae869f9422797bc1b160ee994d2c2be4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6d75a1811dcb9e9c118e3a5eee494e3"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ac6d75a1811dcb9e9c118e3a5eee494e3">makeSQL</a> (self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=(), kwargs=None)</td></tr>
+<tr class="memdesc:ac6d75a1811dcb9e9c118e3a5eee494e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (SQL statement string, parameter dict).  <a href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ac6d75a1811dcb9e9c118e3a5eee494e3">More...</a><br /></td></tr>
+<tr class="separator:ac6d75a1811dcb9e9c118e3a5eee494e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a20ac56873bd166432c392cd3da9f11b1"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#a20ac56873bd166432c392cd3da9f11b1">quote</a> (cls, value, force=False)</td></tr>
 <tr class="memdesc:a20ac56873bd166432c392cd3da9f11b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns identifier in quotes and proper-escaped for queries, if value needs quoting (has non-alphanumerics, starts with number, or is reserved).  <a href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#a20ac56873bd166432c392cd3da9f11b1">More...</a><br /></td></tr>
 <tr class="separator:a20ac56873bd166432c392cd3da9f11b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -140,6 +140,7 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:a4a488780dfa749f316326f2bfe245c79"><td class="memItemLeft" align="right" valign="top">list&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#a4a488780dfa749f316326f2bfe245c79">OPS</a></td></tr>
+<tr class="memdesc:a4a488780dfa749f316326f2bfe245c79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Recognized binary operators for <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ac6d75a1811dcb9e9c118e3a5eee494e3" title="Returns (SQL statement string, parameter dict).">makeSQL()</a>  <a href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#a4a488780dfa749f316326f2bfe245c79">More...</a><br /></td></tr>
 <tr class="separator:a4a488780dfa749f316326f2bfe245c79"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
@@ -154,7 +155,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00046">46</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00047">47</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="abf9698e70d4c47fc91057497a5d8d347"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abf9698e70d4c47fc91057497a5d8d347">&#9670;&nbsp;</a></span>insert()</h2>
@@ -199,12 +200,12 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_queryable.html#a05b66cbf94dd567179cf585fc5ef5324">dblite.api.Queryable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00057">57</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00059">59</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
 
 </div>
 </div>
-<a id="ae869f9422797bc1b160ee994d2c2be4d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae869f9422797bc1b160ee994d2c2be4d">&#9670;&nbsp;</a></span>makeSQL()</h2>
+<a id="ac6d75a1811dcb9e9c118e3a5eee494e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac6d75a1811dcb9e9c118e3a5eee494e3">&#9670;&nbsp;</a></span>makeSQL()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -261,7 +262,13 @@ Additional Inherited Members</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>values</em> = <code>()</code>&#160;</td>
+          <td class="paramname"><em>values</em> = <code>()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>kwargs</em> = <code>None</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -273,7 +280,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Returns (SQL statement string, parameter dict). </p>
 
-<p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_queryable.html#a778d653a1958e9cae7de52f4d770486b">dblite.api.Queryable</a>.</p>
+<p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_queryable.html#af8d9ba92b47956397fe4524fd65854fd">dblite.api.Queryable</a>.</p>
 
 <p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00064">64</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
 
@@ -322,7 +329,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5">dblite.api.Queryable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00180">180</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00196">196</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
 
 </div>
 </div>
@@ -350,7 +357,9 @@ Additional Inherited Members</h2></td></tr>
 <div class="line">           <span class="stringliteral">&quot;&gt;=&quot;</span>, <span class="stringliteral">&quot;=&quot;</span>, <span class="stringliteral">&quot;==&quot;</span>, <span class="stringliteral">&quot;!=&quot;</span>, <span class="stringliteral">&quot;&lt;&gt;&quot;</span>, <span class="stringliteral">&quot;IS&quot;</span>, <span class="stringliteral">&quot;IS NOT&quot;</span>, <span class="stringliteral">&quot;IN&quot;</span>, <span class="stringliteral">&quot;NOT IN&quot;</span>, <span class="stringliteral">&quot;LIKE&quot;</span>,</div>
 <div class="line">           <span class="stringliteral">&quot;GLOB&quot;</span>, <span class="stringliteral">&quot;MATCH&quot;</span>, <span class="stringliteral">&quot;REGEXP&quot;</span>, <span class="stringliteral">&quot;AND&quot;</span>, <span class="stringliteral">&quot;OR&quot;</span>]</div>
 </div><!-- fragment -->
-<p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00048">48</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
+<p>Recognized binary operators for <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ac6d75a1811dcb9e9c118e3a5eee494e3" title="Returns (SQL statement string, parameter dict).">makeSQL()</a> </p>
+
+<p class="definition">Definition at line <a class="el" href="sqlite_8py_source.html#l00050">50</a> of file <a class="el" href="sqlite_8py_source.html">sqlite.py</a>.</p>
 
 </div>
 </div>
@@ -363,7 +372,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacedblite.html">dblite</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1engines.html">engines</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1engines_1_1sqlite.html">sqlite</a></li><li class="navelem"><a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html">Queryable</a></li>
-    <li class="footer">Generated on Fri Nov 25 2022 21:27:56 for dblite by
+    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>

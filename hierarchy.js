@@ -1,9 +1,12 @@
 var hierarchy =
 [
-    [ "dblite.api.Engines", "classdblite_1_1api_1_1_engines.html", null ],
+    [ "cursor", null, [
+      [ "dblite.engines.postgres.RowFactoryCursor", "classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html", null ]
+    ] ],
     [ "Exception", "class_exception.html", [
       [ "dblite.api.Rollback", "classdblite_1_1api_1_1_rollback.html", null ]
     ] ],
+    [ "dblite.engines.postgres.Identifier", "classdblite_1_1engines_1_1postgres_1_1_identifier.html", null ],
     [ "dblite.api.Queryable", "classdblite_1_1api_1_1_queryable.html", [
       [ "dblite.api.Database", "classdblite_1_1api_1_1_database.html", [
         [ "dblite.engines.postgres.Database", "classdblite_1_1engines_1_1postgres_1_1_database.html", null ],
@@ -23,6 +26,6 @@ var hierarchy =
       ] ]
     ] ],
     [ "tzinfo", null, [
-      [ "dblite.api.StaticTzInfo", "classdblite_1_1api_1_1_static_tz_info.html", null ]
+      [ "dblite.util.StaticTzInfo", "classdblite_1_1util_1_1_static_tz_info.html", null ]
     ] ]
 ];

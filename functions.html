@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -99,7 +99,8 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_transaction.html#af9b1bc9d63718f4cb79adcd7120785ca">dblite.engines.sqlite.Transaction</a>
 </li>
 <li>__eq__()
-: <a class="el" href="classdblite_1_1api_1_1_static_tz_info.html#a00be9e242ae0d1932233c62af43bfaa6">dblite.api.StaticTzInfo</a>
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_identifier.html#af3ebb6ce090844b3ef6456560f5e00b5">dblite.engines.postgres.Identifier</a>
+, <a class="el" href="classdblite_1_1util_1_1_static_tz_info.html#ab7d332d04fb61e58eb75b2e477a6882e">dblite.util.StaticTzInfo</a>
 </li>
 <li>__exit__()
 : <a class="el" href="classdblite_1_1api_1_1_database.html#a559a4dbaad334cfc9bc0c9a31b9e0061">dblite.api.Database</a>
@@ -110,18 +111,26 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_transaction.html#a04d891bad9bd8ef916601cf686046693">dblite.engines.sqlite.Transaction</a>
 </li>
 <li>__init__()
-: <a class="el" href="classdblite_1_1api_1_1_static_tz_info.html#a268fcfe493b82e47875aa452cab7a807">dblite.api.StaticTzInfo</a>
-, <a class="el" href="classdblite_1_1api_1_1_transaction.html#ae3ae45f9f0f10cf86fdcc279a21ab167">dblite.api.Transaction</a>
+: <a class="el" href="classdblite_1_1api_1_1_transaction.html#ae3ae45f9f0f10cf86fdcc279a21ab167">dblite.api.Transaction</a>
 , <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#abec96c2389bacf204776e8ce53ab2055">dblite.engines.postgres.Database</a>
+, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_identifier.html#a23a2198717804b9c06772c3e3164f115">dblite.engines.postgres.Identifier</a>
+, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#a4defa5c6475d093f2675cd368764e27c">dblite.engines.postgres.RowFactoryCursor</a>
 , <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_transaction.html#a7e91cbc5dee2a1adb8d90b3d9bf80618">dblite.engines.postgres.Transaction</a>
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#a125dfd09de519d792a26e70336b56325">dblite.engines.sqlite.Database</a>
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_transaction.html#a6f65b067aae023206da1fb5f49f5a5ac">dblite.engines.sqlite.Transaction</a>
+, <a class="el" href="classdblite_1_1util_1_1_static_tz_info.html#a871d22ad087bec3ed81992a36419f237">dblite.util.StaticTzInfo</a>
 </li>
 <li>__ne__()
-: <a class="el" href="classdblite_1_1api_1_1_static_tz_info.html#a2e76ef8f0775f067790687d88ca15f55">dblite.api.StaticTzInfo</a>
+: <a class="el" href="classdblite_1_1util_1_1_static_tz_info.html#a94e33aa8c385de9e35aef82df21f7c4b">dblite.util.StaticTzInfo</a>
+</li>
+<li>__next__()
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#a024f499778c58087aebf8fbaef00bef3">dblite.engines.postgres.RowFactoryCursor</a>
 </li>
 <li>__repr__()
-: <a class="el" href="classdblite_1_1api_1_1_static_tz_info.html#ad26bf25bcb8ecb190ed15b328a4ddf4a">dblite.api.StaticTzInfo</a>
+: <a class="el" href="classdblite_1_1util_1_1_static_tz_info.html#ac63d6956846d2a0bd0890ee40779f7a5">dblite.util.StaticTzInfo</a>
+</li>
+<li>__str__()
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_identifier.html#a5cd92ea00b58ac6ef2a4b5572be2f4cf">dblite.engines.postgres.Identifier</a>
 </li>
 </ul>
 
@@ -176,9 +185,6 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 , <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_transaction.html#a8c71aa28992325bb7a98556f0bb6eecb">dblite.engines.postgres.Transaction</a>
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_transaction.html#a18014f4134fee7658650ce8beebfb764">dblite.engines.sqlite.Transaction</a>
 </li>
-<li>DATABASES
-: <a class="el" href="classdblite_1_1api_1_1_engines.html#a34f7ce5b384054757b6601d511d88b27">dblite.api.Engines</a>
-</li>
 <li>delete()
 : <a class="el" href="classdblite_1_1api_1_1_queryable.html#ac3c432733524623778062e2b9e58129b">dblite.api.Queryable</a>
 </li>
@@ -186,7 +192,7 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 : <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#a3184821570bb7fc7bcdd678f6b5ec3b8">dblite.engines.postgres.Database</a>
 </li>
 <li>dst()
-: <a class="el" href="classdblite_1_1api_1_1_static_tz_info.html#a5adf687617d02351259107c5b7e5fbd4">dblite.api.StaticTzInfo</a>
+: <a class="el" href="classdblite_1_1util_1_1_static_tz_info.html#a9596062c106cd8fcd739f121faaca71b">dblite.util.StaticTzInfo</a>
 </li>
 </ul>
 
@@ -210,21 +216,19 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 
 
 <h3><a id="index_f"></a>- f -</h3><ul>
-<li>factory()
-: <a class="el" href="classdblite_1_1api_1_1_engines.html#aa6ca47cc3a3f56b68fbe6d38399e37db">dblite.api.Engines</a>
+<li>factory
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#a949b5d56a85bc83961ce4b607432dd26">dblite.engines.postgres.RowFactoryCursor</a>
 </li>
 <li>fetchall()
 : <a class="el" href="classdblite_1_1api_1_1_queryable.html#af48e9574ac9de1fa437c47aea0fd9ecb">dblite.api.Queryable</a>
+, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#a5ce5b233f4623ad964bdb8ac4afc01ed">dblite.engines.postgres.RowFactoryCursor</a>
+</li>
+<li>fetchmany()
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#ac37217cd75376eb3304f832d9eedab3e">dblite.engines.postgres.RowFactoryCursor</a>
 </li>
 <li>fetchone()
 : <a class="el" href="classdblite_1_1api_1_1_queryable.html#afa925d1cb5144096cffef68fc5165785">dblite.api.Queryable</a>
-</li>
-</ul>
-
-
-<h3><a id="index_g"></a>- g -</h3><ul>
-<li>get()
-: <a class="el" href="classdblite_1_1api_1_1_engines.html#ab4a342f7b500858c2f6f0844c64fdacf">dblite.api.Engines</a>
+, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#ae268a1a3f719b332a986c05a2f0e5da5">dblite.engines.postgres.RowFactoryCursor</a>
 </li>
 </ul>
 
@@ -246,16 +250,23 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 : <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#ae0756568cbdf0712748446d0949c5c52">dblite.engines.postgres.Database</a>
 </li>
 <li>makeSQL()
-: <a class="el" href="classdblite_1_1api_1_1_queryable.html#a778d653a1958e9cae7de52f4d770486b">dblite.api.Queryable</a>
-, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#acb3a145b287354915596426174bac1f2">dblite.engines.postgres.Queryable</a>
-, <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ae869f9422797bc1b160ee994d2c2be4d">dblite.engines.sqlite.Queryable</a>
-</li>
-<li>MODULES
-: <a class="el" href="classdblite_1_1api_1_1_engines.html#a57a09fae0a91477a5e43d6162d52a718">dblite.api.Engines</a>
+: <a class="el" href="classdblite_1_1api_1_1_queryable.html#af8d9ba92b47956397fe4524fd65854fd">dblite.api.Queryable</a>
+, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#abad8287c0c6e2f624e6a11ec86b2c853">dblite.engines.postgres.Queryable</a>
+, <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ac6d75a1811dcb9e9c118e3a5eee494e3">dblite.engines.sqlite.Queryable</a>
 </li>
 <li>MUTEX
 : <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#a999fbfe46176b47a79f75fd090534890">dblite.engines.postgres.Database</a>
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#a5fab29bdfd921fa57a3e4e4d5e437a33">dblite.engines.sqlite.Database</a>
+</li>
+</ul>
+
+
+<h3><a id="index_n"></a>- n -</h3><ul>
+<li>name
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_identifier.html#a657d31edc1717a68596ff2d05d6e94e4">dblite.engines.postgres.Identifier</a>
+</li>
+<li>next()
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#a31f0e31ddf74d67b1868d3d3d0094a4e">dblite.engines.postgres.RowFactoryCursor</a>
 </li>
 </ul>
 
@@ -283,15 +294,13 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 <li>POOLS
 : <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#ab9d88a24f514bf06d097fa19a372f09f">dblite.engines.postgres.Database</a>
 </li>
-<li>populate()
-: <a class="el" href="classdblite_1_1api_1_1_engines.html#ac1c4f42b0a689ec850a2bf3d4c9f47ef">dblite.api.Engines</a>
-</li>
 </ul>
 
 
 <h3><a id="index_q"></a>- q -</h3><ul>
 <li>quote()
 : <a class="el" href="classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5">dblite.api.Queryable</a>
+, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_identifier.html#a52a21e735c6338c2ac125b598188519b">dblite.engines.postgres.Identifier</a>
 , <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a8d4b87bac2af873236552ab709f26710">dblite.engines.postgres.Queryable</a>
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#a20ac56873bd166432c392cd3da9f11b1">dblite.engines.sqlite.Queryable</a>
 </li>
@@ -303,6 +312,23 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 : <a class="el" href="classdblite_1_1api_1_1_transaction.html#ae67fc3701db8782784515a9478a8778c">dblite.api.Transaction</a>
 , <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_transaction.html#a2e431b2da15491c306d89f75be0ae169">dblite.engines.postgres.Transaction</a>
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_transaction.html#af8d50ce026ba2942b2fff5bd34efa03d">dblite.engines.sqlite.Transaction</a>
+</li>
+<li>row_factory
+: <a class="el" href="classdblite_1_1api_1_1_database.html#a55981a36bc39c90f412ea1283715b293">dblite.api.Database</a>
+</li>
+<li>ROW_FACTORY
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#afb4153f08718f8e80afa9c8a80742fe8">dblite.engines.postgres.Database</a>
+</li>
+<li>row_factory
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#a79badaa78f74649867a28eb23841aafe">dblite.engines.postgres.Database</a>
+, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#a1c7588da77e96c8ced8e0a0809e2ab5c">dblite.engines.postgres.RowFactoryCursor</a>
+, <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#a507748fb2b4d33e113e4c609583ffadc">dblite.engines.sqlite.Database</a>
+</li>
+<li>ROW_FACTORY
+: <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#acfb1f74403ca03e86778c38fe497f653">dblite.engines.sqlite.Database</a>
+</li>
+<li>rowtype
+: <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#a53f2d75da7c37125bea285ebefb92c57">dblite.engines.postgres.RowFactoryCursor</a>
 </li>
 </ul>
 
@@ -321,7 +347,7 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 , <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#a1af03bf15334b5e208acde0b8bd0f98e">dblite.engines.sqlite.Database</a>
 </li>
 <li>tzname()
-: <a class="el" href="classdblite_1_1api_1_1_static_tz_info.html#ae2493fbf59bd2c8184f3e830b0d9b437">dblite.api.StaticTzInfo</a>
+: <a class="el" href="classdblite_1_1util_1_1_static_tz_info.html#aa636f0487b3f7414762626f969a59b4d">dblite.util.StaticTzInfo</a>
 </li>
 </ul>
 
@@ -331,14 +357,14 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 : <a class="el" href="classdblite_1_1api_1_1_queryable.html#acb856fb2c60668d53a47f58350065581">dblite.api.Queryable</a>
 </li>
 <li>utcoffset()
-: <a class="el" href="classdblite_1_1api_1_1_static_tz_info.html#a3bc2a12be371f67eecd90a8cc4fca608">dblite.api.StaticTzInfo</a>
+: <a class="el" href="classdblite_1_1util_1_1_static_tz_info.html#ae76b8f718e8b7bd31cab655b725ca152">dblite.util.StaticTzInfo</a>
 </li>
 </ul>
 
 
 <h3><a id="index_z"></a>- z -</h3><ul>
 <li>ZERO
-: <a class="el" href="classdblite_1_1api_1_1_static_tz_info.html#ae3868cd1810f215a6eaa573e9447fc2b">dblite.api.StaticTzInfo</a>
+: <a class="el" href="classdblite_1_1util_1_1_static_tz_info.html#a0ee134ab4d47ca60ffbf3afd98f1b0b5">dblite.util.StaticTzInfo</a>
 </li>
 </ul>
 </div><!-- contents -->
@@ -346,7 +372,7 @@ $(document).ready(function(){initNavTree('functions.html',''); initResizable(); 
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Fri Nov 25 2022 21:27:56 for dblite by
+    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>

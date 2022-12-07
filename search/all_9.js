@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['load_5fmodules_40',['load_modules',['../namespacedblite_1_1api.html#a75e4fcf066c3b7dd08519cdb881d567d',1,'dblite::api']]]
+  ['load_5fmodules_45',['load_modules',['../namespacedblite_1_1util.html#ac84f3500679502b06e7371ed030d79ce',1,'dblite::util']]]
 ];

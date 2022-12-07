@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -131,9 +131,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a05b66cbf94dd567179cf585fc5ef5324"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a05b66cbf94dd567179cf585fc5ef5324">insert</a> (self, table, values=(), **kwargs)</td></tr>
 <tr class="memdesc:a05b66cbf94dd567179cf585fc5ef5324"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database INSERT, returns inserted row ID.  <a href="classdblite_1_1api_1_1_queryable.html#a05b66cbf94dd567179cf585fc5ef5324">More...</a><br /></td></tr>
 <tr class="separator:a05b66cbf94dd567179cf585fc5ef5324"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a778d653a1958e9cae7de52f4d770486b"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a778d653a1958e9cae7de52f4d770486b">makeSQL</a> (self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=())</td></tr>
-<tr class="memdesc:a778d653a1958e9cae7de52f4d770486b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (SQL statement string, parameter dict).  <a href="classdblite_1_1api_1_1_queryable.html#a778d653a1958e9cae7de52f4d770486b">More...</a><br /></td></tr>
-<tr class="separator:a778d653a1958e9cae7de52f4d770486b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8d9ba92b47956397fe4524fd65854fd"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#af8d9ba92b47956397fe4524fd65854fd">makeSQL</a> (self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=(), kwargs=None)</td></tr>
+<tr class="memdesc:af8d9ba92b47956397fe4524fd65854fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (SQL statement string, parameter dict).  <a href="classdblite_1_1api_1_1_queryable.html#af8d9ba92b47956397fe4524fd65854fd">More...</a><br /></td></tr>
+<tr class="separator:af8d9ba92b47956397fe4524fd65854fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80ec47d02d8825e0b4194233d42475c5"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5">quote</a> (cls, value, force=False)</td></tr>
 <tr class="memdesc:a80ec47d02d8825e0b4194233d42475c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns identifier in quotes and proper-escaped for queries, if value needs quoting (has non-alphanumerics, starts with number, or is reserved).  <a href="classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5">More...</a><br /></td></tr>
 <tr class="separator:a80ec47d02d8825e0b4194233d42475c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -156,7 +156,7 @@ Properties</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Abstract base for <a class="el" href="classdblite_1_1api_1_1_database.html" title="Database instance.">Database</a> and <a class="el" href="classdblite_1_1api_1_1_transaction.html" title="Transaction context manager, breakable by raising Rollback.">Transaction</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00191">191</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00215">215</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="ac3c432733524623778062e2b9e58129b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac3c432733524623778062e2b9e58129b">&#9670;&nbsp;</a></span>delete()</h2>
@@ -199,7 +199,7 @@ Properties</h2></td></tr>
 <p>Convenience wrapper for database DELETE, returns affected row count. </p>
 <p>Keyword arguments are added to WHERE. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00245">245</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00266">266</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -246,7 +246,7 @@ Properties</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_transaction.html#ae60fb31f93813de08aef5c68cb80e407">dblite.engines.postgres.Transaction</a>, <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_transaction.html#aef7594b7929c1b95cb93c6265936c4dc">dblite.engines.sqlite.Transaction</a>, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#affd6f485519094d79f4ae9287bad13fa">dblite.engines.postgres.Database</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#ad3fd7461e87567f5512f1334c35b57e6">dblite.engines.sqlite.Database</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00258">258</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00277">277</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -286,7 +286,7 @@ Properties</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_transaction.html#a4332cf9609b84646d1eb992c1720c3b9">dblite.engines.postgres.Transaction</a>, <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_transaction.html#a16e1703d6e4acd2d9a0f06d08361792a">dblite.engines.sqlite.Transaction</a>, <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#a0593b8315c3eeeb41d5839f7d999a5a9">dblite.engines.postgres.Database</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#aa4c3909302b32e3de10ca3bdddaf95ab">dblite.engines.sqlite.Database</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00270">270</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00289">289</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -355,7 +355,7 @@ Properties</h2></td></tr>
 <p>Convenience wrapper for database SELECT and fetch all. </p>
 <p>Keyword arguments are added to WHERE. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00198">198</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00222">222</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -424,7 +424,7 @@ Properties</h2></td></tr>
 <p>Convenience wrapper for database SELECT and fetch one. </p>
 <p>Keyword arguments are added to WHERE. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00206">206</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00230">230</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -471,12 +471,12 @@ Properties</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a7d89ab21f412a533e9631a0aae8636d9">dblite.engines.postgres.Queryable</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#abf9698e70d4c47fc91057497a5d8d347">dblite.engines.sqlite.Queryable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00215">215</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00239">239</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
-<a id="a778d653a1958e9cae7de52f4d770486b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a778d653a1958e9cae7de52f4d770486b">&#9670;&nbsp;</a></span>makeSQL()</h2>
+<a id="af8d9ba92b47956397fe4524fd65854fd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8d9ba92b47956397fe4524fd65854fd">&#9670;&nbsp;</a></span>makeSQL()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -533,7 +533,13 @@ Properties</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>values</em> = <code>()</code>&#160;</td>
+          <td class="paramname"><em>values</em> = <code>()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>kwargs</em> = <code>None</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -545,9 +551,9 @@ Properties</h2></td></tr>
 
 <p>Returns (SQL statement string, parameter dict). </p>
 
-<p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#acb3a145b287354915596426174bac1f2">dblite.engines.postgres.Queryable</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ae869f9422797bc1b160ee994d2c2be4d">dblite.engines.sqlite.Queryable</a>.</p>
+<p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#abad8287c0c6e2f624e6a11ec86b2c853">dblite.engines.postgres.Queryable</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#ac6d75a1811dcb9e9c118e3a5eee494e3">dblite.engines.sqlite.Queryable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00274">274</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00293">293</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -594,7 +600,7 @@ Properties</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html#a8d4b87bac2af873236552ab709f26710">dblite.engines.postgres.Queryable</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_queryable.html#a20ac56873bd166432c392cd3da9f11b1">dblite.engines.sqlite.Queryable</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00303">303</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00323">323</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -663,7 +669,7 @@ Properties</h2></td></tr>
 <p>Convenience wrapper for database SELECT, returns database cursor. </p>
 <p>Keyword arguments are added to WHERE. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00223">223</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00247">247</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -714,7 +720,7 @@ Properties</h2></td></tr>
 <p>Convenience wrapper for database UPDATE, returns affected row count. </p>
 <p>Keyword arguments are added to WHERE. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00234">234</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00257">257</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -741,7 +747,7 @@ Properties</h2></td></tr>
 
 <p>Whether currently not open. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00281">281</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00301">301</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -767,7 +773,7 @@ Properties</h2></td></tr>
 
 <p><a class="el" href="classdblite_1_1api_1_1_database.html" title="Database instance.">Database</a> engine cursor object, or `None` if closed. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00289">289</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00309">309</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -780,7 +786,7 @@ Properties</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacedblite.html">dblite</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1api.html">api</a></li><li class="navelem"><a class="el" href="classdblite_1_1api_1_1_queryable.html">Queryable</a></li>
-    <li class="footer">Generated on Fri Nov 25 2022 21:27:56 for dblite by
+    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>

@@ -17,6 +17,8 @@ var classdblite_1_1engines_1_1postgres_1_1_database =
     [ "MUTEX", "classdblite_1_1engines_1_1postgres_1_1_database.html#a999fbfe46176b47a79f75fd090534890", null ],
     [ "POOL_SIZE", "classdblite_1_1engines_1_1postgres_1_1_database.html#a731ced9614fd8496db48031f8b5131ab", null ],
     [ "POOLS", "classdblite_1_1engines_1_1postgres_1_1_database.html#ab9d88a24f514bf06d097fa19a372f09f", null ],
+    [ "ROW_FACTORY", "classdblite_1_1engines_1_1postgres_1_1_database.html#afb4153f08718f8e80afa9c8a80742fe8", null ],
     [ "closed", "classdblite_1_1engines_1_1postgres_1_1_database.html#aba9472ec7c1b5969e383a999901d16e1", null ],
-    [ "cursor", "classdblite_1_1engines_1_1postgres_1_1_database.html#abd1a111ec66061cdbbf6ec2cfcd9d22d", null ]
+    [ "cursor", "classdblite_1_1engines_1_1postgres_1_1_database.html#abd1a111ec66061cdbbf6ec2cfcd9d22d", null ],
+    [ "row_factory", "classdblite_1_1engines_1_1postgres_1_1_database.html#a79badaa78f74649867a28eb23841aafe", null ]
 ];

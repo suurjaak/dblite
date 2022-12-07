@@ -7,6 +7,7 @@ var sqlite_8py =
     [ "quote", "sqlite_8py.html#a4e50f0ea3ac98ead624a73aed7f04999", null ],
     [ "register_adapter", "sqlite_8py.html#a8de81a95ef56863e5aecb6217d11e1c9", null ],
     [ "register_converter", "sqlite_8py.html#a91d2d9621291b13682df9c2ea0643186", null ],
+    [ "register_row_factory", "sqlite_8py.html#aee54898ef1d3a6f24d09b586684b1939", null ],
     [ "__all__", "sqlite_8py.html#af56fdd5f265814f995a5758fbb90e0d5", null ],
     [ "RESERVED_KEYWORDS", "sqlite_8py.html#a08deb237856866ea07850eda50d694a8", null ]
 ];

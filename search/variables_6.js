@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['reserved_5fkeywords_139',['RESERVED_KEYWORDS',['../namespacedblite_1_1engines_1_1postgres.html#aa3aa706bdf4122682b376bc534d0d516',1,'dblite.engines.postgres.RESERVED_KEYWORDS()'],['../namespacedblite_1_1engines_1_1sqlite.html#a08deb237856866ea07850eda50d694a8',1,'dblite.engines.sqlite.RESERVED_KEYWORDS()']]]
+  ['ops_157',['OPS',['../classdblite_1_1engines_1_1postgres_1_1_queryable.html#a2d8fbdac6a242a3bf8c08938806a9d09',1,'dblite.engines.postgres.Queryable.OPS()'],['../classdblite_1_1engines_1_1sqlite_1_1_queryable.html#a4a488780dfa749f316326f2bfe245c79',1,'dblite.engines.sqlite.Queryable.OPS()']]]
 ];

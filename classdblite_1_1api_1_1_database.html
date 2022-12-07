@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -85,6 +85,7 @@ $(document).ready(function(){initNavTree('classdblite_1_1api_1_1_database.html',
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="classdblite_1_1api_1_1_database-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">dblite.api.Database Class Reference</div>  </div>
@@ -144,9 +145,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a05b66cbf94dd567179cf585fc5ef5324 inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a05b66cbf94dd567179cf585fc5ef5324">insert</a> (self, table, values=(), **kwargs)</td></tr>
 <tr class="memdesc:a05b66cbf94dd567179cf585fc5ef5324 inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database INSERT, returns inserted row ID.  <a href="classdblite_1_1api_1_1_queryable.html#a05b66cbf94dd567179cf585fc5ef5324">More...</a><br /></td></tr>
 <tr class="separator:a05b66cbf94dd567179cf585fc5ef5324 inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a778d653a1958e9cae7de52f4d770486b inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a778d653a1958e9cae7de52f4d770486b">makeSQL</a> (self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=())</td></tr>
-<tr class="memdesc:a778d653a1958e9cae7de52f4d770486b inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (SQL statement string, parameter dict).  <a href="classdblite_1_1api_1_1_queryable.html#a778d653a1958e9cae7de52f4d770486b">More...</a><br /></td></tr>
-<tr class="separator:a778d653a1958e9cae7de52f4d770486b inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8d9ba92b47956397fe4524fd65854fd inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#af8d9ba92b47956397fe4524fd65854fd">makeSQL</a> (self, action, table, cols=&quot;*&quot;, where=(), group=(), order=(), limit=(), values=(), kwargs=None)</td></tr>
+<tr class="memdesc:af8d9ba92b47956397fe4524fd65854fd inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns (SQL statement string, parameter dict).  <a href="classdblite_1_1api_1_1_queryable.html#af8d9ba92b47956397fe4524fd65854fd">More...</a><br /></td></tr>
+<tr class="separator:af8d9ba92b47956397fe4524fd65854fd inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80ec47d02d8825e0b4194233d42475c5 inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5">quote</a> (cls, value, force=False)</td></tr>
 <tr class="memdesc:a80ec47d02d8825e0b4194233d42475c5 inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns identifier in quotes and proper-escaped for queries, if value needs quoting (has non-alphanumerics, starts with number, or is reserved).  <a href="classdblite_1_1api_1_1_queryable.html#a80ec47d02d8825e0b4194233d42475c5">More...</a><br /></td></tr>
 <tr class="separator:a80ec47d02d8825e0b4194233d42475c5 inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,8 +158,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:acb856fb2c60668d53a47f58350065581 inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database UPDATE, returns affected row count.  <a href="classdblite_1_1api_1_1_queryable.html#acb856fb2c60668d53a47f58350065581">More...</a><br /></td></tr>
 <tr class="separator:acb856fb2c60668d53a47f58350065581 inherit pub_methods_classdblite_1_1api_1_1_queryable"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:a55981a36bc39c90f412ea1283715b293"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_database.html#a55981a36bc39c90f412ea1283715b293">row_factory</a> = property</td></tr>
+<tr class="memdesc:a55981a36bc39c90f412ea1283715b293"><td class="mdescLeft">&#160;</td><td class="mdescRight">The custom row factory, if any, as `function(cursor, row tuple)`.  <a href="classdblite_1_1api_1_1_database.html#a55981a36bc39c90f412ea1283715b293">More...</a><br /></td></tr>
+<tr class="separator:a55981a36bc39c90f412ea1283715b293"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header properties_classdblite_1_1api_1_1_queryable"><td colspan="2" onclick="javascript:toggleInherit('properties_classdblite_1_1api_1_1_queryable')"><img src="closed.png" alt="-"/>&#160;Properties inherited from <a class="el" href="classdblite_1_1api_1_1_queryable.html">dblite.api.Queryable</a></td></tr>
 <tr class="memitem:a57270e6d7b99c314c5f2d516e913052f inherit properties_classdblite_1_1api_1_1_queryable"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1api_1_1_queryable.html#a57270e6d7b99c314c5f2d516e913052f">closed</a> = property</td></tr>
 <tr class="memdesc:a57270e6d7b99c314c5f2d516e913052f inherit properties_classdblite_1_1api_1_1_queryable"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether currently not open.  <a href="classdblite_1_1api_1_1_queryable.html#a57270e6d7b99c314c5f2d516e913052f">More...</a><br /></td></tr>
@@ -173,7 +177,7 @@ Additional Inherited Members</h2></td></tr>
 <p>Queries directly on the <a class="el" href="classdblite_1_1api_1_1_database.html" title="Database instance.">Database</a> object use autocommit mode.</p>
 <p>Note that the database connection is not opened immediately on construction. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00315">315</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00335">335</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a727e4e11283fd55502b88cbf8079feb1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a727e4e11283fd55502b88cbf8079feb1">&#9670;&nbsp;</a></span>__del__()</h2>
@@ -193,7 +197,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Closes the database, if open. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00341">341</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00361">361</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -218,7 +222,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#a3a4f56824a8bec177c0523e564d21197">dblite.engines.postgres.Database</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#aa677a234c265835eb48b43f4c0116048">dblite.engines.sqlite.Database</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00333">333</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00353">353</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -264,7 +268,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#aace8ee033c797ab5366dc45dbf8aee25">dblite.engines.postgres.Database</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#abb3062f83505effc665b5bf5940bf4f1">dblite.engines.sqlite.Database</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00337">337</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00357">357</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -304,7 +308,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#a7aa910a8c9a9eca47eb850aa175c33cd">dblite.engines.postgres.Database</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#a46287fdb7ef0ace7fb1c08f6b16bd47b">dblite.engines.sqlite.Database</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00355">355</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00375">375</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -328,7 +332,7 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#a9c08665aafd7a3a049896901dfdcf105">dblite.engines.postgres.Database</a>, and <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#a56b57946a537b4db49f3ddb09812a2f4">dblite.engines.sqlite.Database</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00345">345</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00365">365</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -383,7 +387,34 @@ Additional Inherited Members</h2></td></tr>
 
 <p>Reimplemented in <a class="el" href="classdblite_1_1engines_1_1sqlite_1_1_database.html#a1af03bf15334b5e208acde0b8bd0f98e">dblite.engines.sqlite.Database</a>, and <a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html#aa378f3bfe403f5566436c9b70c9430cb">dblite.engines.postgres.Database</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00330">330</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00350">350</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Property Documentation</h2>
+<a id="a55981a36bc39c90f412ea1283715b293"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a55981a36bc39c90f412ea1283715b293">&#9670;&nbsp;</a></span>row_factory</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">dblite.api.Database.row_factory = property</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The custom row factory, if any, as `function(cursor, row tuple)`. </p>
+
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00380">380</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -396,7 +427,7 @@ Additional Inherited Members</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacedblite.html">dblite</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1api.html">api</a></li><li class="navelem"><a class="el" href="classdblite_1_1api_1_1_database.html">Database</a></li>
-    <li class="footer">Generated on Fri Nov 25 2022 21:27:56 for dblite by
+    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>

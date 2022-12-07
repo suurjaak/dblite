@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['update_126',['update',['../classdblite_1_1api_1_1_queryable.html#acb856fb2c60668d53a47f58350065581',1,'dblite.api.Queryable.update()'],['../namespacedblite_1_1api.html#a96bcd45247e5044ca3c4bb0321271368',1,'dblite.api.update()']]],
-  ['utcoffset_127',['utcoffset',['../classdblite_1_1api_1_1_static_tz_info.html#a3bc2a12be371f67eecd90a8cc4fca608',1,'dblite::api::StaticTzInfo']]]
+  ['transaction_146',['transaction',['../classdblite_1_1api_1_1_database.html#a95232e0715e749349cdbd54dfd7b5361',1,'dblite.api.Database.transaction()'],['../classdblite_1_1engines_1_1postgres_1_1_database.html#aa378f3bfe403f5566436c9b70c9430cb',1,'dblite.engines.postgres.Database.transaction()'],['../classdblite_1_1engines_1_1sqlite_1_1_database.html#a1af03bf15334b5e208acde0b8bd0f98e',1,'dblite.engines.sqlite.Database.transaction()'],['../namespacedblite_1_1api.html#aa6ca49ff7108d313c2a159bceb4a9824',1,'dblite.api.transaction()']]],
+  ['tzname_147',['tzname',['../classdblite_1_1util_1_1_static_tz_info.html#aa636f0487b3f7414762626f969a59b4d',1,'dblite::util::StaticTzInfo']]]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['transaction_77',['Transaction',['../classdblite_1_1engines_1_1sqlite_1_1_transaction.html',1,'dblite.engines.sqlite.Transaction'],['../classdblite_1_1engines_1_1postgres_1_1_transaction.html',1,'dblite.engines.postgres.Transaction'],['../classdblite_1_1api_1_1_transaction.html',1,'dblite.api.Transaction']]]
+  ['statictzinfo_88',['StaticTzInfo',['../classdblite_1_1util_1_1_static_tz_info.html',1,'dblite::util']]]
 ];

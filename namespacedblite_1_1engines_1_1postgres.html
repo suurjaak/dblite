@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -97,7 +97,13 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_database.html">Database</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper around psycopg2.ConnectionPool and Cursor.  <a href="classdblite_1_1engines_1_1postgres_1_1_database.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_identifier.html">Identifier</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper for table and column names from data objects.  <a href="classdblite_1_1engines_1_1postgres_1_1_identifier.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_queryable.html">Queryable</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html">RowFactoryCursor</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A cursor that generates result rows via given factory callable.  <a href="classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_transaction.html">Transaction</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classdblite_1_1engines_1_1postgres_1_1_transaction.html" title="Transaction context manager, provides convenience methods for queries.">Transaction</a> context manager, provides convenience methods for queries.  <a href="classdblite_1_1engines_1_1postgres_1_1_transaction.html#details">More...</a><br /></td></tr>
@@ -123,6 +129,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a62cdb67c3092ad89360d1bc10e58ec10"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1engines_1_1postgres.html#a62cdb67c3092ad89360d1bc10e58ec10">register_converter</a> (transformer, typenames)</td></tr>
 <tr class="memdesc:a62cdb67c3092ad89360d1bc10e58ec10"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers function to auto-convert given Postgres types to Python types in query results.  <a href="namespacedblite_1_1engines_1_1postgres.html#a62cdb67c3092ad89360d1bc10e58ec10">More...</a><br /></td></tr>
 <tr class="separator:a62cdb67c3092ad89360d1bc10e58ec10"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7317be614e0b2214cc7f9729cce9196e"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1engines_1_1postgres.html#a7317be614e0b2214cc7f9729cce9196e">register_row_factory</a> (row_factory)</td></tr>
+<tr class="memdesc:a7317be614e0b2214cc7f9729cce9196e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers custom row factory, as or `None` to reset to default.  <a href="namespacedblite_1_1engines_1_1postgres.html#a7317be614e0b2214cc7f9729cce9196e">More...</a><br /></td></tr>
+<tr class="separator:a7317be614e0b2214cc7f9729cce9196e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -155,7 +164,7 @@ Variables</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00605">605</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00743">743</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -177,7 +186,7 @@ Variables</h2></td></tr>
 
 <p>Returns Postgres connection options as URL, like `"postgresql://host/dbname"`. </p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00614">614</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00752">752</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -231,7 +240,7 @@ Variables</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>```{table or view name: { "fields": OrderedDict({ column { "name": column name, "type": column type name, ?"pk": True, ?"fk": foreign table name, } }), ?"key": primary key column name, ?"parent": parent table name, ?"children": [child table name, ], "type": "table" or "view", } }``` </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00655">655</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00793">793</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -270,7 +279,7 @@ Variables</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00723">723</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00861">861</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -302,7 +311,7 @@ Variables</h2></td></tr>
 
 <p>Registers function to auto-adapt given Python types to Postgres types in query parameters. </p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00737">737</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00875">875</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -334,7 +343,29 @@ Variables</h2></td></tr>
 
 <p>Registers function to auto-convert given Postgres types to Python types in query results. </p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00749">749</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00887">887</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+
+</div>
+</div>
+<a id="a7317be614e0b2214cc7f9729cce9196e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7317be614e0b2214cc7f9729cce9196e">&#9670;&nbsp;</a></span>register_row_factory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">def dblite.engines.postgres.register_row_factory </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>row_factory</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Registers custom row factory, as or `None` to reset to default. </p>
+
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00897">897</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -351,23 +382,23 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;=  [</div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;    <span class="stringliteral">&quot;ALL&quot;</span>, <span class="stringliteral">&quot;ANALYSE&quot;</span>, <span class="stringliteral">&quot;ANALYZE&quot;</span>, <span class="stringliteral">&quot;AND&quot;</span>, <span class="stringliteral">&quot;ANY&quot;</span>, <span class="stringliteral">&quot;ASC&quot;</span>, <span class="stringliteral">&quot;ASYMMETRIC&quot;</span>, <span class="stringliteral">&quot;BOTH&quot;</span>, <span class="stringliteral">&quot;CASE&quot;</span>, <span class="stringliteral">&quot;CAST&quot;</span>, <span class="stringliteral">&quot;CHECK&quot;</span>,</div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;    <span class="stringliteral">&quot;COLLATE&quot;</span>, <span class="stringliteral">&quot;COLUMN&quot;</span>, <span class="stringliteral">&quot;CONSTRAINT&quot;</span>, <span class="stringliteral">&quot;CURRENT_CATALOG&quot;</span>, <span class="stringliteral">&quot;CURRENT_DATE&quot;</span>, <span class="stringliteral">&quot;CURRENT_ROLE&quot;</span>,</div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;    <span class="stringliteral">&quot;CURRENT_TIME&quot;</span>, <span class="stringliteral">&quot;CURRENT_TIMESTAMP&quot;</span>, <span class="stringliteral">&quot;CURRENT_USER&quot;</span>, <span class="stringliteral">&quot;DEFAULT&quot;</span>, <span class="stringliteral">&quot;DEFERRABLE&quot;</span>, <span class="stringliteral">&quot;DESC&quot;</span>,</div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;    <span class="stringliteral">&quot;DISTINCT&quot;</span>, <span class="stringliteral">&quot;DO&quot;</span>, <span class="stringliteral">&quot;ELSE&quot;</span>, <span class="stringliteral">&quot;END&quot;</span>, <span class="stringliteral">&quot;FALSE&quot;</span>, <span class="stringliteral">&quot;FOREIGN&quot;</span>, <span class="stringliteral">&quot;IN&quot;</span>, <span class="stringliteral">&quot;INITIALLY&quot;</span>, <span class="stringliteral">&quot;LATERAL&quot;</span>, <span class="stringliteral">&quot;LEADING&quot;</span>,</div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;    <span class="stringliteral">&quot;LOCALTIME&quot;</span>, <span class="stringliteral">&quot;LOCALTIMESTAMP&quot;</span>, <span class="stringliteral">&quot;NOT&quot;</span>, <span class="stringliteral">&quot;NULL&quot;</span>, <span class="stringliteral">&quot;ONLY&quot;</span>, <span class="stringliteral">&quot;OR&quot;</span>, <span class="stringliteral">&quot;PLACING&quot;</span>, <span class="stringliteral">&quot;PRIMARY&quot;</span>, <span class="stringliteral">&quot;REFERENCES&quot;</span>,</div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;    <span class="stringliteral">&quot;SELECT&quot;</span>, <span class="stringliteral">&quot;SESSION_USER&quot;</span>, <span class="stringliteral">&quot;SOME&quot;</span>, <span class="stringliteral">&quot;SYMMETRIC&quot;</span>, <span class="stringliteral">&quot;TABLE&quot;</span>, <span class="stringliteral">&quot;THEN&quot;</span>, <span class="stringliteral">&quot;TRAILING&quot;</span>, <span class="stringliteral">&quot;TRUE&quot;</span>, <span class="stringliteral">&quot;UNIQUE&quot;</span>,</div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;    <span class="stringliteral">&quot;USER&quot;</span>, <span class="stringliteral">&quot;USING&quot;</span>, <span class="stringliteral">&quot;VARIADIC&quot;</span>, <span class="stringliteral">&quot;WHEN&quot;</span>, <span class="stringliteral">&quot;AUTHORIZATION&quot;</span>, <span class="stringliteral">&quot;BINARY&quot;</span>, <span class="stringliteral">&quot;COLLATION&quot;</span>, <span class="stringliteral">&quot;CONCURRENTLY&quot;</span>,</div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;    <span class="stringliteral">&quot;CROSS&quot;</span>, <span class="stringliteral">&quot;CURRENT_SCHEMA&quot;</span>, <span class="stringliteral">&quot;FREEZE&quot;</span>, <span class="stringliteral">&quot;FULL&quot;</span>, <span class="stringliteral">&quot;ILIKE&quot;</span>, <span class="stringliteral">&quot;INNER&quot;</span>, <span class="stringliteral">&quot;IS&quot;</span>, <span class="stringliteral">&quot;JOIN&quot;</span>, <span class="stringliteral">&quot;LEFT&quot;</span>, <span class="stringliteral">&quot;LIKE&quot;</span>,</div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    <span class="stringliteral">&quot;NATURAL&quot;</span>, <span class="stringliteral">&quot;OUTER&quot;</span>, <span class="stringliteral">&quot;RIGHT&quot;</span>, <span class="stringliteral">&quot;SIMILAR&quot;</span>, <span class="stringliteral">&quot;TABLESAMPLE&quot;</span>, <span class="stringliteral">&quot;VERBOSE&quot;</span>, <span class="stringliteral">&quot;ISNULL&quot;</span>, <span class="stringliteral">&quot;NOTNULL&quot;</span>,</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;    <span class="stringliteral">&quot;OVERLAPS&quot;</span>, <span class="stringliteral">&quot;ARRAY&quot;</span>, <span class="stringliteral">&quot;AS&quot;</span>, <span class="stringliteral">&quot;CREATE&quot;</span>, <span class="stringliteral">&quot;EXCEPT&quot;</span>, <span class="stringliteral">&quot;FETCH&quot;</span>, <span class="stringliteral">&quot;FOR&quot;</span>, <span class="stringliteral">&quot;FROM&quot;</span>, <span class="stringliteral">&quot;GRANT&quot;</span>, <span class="stringliteral">&quot;GROUP&quot;</span>,</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;    <span class="stringliteral">&quot;HAVING&quot;</span>, <span class="stringliteral">&quot;INTERSECT&quot;</span>, <span class="stringliteral">&quot;INTO&quot;</span>, <span class="stringliteral">&quot;LIMIT&quot;</span>, <span class="stringliteral">&quot;OFFSET&quot;</span>, <span class="stringliteral">&quot;ON&quot;</span>, <span class="stringliteral">&quot;ORDER&quot;</span>, <span class="stringliteral">&quot;RETURNING&quot;</span>, <span class="stringliteral">&quot;TO&quot;</span>, <span class="stringliteral">&quot;UNION&quot;</span>,</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;    <span class="stringliteral">&quot;WHERE&quot;</span>, <span class="stringliteral">&quot;WINDOW&quot;</span>, <span class="stringliteral">&quot;WITH&quot;</span></div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;    <span class="stringliteral">&quot;ALL&quot;</span>, <span class="stringliteral">&quot;ANALYSE&quot;</span>, <span class="stringliteral">&quot;ANALYZE&quot;</span>, <span class="stringliteral">&quot;AND&quot;</span>, <span class="stringliteral">&quot;ANY&quot;</span>, <span class="stringliteral">&quot;ARRAY&quot;</span>, <span class="stringliteral">&quot;AS&quot;</span>, <span class="stringliteral">&quot;ASC&quot;</span>, <span class="stringliteral">&quot;ASYMMETRIC&quot;</span>, <span class="stringliteral">&quot;AUTHORIZATION&quot;</span>,</div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;    <span class="stringliteral">&quot;BINARY&quot;</span>, <span class="stringliteral">&quot;BOTH&quot;</span>, <span class="stringliteral">&quot;CASE&quot;</span>, <span class="stringliteral">&quot;CAST&quot;</span>, <span class="stringliteral">&quot;CHECK&quot;</span>, <span class="stringliteral">&quot;COLLATE&quot;</span>, <span class="stringliteral">&quot;COLLATION&quot;</span>, <span class="stringliteral">&quot;COLUMN&quot;</span>, <span class="stringliteral">&quot;CONCURRENTLY&quot;</span>,</div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;    <span class="stringliteral">&quot;CONSTRAINT&quot;</span>, <span class="stringliteral">&quot;CREATE&quot;</span>, <span class="stringliteral">&quot;CROSS&quot;</span>, <span class="stringliteral">&quot;CURRENT_CATALOG&quot;</span>, <span class="stringliteral">&quot;CURRENT_DATE&quot;</span>, <span class="stringliteral">&quot;CURRENT_ROLE&quot;</span>,</div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;    <span class="stringliteral">&quot;CURRENT_SCHEMA&quot;</span>, <span class="stringliteral">&quot;CURRENT_TIME&quot;</span>, <span class="stringliteral">&quot;CURRENT_TIMESTAMP&quot;</span>, <span class="stringliteral">&quot;CURRENT_USER&quot;</span>, <span class="stringliteral">&quot;DEFAULT&quot;</span>, <span class="stringliteral">&quot;DEFERRABLE&quot;</span>,</div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;    <span class="stringliteral">&quot;DESC&quot;</span>, <span class="stringliteral">&quot;DISTINCT&quot;</span>, <span class="stringliteral">&quot;DO&quot;</span>, <span class="stringliteral">&quot;ELSE&quot;</span>, <span class="stringliteral">&quot;END&quot;</span>, <span class="stringliteral">&quot;EXCEPT&quot;</span>, <span class="stringliteral">&quot;FALSE&quot;</span>, <span class="stringliteral">&quot;FETCH&quot;</span>, <span class="stringliteral">&quot;FOR&quot;</span>, <span class="stringliteral">&quot;FOREIGN&quot;</span>, <span class="stringliteral">&quot;FREEZE&quot;</span>,</div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;    <span class="stringliteral">&quot;FROM&quot;</span>, <span class="stringliteral">&quot;FULL&quot;</span>, <span class="stringliteral">&quot;GRANT&quot;</span>, <span class="stringliteral">&quot;GROUP&quot;</span>, <span class="stringliteral">&quot;HAVING&quot;</span>, <span class="stringliteral">&quot;ILIKE&quot;</span>, <span class="stringliteral">&quot;IN&quot;</span>, <span class="stringliteral">&quot;INITIALLY&quot;</span>, <span class="stringliteral">&quot;INNER&quot;</span>, <span class="stringliteral">&quot;INTERSECT&quot;</span>,</div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;    <span class="stringliteral">&quot;INTO&quot;</span>, <span class="stringliteral">&quot;IS&quot;</span>, <span class="stringliteral">&quot;ISNULL&quot;</span>, <span class="stringliteral">&quot;JOIN&quot;</span>, <span class="stringliteral">&quot;LATERAL&quot;</span>, <span class="stringliteral">&quot;LEADING&quot;</span>, <span class="stringliteral">&quot;LEFT&quot;</span>, <span class="stringliteral">&quot;LIKE&quot;</span>, <span class="stringliteral">&quot;LIMIT&quot;</span>, <span class="stringliteral">&quot;LOCALTIME&quot;</span>,</div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;    <span class="stringliteral">&quot;LOCALTIMESTAMP&quot;</span>, <span class="stringliteral">&quot;NATURAL&quot;</span>, <span class="stringliteral">&quot;NOT&quot;</span>, <span class="stringliteral">&quot;NOTNULL&quot;</span>, <span class="stringliteral">&quot;NULL&quot;</span>, <span class="stringliteral">&quot;OFFSET&quot;</span>, <span class="stringliteral">&quot;ON&quot;</span>, <span class="stringliteral">&quot;ONLY&quot;</span>, <span class="stringliteral">&quot;OR&quot;</span>, <span class="stringliteral">&quot;ORDER&quot;</span>,</div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    <span class="stringliteral">&quot;OUTER&quot;</span>, <span class="stringliteral">&quot;OVERLAPS&quot;</span>, <span class="stringliteral">&quot;PLACING&quot;</span>, <span class="stringliteral">&quot;PRIMARY&quot;</span>, <span class="stringliteral">&quot;REFERENCES&quot;</span>, <span class="stringliteral">&quot;RETURNING&quot;</span>, <span class="stringliteral">&quot;RIGHT&quot;</span>, <span class="stringliteral">&quot;SELECT&quot;</span>,</div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;    <span class="stringliteral">&quot;SESSION_USER&quot;</span>, <span class="stringliteral">&quot;SIMILAR&quot;</span>, <span class="stringliteral">&quot;SOME&quot;</span>, <span class="stringliteral">&quot;SYMMETRIC&quot;</span>, <span class="stringliteral">&quot;TABLE&quot;</span>, <span class="stringliteral">&quot;TABLESAMPLE&quot;</span>, <span class="stringliteral">&quot;THEN&quot;</span>, <span class="stringliteral">&quot;TO&quot;</span>,</div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;    <span class="stringliteral">&quot;TRAILING&quot;</span>, <span class="stringliteral">&quot;TRUE&quot;</span>, <span class="stringliteral">&quot;UNION&quot;</span>, <span class="stringliteral">&quot;UNIQUE&quot;</span>, <span class="stringliteral">&quot;USER&quot;</span>, <span class="stringliteral">&quot;USING&quot;</span>, <span class="stringliteral">&quot;VARIADIC&quot;</span>, <span class="stringliteral">&quot;VERBOSE&quot;</span>,</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;    <span class="stringliteral">&quot;WHEN&quot;</span>, <span class="stringliteral">&quot;WHERE&quot;</span>, <span class="stringliteral">&quot;WINDOW&quot;</span>, <span class="stringliteral">&quot;WITH&quot;</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;]</div>
 </div><!-- fragment -->
 <p>Postgres reserved keywords, needing quotes in SQL queries. </p>
 
-<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00036">36</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="postgres_8py_source.html#l00038">38</a> of file <a class="el" href="postgres_8py_source.html">postgres.py</a>.</p>
 
 </div>
 </div>
@@ -377,7 +408,7 @@ Variables</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacedblite.html">dblite</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1engines.html">engines</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1engines_1_1postgres.html">postgres</a></li>
-    <li class="footer">Generated on Fri Nov 25 2022 21:27:56 for dblite by
+    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>
