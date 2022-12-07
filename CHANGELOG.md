@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.2.0, 2022-12-06
+1.2.0, 2022-12-07
 -----------------
 - support data classes and objects in query arguments and results
 - support dictionaries for column/group/order arguments
