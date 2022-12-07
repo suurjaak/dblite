@@ -278,9 +278,10 @@ Object-relational mapping
 -------------------------
 
 dblite uses dictionaries as rows by default, but can just as easily operate with
-various types of data classes.
+various types of data classes and objects, using classes in place of table names
+and objects in place of data dictionaries.
 
-If data attributes have been declared as properties on the class,
+And if data attributes have been declared as properties on the class,
 the class properties can be used directly in dblite in place of column names,
 e.g. for `ORDER BY` clause.
 
@@ -374,7 +375,9 @@ for device in dblite.fetchall(Device, order=Device.name):
     dblite.delete(Device, device)
 ```
 
-### collections.namedtuple
+### namedtuple
+
+Works with both `collections.namedtuple` and `typing.NamedTuple`.
 
 ```python
 schema = "CREATE TABLE devices (id INTEGER PRIMARY KEY, name TEXT)"
