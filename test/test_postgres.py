@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     22.11.2022
-@modified    06.12.2022
+@modified    07.12.2022
 ------------------------------------------------------------------------------
 """
 import collections
@@ -87,7 +87,8 @@ class TestPostgres(unittest.TestCase):
         uri = "postgresql://"
         if self._env.get("user"):     uri += self._env["user"]
         if self._env.get("password"): uri += ":%s" % self._env["password"]
-        if self._env.get("user") or self._env.get("password"): uri += "@"
+        if self._env.get("user") \
+        or self._env.get("password"): uri += "@"
         if self._env.get("host"):     uri += self._env["host"]
         if self._env.get("port"):     uri += ":%s" % self._env["port"]
         if self._env.get("dbname"):   uri += "/%s" % self._env["dbname"]
