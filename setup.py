@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     16.11.2022
-@modified    16.11.2022
+@modified    23.03.2023
 ------------------------------------------------------------------------------
 """
 import os
@@ -51,6 +51,7 @@ setuptools.setup(
     platforms            = ["any"],
     keywords             = "SQL SQLite Postgres psycopg2",
     python_requires      = ">=2.7",
+    install_requires     = ["six"],
 
     package_dir          = {"": "src"},
     packages             = [PACKAGE],
