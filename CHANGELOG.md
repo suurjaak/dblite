@@ -1,7 +1,11 @@
 CHANGELOG
 =========
 
-1.2.0, 2022-12-06
+1.3.0, 2023-0-23
+-----------------
+- add attributes Database.ENGINE and Transaction.ENGINE
+
+1.2.0, 2022-12-07
 -----------------
 - support data classes and objects in query arguments and results
 - support dictionaries for column/group/order arguments

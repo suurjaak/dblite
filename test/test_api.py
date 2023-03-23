@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    06.12.2022
+@modified    23.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -128,11 +128,13 @@ class TestAPI(unittest.TestCase):
         tx = db.transaction()
         self.assertIsInstance(tx, dblite.api.Transaction,
                               "Unexpected value from dblite.transaction().")
+        self.assertEqual(tx.ENGINE, engine, "Unexpected value from %s.ENGINE." % label(tx))
         tx.close()
 
         logger.info("Verifying Database property decorators.")
         self.assertFalse(db.closed, "Unexpected value from %s.closed." % label(db))
         self.assertIsNotNone(db.cursor, "Unexpected value from %s.cursor." % label(db))
+        self.assertEqual(db.ENGINE, engine, "Unexpected value from %s.ENGINE." % label(db))
 
         logger.info("Verifying dblite.close().")
         self.assertFalse(db.closed, "Unexpected value from %s.closed." % label(db))

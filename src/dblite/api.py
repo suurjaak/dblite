@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    06.12.2022
+@modified    23.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -218,6 +218,10 @@ def register_row_factory(row_factory, engine=None):
 
 class Queryable(object):
     """Abstract base for Database and Transaction."""
+
+    ## Underlying database engine, "sqlite" for SQLite3 and "postgres" for PostgreSQL
+    ENGINE = None
+
 
     def fetchall(self, table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
         """

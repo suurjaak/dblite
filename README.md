@@ -552,6 +552,7 @@ API
 | `Database.closed`                       | whether database is not open
 | `Database.cursor`                       | database engine cursor object
 | `Database.row_factory`                  | custom row factory, as `function(cursor, row tuple)`
+| `Database.ENGINE`                       | underlying database engine, `"sqlite"` for SQLite3 and `"postgres"` for PostgreSQL
 |                                         | |
 | **dblite.Transaction**                  | |
 | `Transaction.fetchall()`                | runs `SELECT`, returns all rows
@@ -567,7 +568,8 @@ API
 | `Transaction.close()`                   | closes the transaction, performing commit or rollback as specified
 | `Transaction.closed`                    | whether transaction is not open
 | `Transaction.cursor`                    | database engine cursor object
-| `Transaction.database`                  | returns transaction `Database` instance
+| `Transaction.database`                  | transaction `Database` instance
+| `Database.ENGINE`                       | underlying database engine, `"sqlite"` for SQLite3 and `"postgres"` for PostgreSQL
 
 
 Dependencies

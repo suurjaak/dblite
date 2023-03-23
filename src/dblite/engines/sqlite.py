@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    06.12.2022
+@modified    23.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -50,6 +50,9 @@ class Queryable(api.Queryable):
     OPS = ["||", "*", "/", "%", "+", "-", "<<", ">>", "&", "|", "<", "<=", ">",
            ">=", "=", "==", "!=", "<>", "IS", "IS NOT", "IN", "NOT IN", "LIKE",
            "GLOB", "MATCH", "REGEXP", "AND", "OR"]
+
+    ## Name of underlying database engine
+    ENGINE = "sqlite"
 
 
     def insert(self, table, values=(), **kwargs):

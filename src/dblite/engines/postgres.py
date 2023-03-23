@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    06.12.2022
+@modified    23.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -74,6 +74,9 @@ class Queryable(api.Queryable):
            "<=", "<>", "<@", "=", ">", ">=", ">>", "@>", "^", "|", "||", "&&", "~",
            "~*", "ANY", "ILIKE", "IN", "IS", "IS NOT", "LIKE", "NOT ILIKE", "NOT IN",
            "NOT LIKE", "NOT SIMILAR TO", "OR", "OVERLAPS", "SIMILAR TO", "SOME")
+
+    ## Name of underlying database engine
+    ENGINE = "postgres"
 
 
     def insert(self, table, values=(), **kwargs):
