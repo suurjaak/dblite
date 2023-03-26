@@ -287,8 +287,8 @@ class Database(api.Database, Queryable):
         Executes the SQL statement and returns sqlite3.Cursor.
 
         @param   sql   SQL statement to execute, with SQLite-specific parameter bindings, if any
-        @param   args  dictionary for %(name)s placeholders,
-                       or a sequence for positional %s placeholders
+        @param   args  dictionary for :name placeholders,
+                       or a sequence for positional ? placeholders
         """
         return self.connection.execute(sql, args)
 
@@ -298,8 +298,8 @@ class Database(api.Database, Queryable):
         Executes the SQL statement against all parameter sequences.
 
         @param   sql   SQL statement to execute, with SQLite-specific parameter bindings
-        @param   args  iterable of query parameters, as dictionaries for %(name)s placeholders
-                       or sequences for positional %s placeholders
+        @param   args  iterable of query parameters, as dictionaries for :name placeholders
+                       or sequences for positional ? placeholders
         """
         self.connection.executemany(sql, args)
 
@@ -471,8 +471,8 @@ class Transaction(api.Transaction, Queryable):
         Executes the SQL statement and returns sqlite3.Cursor.
 
         @param   sql   SQL statement to execute, with SQLite-specific parameter bindings, if any
-        @param   args  dictionary for %(name)s placeholders,
-                       or a sequence for positional %s placeholders
+        @param   args  dictionary for :name placeholders,
+                       or a sequence for positional ? placeholders
         """
         if self._closed: raise RuntimeError("Transaction already closed")
         if not self._cursor: self._make_cursor()
@@ -483,8 +483,8 @@ class Transaction(api.Transaction, Queryable):
         Executes the SQL statement against all parameter sequences.
 
         @param   sql   SQL statement to execute, with SQLite-specific parameter bindings
-        @param   args  iterable of query parameters, as dictionaries for %(name)s placeholders
-                       or sequences for positional %s placeholders
+        @param   args  iterable of query parameters, as dictionaries for :name placeholders
+                       or sequences for positional ? placeholders
         """
         if self._closed: raise RuntimeError("Transaction already closed")
         if not self._cursor: self._make_cursor()
