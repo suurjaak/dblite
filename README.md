@@ -526,10 +526,12 @@ API
 | `dblite.fetchall()`                     | runs `SELECT`, returns all rows
 | `dblite.fetchone()`                     | runs `SELECT`, returns a single row, or `None`
 | `dblite.insert()`                       | `INSERT` a single row into table, returns inserted ID
+| `dblite.insertmany()`                   | `INSERT` multiple rows into table, returns a list of inserted IDs
 | `dblite.select()`                       | runs `SELECT`, returns cursor
 | `dblite.update()`                       | `UPDATE` table, returns affected row count
 | `dblite.delete()`                       | `DELETE` from table, returns affected row count
 | `dblite.execute()`                      | executes SQL with arguments, returns cursor
+| `dblite.executemany()`                  | executes SQL against all parameter sequences
 | `dblite.executescript()`                | executes SQL as a script of one or more SQL statements
 | `dblite.close()`                        | closes the database and all pending transactions, if open
 | `dblite.transaction()`                  | returns `dblite.Transaction` context manager
@@ -541,10 +543,12 @@ API
 | `Database.fetchall()`                   | runs `SELECT`, returns all rows
 | `Database.fetchone()`                   | runs `SELECT`, returns a single row, or `None`
 | `Database.insert()`                     | `INSERT` a single row into table, returns inserted ID
+| `Database.insertmany()`                 | `INSERT` multiple rows into table, returns a list of inserted IDs
 | `Database.select()`                     | runs `SELECT`, returns cursor
 | `Database.update()`                     | `UPDATE` table, returns affected row count
 | `Database.delete()`                     | `DELETE` from table, returns affected row count
 | `Database.execute()`                    | executes SQL with arguments, returns cursor
+| `Database.executemany()`                | executes SQL against all parameter sequences
 | `Database.executescript()`              | executes SQL as a script of one or more SQL statements
 | `Database.transaction()`                | returns `dblite.Transaction` context manager
 | `Database.open()`                       | opens database connection if not already open
@@ -558,10 +562,12 @@ API
 | `Transaction.fetchall()`                | runs `SELECT`, returns all rows
 | `Transaction.fetchone()`                | runs `SELECT`, returns a single row, or `None`
 | `Transaction.insert()`                  | `INSERT` a single row into table, returns inserted ID
+| `Transaction.insertmany()`              | `INSERT` multiple rows into table, returns a list of inserted IDs
 | `Transaction.select()`                  | runs `SELECT`, returns cursor
 | `Transaction.update()`                  | `UPDATE` table, returns affected row count
 | `Transaction.delete()`                  | `DELETE` from table, returns affected row count
 | `Transaction.execute()`                 | executes SQL with arguments, returns cursor
+| `Transaction.executemany()`             | executes SQL against all parameter sequences
 | `Transaction.executescript()`           | executes SQL as a script of one or more SQL statements
 | `Transaction.commit()`                  | commits pending actions, if any
 | `Transaction.rollback()`                | rolls back pending actions, if any

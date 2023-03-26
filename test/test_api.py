@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    23.03.2023
+@modified    26.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -36,6 +36,12 @@ class TestAPI(unittest.TestCase):
     ENGINES = {
         "sqlite":   ("", {}),
         "postgres": ({}, {"maxconn": 2}),
+    }
+
+    ## Engine-specific argument placeholder templates in raw SQL
+    ARGHOLDERS = {
+        "sqlite":   {"pos": "?",   "named": ":%(name)s"},
+        "postgres": {"pos": "%%s", "named": "%%(%(name)s)s"},
     }
 
     ## Table columns as {table name: [{"name", "type"}]}
@@ -103,12 +109,12 @@ class TestAPI(unittest.TestCase):
                 if i: logger.info("-" * 60)
                 logger.info("Verifying dblite API for %s.", engine)
                 self.verify_general_api(opts, kwargs, engine)
-                self.verify_query_api(dblite)
+                self.verify_query_api(dblite, engine)
                 dblite.close()
                 with dblite.init() as db:
-                    self.verify_query_api(db)
+                    self.verify_query_api(db, engine)
                 with dblite.transaction() as tx:
-                    self.verify_query_api(tx)
+                    self.verify_query_api(tx, engine)
                 self.verify_query_args(dblite)
                 self.verify_transactions()
                 self.verify_exclusive_transactions()
@@ -147,7 +153,7 @@ class TestAPI(unittest.TestCase):
             db.fetchone(next(iter(self.TABLES)))
 
 
-    def verify_query_api(self, obj):
+    def verify_query_api(self, obj, engine):
         """Verifies query functions."""
         logger.info("Verifying %s query functions.", label(obj))
         DATAS = copy.deepcopy(self.DATAS)
@@ -207,6 +213,28 @@ class TestAPI(unittest.TestCase):
 
             affected = obj.delete(table)
             self.assertGreater(affected, 1, "Unexpected value from %s.delete()." % obj)
+
+            logger.debug("Verifying %s.insertmany(%r).", label(obj), table)
+            res = obj.insertmany(table, DATAS[table])
+            self.assertIsInstance(res, list, "Unexpected value from %s.insertmany()." % obj)
+            rows = obj.fetchall(table)
+            self.assertEqual(rows, DATAS[table], "Unexpected value from %s.fetchall()." % obj)
+            obj.delete(table)
+
+            logger.debug("Verifying %s.insertmany(%r) with keyword overrides.", label(obj), table)
+            res = obj.insertmany(table, DATAS[table], val="common for all")
+            rows = obj.fetchall(table)
+            self.assertEqual(rows, [dict(x, val="common for all") for x in DATAS[table]],
+                             "Unexpected value from %s.fetchall()." % obj)
+
+            logger.debug("Verifying %s.executemany(%r).", label(obj), table)
+            for cls in (dict, list):
+                tpl = self.ARGHOLDERS[engine]["named" if cls is dict else "pos"]
+                sql = "DELETE FROM %s WHERE id = %s" % (table, tpl % dict(name="id"))
+                args = ({"id": x["id"]} if cls is dict else [x["id"]] for x in DATAS[table])
+                obj.executemany(sql, args)
+                self.assertFalse(obj.fetchall(table), "Unexpected value from %s.fetchall()." % obj)
+                obj.insertmany(table, DATAS[table])
 
             logger.debug("Verifying %s.executescript().", label(obj))
             obj.executescript("DROP TABLE %s" % table)
