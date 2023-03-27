@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['reserved_5fkeywords_161',['RESERVED_KEYWORDS',['../namespacedblite_1_1engines_1_1postgres.html#aa3aa706bdf4122682b376bc534d0d516',1,'dblite.engines.postgres.RESERVED_KEYWORDS()'],['../namespacedblite_1_1engines_1_1sqlite.html#a08deb237856866ea07850eda50d694a8',1,'dblite.engines.sqlite.RESERVED_KEYWORDS()']]],
-  ['row_5ffactory_162',['ROW_FACTORY',['../classdblite_1_1engines_1_1postgres_1_1_database.html#afb4153f08718f8e80afa9c8a80742fe8',1,'dblite.engines.postgres.Database.ROW_FACTORY()'],['../classdblite_1_1engines_1_1sqlite_1_1_database.html#acfb1f74403ca03e86778c38fe497f653',1,'dblite.engines.sqlite.Database.ROW_FACTORY()']]],
-  ['rowtype_163',['rowtype',['../classdblite_1_1engines_1_1postgres_1_1_row_factory_cursor.html#a53f2d75da7c37125bea285ebefb92c57',1,'dblite::engines::postgres::RowFactoryCursor']]]
+  ['path_164',['path',['../classdblite_1_1engines_1_1sqlite_1_1_database.html#a7f3336ba33877c9ce37540abd4707e5a',1,'dblite::engines::sqlite::Database']]],
+  ['pool_5fsize_165',['POOL_SIZE',['../classdblite_1_1engines_1_1postgres_1_1_database.html#a731ced9614fd8496db48031f8b5131ab',1,'dblite::engines::postgres::Database']]],
+  ['pools_166',['POOLS',['../classdblite_1_1engines_1_1postgres_1_1_database.html#ab9d88a24f514bf06d097fa19a372f09f',1,'dblite::engines::postgres::Database']]]
 ];

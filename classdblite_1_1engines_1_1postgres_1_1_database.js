@@ -5,6 +5,7 @@ var classdblite_1_1engines_1_1postgres_1_1_database =
     [ "__exit__", "classdblite_1_1engines_1_1postgres_1_1_database.html#aace8ee033c797ab5366dc45dbf8aee25", null ],
     [ "close", "classdblite_1_1engines_1_1postgres_1_1_database.html#a7aa910a8c9a9eca47eb850aa175c33cd", null ],
     [ "execute", "classdblite_1_1engines_1_1postgres_1_1_database.html#affd6f485519094d79f4ae9287bad13fa", null ],
+    [ "executemany", "classdblite_1_1engines_1_1postgres_1_1_database.html#aed3bc96f360237a80242592c775af056", null ],
     [ "executescript", "classdblite_1_1engines_1_1postgres_1_1_database.html#a0593b8315c3eeeb41d5839f7d999a5a9", null ],
     [ "init_pool", "classdblite_1_1engines_1_1postgres_1_1_database.html#a2d34eb4c68ee3ef31e5df23d97206ddc", null ],
     [ "make_cursor", "classdblite_1_1engines_1_1postgres_1_1_database.html#ae0756568cbdf0712748446d0949c5c52", null ],

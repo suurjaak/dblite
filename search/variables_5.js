@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['name_156',['name',['../classdblite_1_1engines_1_1postgres_1_1_identifier.html#a657d31edc1717a68596ff2d05d6e94e4',1,'dblite::engines::postgres::Identifier']]]
+  ['mutex_161',['MUTEX',['../classdblite_1_1engines_1_1postgres_1_1_database.html#a999fbfe46176b47a79f75fd090534890',1,'dblite.engines.postgres.Database.MUTEX()'],['../classdblite_1_1engines_1_1sqlite_1_1_database.html#a5fab29bdfd921fa57a3e4e4d5e437a33',1,'dblite.engines.sqlite.Database.MUTEX()']]]
 ];

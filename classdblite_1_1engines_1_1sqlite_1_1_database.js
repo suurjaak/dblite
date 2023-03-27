@@ -5,6 +5,7 @@ var classdblite_1_1engines_1_1sqlite_1_1_database =
     [ "__exit__", "classdblite_1_1engines_1_1sqlite_1_1_database.html#abb3062f83505effc665b5bf5940bf4f1", null ],
     [ "close", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a46287fdb7ef0ace7fb1c08f6b16bd47b", null ],
     [ "execute", "classdblite_1_1engines_1_1sqlite_1_1_database.html#ad3fd7461e87567f5512f1334c35b57e6", null ],
+    [ "executemany", "classdblite_1_1engines_1_1sqlite_1_1_database.html#aec650bf325d85e9614fc45d54d65a27f", null ],
     [ "executescript", "classdblite_1_1engines_1_1sqlite_1_1_database.html#aa4c3909302b32e3de10ca3bdddaf95ab", null ],
     [ "open", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a56b57946a537b4db49f3ddb09812a2f4", null ],
     [ "transaction", "classdblite_1_1engines_1_1sqlite_1_1_database.html#a1af03bf15334b5e208acde0b8bd0f98e", null ],

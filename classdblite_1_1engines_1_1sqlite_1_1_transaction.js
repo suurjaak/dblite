@@ -6,6 +6,7 @@ var classdblite_1_1engines_1_1sqlite_1_1_transaction =
     [ "close", "classdblite_1_1engines_1_1sqlite_1_1_transaction.html#acd4859a98434276f2d58535307ddd5a3", null ],
     [ "commit", "classdblite_1_1engines_1_1sqlite_1_1_transaction.html#aba4371b0d438c092ad6f3a42e19d4683", null ],
     [ "execute", "classdblite_1_1engines_1_1sqlite_1_1_transaction.html#aef7594b7929c1b95cb93c6265936c4dc", null ],
+    [ "executemany", "classdblite_1_1engines_1_1sqlite_1_1_transaction.html#a824f0c053265c8241312f0969066229a", null ],
     [ "executescript", "classdblite_1_1engines_1_1sqlite_1_1_transaction.html#a16e1703d6e4acd2d9a0f06d08361792a", null ],
     [ "rollback", "classdblite_1_1engines_1_1sqlite_1_1_transaction.html#af8d50ce026ba2942b2fff5bd34efa03d", null ],
     [ "closed", "classdblite_1_1engines_1_1sqlite_1_1_transaction.html#afe1c7a7aabba14e3ac343f8200d9e6d1", null ],

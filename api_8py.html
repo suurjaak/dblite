@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -124,6 +124,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a93fa6dc495fe1cef39bb09417ad4afcf"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#a93fa6dc495fe1cef39bb09417ad4afcf">dblite.api.execute</a> (sql, args=())</td></tr>
 <tr class="memdesc:a93fa6dc495fe1cef39bb09417ad4afcf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the SQL statement and returns database cursor.  <a href="namespacedblite_1_1api.html#a93fa6dc495fe1cef39bb09417ad4afcf">More...</a><br /></td></tr>
 <tr class="separator:a93fa6dc495fe1cef39bb09417ad4afcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44014ad46aa7b04f57059ecb270c3caf"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#a44014ad46aa7b04f57059ecb270c3caf">dblite.api.executemany</a> (sql, args)</td></tr>
+<tr class="memdesc:a44014ad46aa7b04f57059ecb270c3caf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the SQL statement against all parameter sequences.  <a href="namespacedblite_1_1api.html#a44014ad46aa7b04f57059ecb270c3caf">More...</a><br /></td></tr>
+<tr class="separator:a44014ad46aa7b04f57059ecb270c3caf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a96ce331b02a3cfbebcd94b16508f70"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#a4a96ce331b02a3cfbebcd94b16508f70">dblite.api.executescript</a> (sql)</td></tr>
 <tr class="memdesc:a4a96ce331b02a3cfbebcd94b16508f70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the SQL as script of any number of statements.  <a href="namespacedblite_1_1api.html#a4a96ce331b02a3cfbebcd94b16508f70">More...</a><br /></td></tr>
 <tr class="separator:a4a96ce331b02a3cfbebcd94b16508f70"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -139,6 +142,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ac2830d87b7ef903efae946ef44f15fa8"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#ac2830d87b7ef903efae946ef44f15fa8">dblite.api.insert</a> (table, values=(), **kwargs)</td></tr>
 <tr class="memdesc:ac2830d87b7ef903efae946ef44f15fa8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database INSERT, returns inserted row ID.  <a href="namespacedblite_1_1api.html#ac2830d87b7ef903efae946ef44f15fa8">More...</a><br /></td></tr>
 <tr class="separator:ac2830d87b7ef903efae946ef44f15fa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:accc73abf032e9d0fe2798c0de6abc77d"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#accc73abf032e9d0fe2798c0de6abc77d">dblite.api.insertmany</a> (table, rows=(), **kwargs)</td></tr>
+<tr class="memdesc:accc73abf032e9d0fe2798c0de6abc77d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database multiple INSERTs, returns list of inserted row IDs.  <a href="namespacedblite_1_1api.html#accc73abf032e9d0fe2798c0de6abc77d">More...</a><br /></td></tr>
+<tr class="separator:accc73abf032e9d0fe2798c0de6abc77d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b20cce18ca828a3354e6bc5a05ca82"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#a61b20cce18ca828a3354e6bc5a05ca82">dblite.api.register_adapter</a> (transformer, typeclasses, engine=None)</td></tr>
 <tr class="memdesc:a61b20cce18ca828a3354e6bc5a05ca82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers function to auto-adapt given Python types to database types in query parameters.  <a href="namespacedblite_1_1api.html#a61b20cce18ca828a3354e6bc5a05ca82">More...</a><br /></td></tr>
 <tr class="separator:a61b20cce18ca828a3354e6bc5a05ca82"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -164,7 +170,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d63fdfdccfa03fb313571ba38f22deb8.html">dblite</a></li><li class="navelem"><a class="el" href="api_8py.html">api.py</a></li>
-    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
+    <li class="footer">Generated on Mon Mar 27 2023 18:25:54 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>

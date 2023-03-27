@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">dblite
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
    <div id="projectbrief">Simple query interface for SQL databases</div>
   </td>
@@ -116,6 +116,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a93fa6dc495fe1cef39bb09417ad4afcf"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#a93fa6dc495fe1cef39bb09417ad4afcf">execute</a> (sql, args=())</td></tr>
 <tr class="memdesc:a93fa6dc495fe1cef39bb09417ad4afcf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the SQL statement and returns database cursor.  <a href="namespacedblite_1_1api.html#a93fa6dc495fe1cef39bb09417ad4afcf">More...</a><br /></td></tr>
 <tr class="separator:a93fa6dc495fe1cef39bb09417ad4afcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44014ad46aa7b04f57059ecb270c3caf"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#a44014ad46aa7b04f57059ecb270c3caf">executemany</a> (sql, args)</td></tr>
+<tr class="memdesc:a44014ad46aa7b04f57059ecb270c3caf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the SQL statement against all parameter sequences.  <a href="namespacedblite_1_1api.html#a44014ad46aa7b04f57059ecb270c3caf">More...</a><br /></td></tr>
+<tr class="separator:a44014ad46aa7b04f57059ecb270c3caf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a96ce331b02a3cfbebcd94b16508f70"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#a4a96ce331b02a3cfbebcd94b16508f70">executescript</a> (sql)</td></tr>
 <tr class="memdesc:a4a96ce331b02a3cfbebcd94b16508f70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes the SQL as script of any number of statements.  <a href="namespacedblite_1_1api.html#a4a96ce331b02a3cfbebcd94b16508f70">More...</a><br /></td></tr>
 <tr class="separator:a4a96ce331b02a3cfbebcd94b16508f70"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,6 +134,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ac2830d87b7ef903efae946ef44f15fa8"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#ac2830d87b7ef903efae946ef44f15fa8">insert</a> (table, values=(), **kwargs)</td></tr>
 <tr class="memdesc:ac2830d87b7ef903efae946ef44f15fa8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database INSERT, returns inserted row ID.  <a href="namespacedblite_1_1api.html#ac2830d87b7ef903efae946ef44f15fa8">More...</a><br /></td></tr>
 <tr class="separator:ac2830d87b7ef903efae946ef44f15fa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:accc73abf032e9d0fe2798c0de6abc77d"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#accc73abf032e9d0fe2798c0de6abc77d">insertmany</a> (table, rows=(), **kwargs)</td></tr>
+<tr class="memdesc:accc73abf032e9d0fe2798c0de6abc77d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience wrapper for database multiple INSERTs, returns list of inserted row IDs.  <a href="namespacedblite_1_1api.html#accc73abf032e9d0fe2798c0de6abc77d">More...</a><br /></td></tr>
+<tr class="separator:accc73abf032e9d0fe2798c0de6abc77d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b20cce18ca828a3354e6bc5a05ca82"><td class="memItemLeft" align="right" valign="top">def&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacedblite_1_1api.html#a61b20cce18ca828a3354e6bc5a05ca82">register_adapter</a> (transformer, typeclasses, engine=None)</td></tr>
 <tr class="memdesc:a61b20cce18ca828a3354e6bc5a05ca82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers function to auto-adapt given Python types to database types in query parameters.  <a href="namespacedblite_1_1api.html#a61b20cce18ca828a3354e6bc5a05ca82">More...</a><br /></td></tr>
 <tr class="separator:a61b20cce18ca828a3354e6bc5a05ca82"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,7 +181,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00151">151</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00173">173</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -214,7 +220,7 @@ Functions</h2></td></tr>
 <p>Convenience wrapper for database DELETE, returns affected row count. </p>
 <p>Arguments have the same meaning as in <a class="el" href="namespacedblite_1_1api.html#ad5d53b2d8e81a5dfb1c5b750b896c6d9" title="Convenience wrapper for database SELECT, returns database cursor.">select()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00119">119</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00131">131</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -253,7 +259,46 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00129">129</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00141">141</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+
+</div>
+</div>
+<a id="a44014ad46aa7b04f57059ecb270c3caf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a44014ad46aa7b04f57059ecb270c3caf">&#9670;&nbsp;</a></span>executemany()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">def dblite.api.executemany </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>sql</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>args</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Executes the SQL statement against all parameter sequences. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">sql</td><td>SQL statement to execute, with engine-specific parameter bindings </td></tr>
+    <tr><td class="paramname">args</td><td>iterable of query parameters, as dictionaries for named placeholders or sequences for positional placeholders </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00151">151</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -281,7 +326,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00141">141</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00163">163</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -501,6 +546,50 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="accc73abf032e9d0fe2798c0de6abc77d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#accc73abf032e9d0fe2798c0de6abc77d">&#9670;&nbsp;</a></span>insertmany()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">def dblite.api.insertmany </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>table</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>rows</em> = <code>()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">**&#160;</td>
+          <td class="paramname"><em>kwargs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Convenience wrapper for database multiple INSERTs, returns list of inserted row IDs. </p>
+<p>Keyword arguments are added to VALUES of every single row, overriding individual row values. `table` argument has the same meaning as in <a class="el" href="namespacedblite_1_1api.html#ad5d53b2d8e81a5dfb1c5b750b896c6d9" title="Convenience wrapper for database SELECT, returns database cursor.">select()</a>. Column names can be data-class properies as in <a class="el" href="namespacedblite_1_1api.html#ad5d53b2d8e81a5dfb1c5b750b896c6d9" title="Convenience wrapper for database SELECT, returns database cursor.">select()</a>. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rows</td><td>list of row values to insert, as list of dicts or sequences of key-value tuples or data objects </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00084">84</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+
+</div>
+</div>
 <a id="a61b20cce18ca828a3354e6bc5a05ca82"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a61b20cce18ca828a3354e6bc5a05ca82">&#9670;&nbsp;</a></span>register_adapter()</h2>
 
@@ -543,7 +632,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00181">181</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00203">203</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -589,7 +678,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00195">195</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00217">217</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -628,7 +717,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00210">210</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00232">232</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -702,7 +791,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00100">100</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00112">112</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -749,7 +838,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00168">168</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00190">190</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -799,7 +888,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00111">111</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
+<p class="definition">Definition at line <a class="el" href="api_8py_source.html#l00123">123</a> of file <a class="el" href="api_8py_source.html">api.py</a>.</p>
 
 </div>
 </div>
@@ -809,7 +898,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacedblite.html">dblite</a></li><li class="navelem"><a class="el" href="namespacedblite_1_1api.html">api</a></li>
-    <li class="footer">Generated on Thu Dec 8 2022 10:35:43 for dblite by
+    <li class="footer">Generated on Mon Mar 27 2023 18:25:54 for dblite by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.17 </li>
   </ul>
