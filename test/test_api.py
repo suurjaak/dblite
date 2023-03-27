@@ -5,18 +5,21 @@ Test database general API in available engines.
 
 Running Postgres test needs sufficient variables in environment like `PGUSER`.
 
+Running Postgres concurrent test with two connections needs at least `PGDBNAME2` in environment.
+
 ------------------------------------------------------------------------------
 This file is part of dblite - simple query interface for SQL databases.
 Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     20.11.2022
-@modified    26.03.2023
+@modified    27.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
 import contextlib
 import copy
+import itertools
 import logging
 import os
 import tempfile
@@ -66,14 +69,15 @@ class TestAPI(unittest.TestCase):
         try: unittest.util._MAX_LENGTH = 100000
         except Exception: pass
         self._connections = collections.OrderedDict()  # {engine: (opts, kwargs)}
-        self._path = None  # Path to SQLite database
+        self._paths = []  # Paths to SQLite databases
 
 
     def setUp(self):
         """Creates engine connection options."""
         super(TestAPI, self).setUp()
-        with tempfile.NamedTemporaryFile(suffix=".sqlite") as f: self._path = f.name
-        self._connections["sqlite"] = (self._path, self.ENGINES["sqlite"][1])
+        for _ in range(2):
+            with tempfile.NamedTemporaryFile(suffix=".sqlite") as f: self._paths.append(f.name)
+        self._connections["sqlite"] = (self._paths[0], self.ENGINES["sqlite"][1])
 
         try: import psycopg2
         except ImportError:
@@ -91,8 +95,9 @@ class TestAPI(unittest.TestCase):
 
     def tearDown(self):
         """Deletes temoorary files and tables."""
-        try: os.remove(self._path)
-        except Exception: pass
+        for p in self._paths:
+            try: os.remove(p)
+            except Exception: pass
         try:
             opts, kwargs = self._connections["postgres"]
             with dblite.init(opts, "postgres", **kwargs) as db:
@@ -118,6 +123,80 @@ class TestAPI(unittest.TestCase):
                 self.verify_query_args(dblite)
                 self.verify_transactions()
                 self.verify_exclusive_transactions()
+
+
+    def test_concurrent(self):
+        """Tests dblite API with multiple concurrent engines and databases."""
+        logger.info("Verifying dblite API with multiple concurrent engines.")
+        dbs = [dblite.init(p) for p in self._paths]
+        if "postgres" in self._connections:
+            opts, kwargs = self._connections["postgres"]
+            dbs.append(dblite.init(opts, engine="postgres", **kwargs))
+            if os.getenv("PGDBNAME2"):
+                opts2 = dict(opts, **{k[2:-1].lower(): v for k, v in os.environ.items()
+                                      if k.startswith("PG") and k.endswith("2")})
+                dbs.append(dblite.init(opts2, engine="postgres", **kwargs))
+        for db in dbs:
+            self.verify_query_api(db, db.ENGINE)
+        self.verify_concurrent(dbs)
+
+
+    def verify_concurrent(self, dbs):
+        """Tests dblite API with multiple concurrent databases."""
+        logger.info("Verifying %s concurrent databases with engines %s.",
+                    len(dbs), set(db.ENGINE for db in dbs))
+
+        TABLES = collections.defaultdict(set)  # {db: (table, )}
+        IDS = collections.defaultdict(dict)  # {db: {table: [id, ]}}
+
+        logger.debug("Verifying creating tables in concurrent connections.")
+        for table, cols in self.TABLES.items():
+            for i, db in enumerate(dbs):
+                for name in [table, "%s_%s" % (table, i)]:
+                    TABLES[db].add(name)
+                    db.executescript("CREATE TABLE %s (%s)" %
+                                     (name, ", ".join("%(name)s %(type)s" % c for c in cols)))
+                    self.assertFalse(db.fetchall(name),
+                                     "Unexpected value from %s.fetchall()." % label(db))
+
+        logger.debug("Verifying inserting data in concurrent connections.")
+        cycletables = itertools.cycle((d, t) for d, tt in TABLES.items() for t in tt)
+        for i in range(1, 3 * sum(map(len, TABLES.values())) + 1):
+            db, table = next(cycletables)
+            db.insert(table, id=i, val="val_%s" % i)
+            IDS[db].setdefault(table, []).append(i)
+
+        logger.debug("Verifying selecting in concurrent connections.")
+        for db in IDS:
+            for table, ids in IDS[db].items():
+                received = set(x["id"] for x in db.fetchall(table))
+                self.assertEqual(received, set(ids),
+                                 "Unexpected value from %s.fetchall()." % label(db))
+
+        logger.debug("Verifying selecting in concurrent transactions.")
+        txs = {db: db.transaction() for db in dbs}
+        for tx in txs.values(): tx.__enter__()
+        for db, tx in txs.items():
+            for table, ids in IDS[db].items():
+                received = set(x["id"] for x in tx.fetchall(table))
+                self.assertEqual(received, set(ids),
+                                 "Unexpected value from %s.fetchall()." % label(tx))
+        for tx in txs.values(): tx.close()
+
+        logger.debug("Verifying deleting in concurrent connections.")
+        while any(any(xx.values()) for xx in IDS.values()):
+            db, table, ids = next((d, t, vv) for d, xx in IDS.items() for t, vv in xx.items() if vv)
+            self.assertTrue(db.delete(table, id=ids.pop()),
+                            "Unexpected value from %s.delete()." % label(db))
+        for db, table in ((d, t) for d, tt in TABLES.items() for t in tt):
+            self.assertFalse(db.fetchone(table), "Unexpected value for %s.fetchone()." % label(db))
+
+        logger.debug("Verifying dropping in concurrent connections.")
+        for db, table in ((d, t) for d, tt in TABLES.items() for t in tt):
+            db.executescript("DROP TABLE %s" % table)
+            with self.assertRaises(Exception,
+                                   msg="Unexpected success for fetch after dropping table."):
+                db.fetchone(table)
 
 
     def verify_general_api(self, opts, kwargs, engine):
