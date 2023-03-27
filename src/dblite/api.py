@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    06.12.2022
+@modified    24.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -75,6 +75,19 @@ def insert(table, values=(), **kwargs):
     return init().insert(table, values, **kwargs)
 
 
+def insertmany(table, rows=(), **kwargs):
+    """
+    Convenience wrapper for database multiple INSERTs, returns list of inserted row IDs.
+    Keyword arguments are added to VALUES of every single row, overriding individual row values.
+    `table` argument has the same meaning as in select().
+    Column names can be data-class properies as in select().
+
+    @param   rows  list of row values to insert, as list of dicts
+                   or sequences of key-value tuples or data objects
+    """
+    return init().insertmany(table, rows, **kwargs)
+
+
 def select(table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
     """
     Convenience wrapper for database SELECT, returns database cursor.
@@ -131,6 +144,17 @@ def execute(sql, args=()):
     @param   args  query parameters, as tuple or dictionary
     """
     return init().execute(sql, args)
+
+
+def executemany(sql, args):
+    """
+    Executes the SQL statement against all parameter sequences.
+
+    @param   sql   SQL statement to execute, with engine-specific parameter bindings
+    @param   args  iterable of query parameters, as dictionaries for named placeholders
+                   or sequences for positional placeholders
+    """
+    return init().executemany(sql, args)
 
 
 def executescript(sql):
@@ -219,6 +243,10 @@ def register_row_factory(row_factory, engine=None):
 class Queryable(object):
     """Abstract base for Database and Transaction."""
 
+    ## Underlying database engine, "sqlite" for SQLite3 and "postgres" for PostgreSQL
+    ENGINE = None
+
+
     def fetchall(self, table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
         """
         Convenience wrapper for database SELECT and fetch all.
@@ -242,6 +270,14 @@ class Queryable(object):
         Keyword arguments are added to VALUES.
         """
         raise NotImplementedError()
+
+
+    def insertmany(self, table, rows=(), **kwargs):
+        """
+        Convenience wrapper for database multiple INSERTs, returns list of inserted row IDs.
+        Keyword arguments are added to VALUES of every single row, overriding individual row values.
+        """
+        return init().insertmany(table, rows, **kwargs)
 
 
     def select(self, table, cols="*", where=(), group=(), order=(), limit=(), **kwargs):
@@ -278,6 +314,17 @@ class Queryable(object):
 
         @param   sql   SQL statement to execute, with engine-specific parameter bindings, if any
         @param   args  query parameters, as tuple or dictionary
+        """
+        raise NotImplementedError()
+
+
+    def executemany(self, sql, args):
+        """
+        Executes the SQL statement against all parameter sequences
+
+        @param   sql   SQL statement to execute, with engine-specific parameter bindings
+        @param   args  iterable of query parameters, as dictionaries for named placeholders
+                       or sequences for positional placeholders
         """
         raise NotImplementedError()
 
@@ -564,7 +611,7 @@ class TypeCursor(object):
 
 __all__ = [
     "Database", "Rollback", "Transaction",
-    "init", "fetchall", "fetchone", "insert", "select", "update", "delete", "execute",
-    "executescript", "close", "transaction", "register_adapter", "register_converter",
-    "register_row_factory",
+    "init", "fetchall", "fetchone", "insert", "insertmany", "select", "update", "delete",
+    "execute", "executemany", "executescript", "close", "transaction",
+    "register_adapter", "register_converter", "register_row_factory",
 ]

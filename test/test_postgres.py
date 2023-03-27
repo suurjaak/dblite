@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     22.11.2022
-@modified    07.12.2022
+@modified    27.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -56,8 +56,8 @@ class TestPostgres(unittest.TestCase):
         """Populates Postgres variables from environment."""
         super(TestPostgres, self).setUp()
         for k, v in os.environ.items():
-            if not k.startswith("PG"): continue  # for k, v
-            self._env[k[2:].lower()] = v
+            if k.startswith("PG") and not k.endswith("2"):
+                self._env[k[2:].lower()] = v
 
 
     def tearDown(self):

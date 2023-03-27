@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    06.12.2022
+@modified    26.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -75,6 +75,9 @@ class Queryable(api.Queryable):
            "~*", "ANY", "ILIKE", "IN", "IS", "IS NOT", "LIKE", "NOT ILIKE", "NOT IN",
            "NOT LIKE", "NOT SIMILAR TO", "OR", "OVERLAPS", "SIMILAR TO", "SOME")
 
+    ## Name of underlying database engine
+    ENGINE = "postgres"
+
 
     def insert(self, table, values=(), **kwargs):
         """
@@ -87,23 +90,50 @@ class Queryable(api.Queryable):
         return next(iter(row.values())) if row and isinstance(row, dict) else None
 
 
+    def insertmany(self, table, rows=(), **kwargs):
+        """
+        Convenience wrapper for database multiple INSERTs, returns list of inserted row IDs.
+        Keyword arguments are added to VALUES of every single row, overriding individual row values.
+        """
+        result = []
+
+        sqlcache = {}  # {tuple(col, ): "INSERT .."}
+        n = util.nameify(table, self._wrapper(column=False))
+        tablename = n.name if isinstance(n, Identifier) else n
+        pk = self._structure.get(tablename, {}).get("key")
+
+        commons = [(self._column(k, table=table, tablename=tablename), v) for k, v in kwargs.items()]
+        for row in rows:
+            cols, values, valueidx = [], [], {}
+            knotnull = pk if pk and util.is_dataobject(row) else None  # Skip NULL pk if data object
+            for k, v in util.keyvalues(row, self._wrapper(tablename=tablename)):
+                k = self._column(k, table=table, tablename=tablename)
+                if k != knotnull or v is not None:
+                    cols.append(k), values.append((k, v)), valueidx.update({k: len(valueidx)})
+            for k, v in commons:
+                if k in valueidx: values[valueidx[k]] = (k, v)
+                else: cols.append(k), values.append((k, v))
+            cols.sort(key=lambda x: x.lower()), values.sort(key=lambda x: x[0].lower())
+            cachekey = tuple(cols)
+
+            sql = sqlcache.get(cachekey)
+            if not sql:
+                sql, args = self.makeSQL("INSERT", tablename, values=values)
+                sqlcache[cachekey] = sql
+            else:
+                keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, _) in enumerate(values)]
+                args = {a: self._cast(k, v, table, tablename)
+                        for i, (a, (k, v)) in enumerate(zip(keys, values))}
+
+            cursor = self.execute(sql, args)
+            res = None if cursor.description is None else next(cursor, None)
+            result.append(next(iter(res.values())) if res and isinstance(res, dict) else None)
+        return result
+
+
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=(),
                 kwargs=None):
         """Returns (SQL statement string, parameter dict)."""
-
-        def cast(col, val):
-            """Returns column value cast to correct type for use in psycopg."""
-            col = col.name if isinstance(col, Identifier) else \
-                  col if isinstance(col, string_types) else \
-                  self._match_name(util.nameify(col, parent=table), tablename)
-            field = tablename in self._structure and self._structure[tablename]["fields"].get(col)
-            if field and "array" == field["type"]:
-                return list(listify(val)) # Values for array fields must be lists
-            elif field and val is not None:
-                val = self._adapt_value(val, field["type"])
-            if isinstance(val, (list, set)):
-                return tuple(val) # Sequence parameters for IN etc must be tuples
-            return val
 
         def parse_members(i, col, op, val):
             """Returns (col, op, val, argkey)."""
@@ -131,35 +161,27 @@ class Queryable(api.Queryable):
             if op in ("IN", "NOT IN") and not val: # IN -> ANY, to avoid error on empty array
                 colsql = "%s%s = ANY('{}')" % ("" if "IN" == op else "NOT ", colsql)
                 op = "EXPR"
-            return colsql, op, cast(col, val), key
+            return colsql, op, self._cast(col, val, table, tablename), key
         def argcount(x)  : return len(x) if isinstance(x, (list, set, tuple)) else 1
         def listify(x)   : return x if isinstance(x, (list, tuple)) else \
                                   list(x) if isinstance(x, set) else [x]
         def keylistify(x): return x if isinstance(x, (list, tuple)) else \
                                   list(x) if isinstance(x, (dict, set)) else [x]
-
-        def column(val, sql=False):
-            """Returns column name from string/property/Identifier, quoted if object and `sql`."""
-            if inspect.isdatadescriptor(val): val = util.nameify(val, wrapper(sql=sql), table)
-            if isinstance(val, Identifier): return text_type(val) if sql else val.name
-            return val if isinstance(val, string_types) else text_type(val)
-
-        def wrapper(column=True, sql=False):
-            """Returns function producing Identifier or SQL-ready name string."""
-            def inner(name):
-                val = Identifier(self._match_name(name, table=tablename if column else None))
-                return text_type(val) if sql else val
-            return inner
+        cast    = lambda col, val:               self._cast(col, val, table, tablename)
+        column  = lambda col, sql=False:         self._column(col, sql, table, tablename)
+        wrapper = lambda column=True, sql=False: self._wrapper(column, sql, tablename)
 
         self._load_schema()
         values0 = values
         action = action.upper()
         where, group, order, limit, values = (() if x is None else x
                                               for x in (where, group, order, limit, values))
-        n = util.nameify(table, wrapper(column=False))
+        n = util.nameify(table, self._wrapper(column=False))
         tablename, tablesql = (n.name, text_type(n)) if isinstance(n, Identifier) else (n, n)
-        cols   = ", ".join(util.nameify(x, wrapper(sql=True), table) for x in keylistify(cols)) or "*"
-        group  = ", ".join(util.nameify(x, wrapper(sql=True), table) for x in keylistify(group))
+        namefmt  = wrapper(sql=True)
+
+        cols   = ", ".join(util.nameify(x, namefmt, table) for x in keylistify(cols)) or "*"
+        group  = ", ".join(util.nameify(x, namefmt, table) for x in keylistify(group))
         where  = util.keyvalues(where, wrapper())
         order  = list(order.items()) if isinstance(order, dict) else listify(order)
         order  = [order] if isinstance(order, (list, tuple)) \
@@ -178,7 +200,8 @@ class Queryable(api.Queryable):
             pk = self._structure.get(tablename, {}).get("key")
             if pk and util.is_dataobject(values0):  # Can't avoid giving primary key if data object
                 values = [(k, v) for k, v in values if k != pk or v is not None]  # Discard NULL pk
-            keys = ["%sI%s" % (re.sub(r"\W+", "_", column(k)), i) for i, (k, _) in enumerate(values)]
+            keys = ["%sI%s" % (re.sub(r"\W+", "_", column(k)), i)
+                    for i, (k, _) in enumerate(values)]
             args.update((a, cast(k, v)) for i, (a, (k, v)) in enumerate(zip(keys, values)))
             cols = ", ".join(column(k, sql=True) for k, _ in values)
             vals = ", ".join("%%(%s)s" % s for s in keys)
@@ -257,6 +280,29 @@ class Queryable(api.Queryable):
         return value
 
 
+    def _cast(self, col, val, table=None, tablename=None):
+        """Returns column value cast to correct type for use in psycopg."""
+        col = col.name if isinstance(col, Identifier) else \
+              col if isinstance(col, string_types) else \
+              self._match_name(util.nameify(col, parent=table), tablename)
+        field = tablename in self._structure and self._structure[tablename]["fields"].get(col)
+        if field and "array" == field["type"]:  # Values for array fields must be lists
+            return list(val) if isinstance(val, (list, set, tuple)) else [val]
+        elif field and val is not None:
+            val = self._adapt_value(val, field["type"])
+        if isinstance(val, (list, set)):  # Sequence parameters for IN etc must be tuples
+            return tuple(val)
+        return val
+
+
+    def _column(self, col, sql=False, table=None, tablename=None):
+        """Returns column name from string/property/Identifier, quoted if object and `sql`."""
+        if inspect.isdatadescriptor(col):
+            col = util.nameify(col, self._wrapper(sql=sql, tablename=tablename), table)
+        if isinstance(col, Identifier): return text_type(col) if sql else col.name
+        return col if isinstance(col, string_types) else text_type(col)
+
+
     def _load_schema(self, force=False):
         """Populates table structure from database if uninitialized or forced."""
         if self._structure is None or force:
@@ -284,6 +330,14 @@ class Queryable(api.Queryable):
                 if len(variants) == 1:
                     name = variants[0]
         return name
+
+
+    def _wrapper(self, column=True, sql=False, tablename=None):
+        """Returns function(name) producing Identifier or SQL-ready name string."""
+        def inner(name):
+            val = Identifier(self._match_name(name, table=tablename if column else None))
+            return text_type(val) if sql else val
+        return inner
 
 
 class Database(api.Database, Queryable):
@@ -362,6 +416,18 @@ class Database(api.Database, Queryable):
         if not self._cursor: raise RuntimeError("Database not open.")
         self._cursor.execute(sql, args or None)
         return self._cursor
+
+
+    def executemany(self, sql, args):
+        """
+        Executes the SQL statement against all parameter sequences.
+
+        @param   sql   SQL statement to execute, with psycopg-specific parameter bindings
+        @param   args  iterable of query parameters, as dictionaries for %(name)s placeholders
+                       or sequences for positional %s placeholders
+        """
+        if not self._cursor: raise RuntimeError("Database not open.")
+        psycopg2.extras.execute_batch(self._cursor, sql, list(args))
 
 
     def executescript(self, sql):
@@ -633,6 +699,18 @@ class Transaction(api.Transaction, Queryable):
         if not self._cursor: self._cursor = self._cursorctx.__enter__()
         self._cursor.execute(sql, args or None)
         return self._cursor
+
+    def executemany(self, sql, args):
+        """
+        Executes the SQL statement against all parameter sequences.
+
+        @param   sql   SQL statement to execute, with psycopg-specific parameter bindings
+        @param   args  iterable of query parameters, as dictionaries for %(name)s placeholders
+                       or sequences for positional %s placeholders
+        """
+        if self.closed: raise RuntimeError("Transaction already closed")
+        if not self._cursor: self._cursor = self._cursorctx.__enter__()
+        psycopg2.extras.execute_batch(self._cursor, sql, list(args))
 
     def executescript(self, sql):
         """

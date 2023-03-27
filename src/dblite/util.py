@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     28.11.2022
-@modified    05.12.2022
+@modified    23.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -142,7 +142,7 @@ def keyvalues(obj, namefmt=None):
     """
     Returns a list of keys and values, or [given object] if not applicable.
 
-    @param   obj      mapping or namedtuple or object with attributes or slots
+    @param   obj      mapping or namedtuple or list|set|tuple or object with attributes or slots
     @param   namefmt  function(key) to apply on extracted keys, if any
     @return           [(key, value)] if available,
                       else original argument as list if list/set/tuple,

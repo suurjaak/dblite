@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+1.3.0, 2023-03-26
+-----------------
+- add insertmany() and executemany()
+- add attributes Database.ENGINE and Transaction.ENGINE
+
 1.2.0, 2022-12-07
 -----------------
 - support data classes and objects in query arguments and results

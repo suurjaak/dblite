@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     05.03.2014
-@modified    06.12.2022
+@modified    26.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -51,6 +51,9 @@ class Queryable(api.Queryable):
            ">=", "=", "==", "!=", "<>", "IS", "IS NOT", "IN", "NOT IN", "LIKE",
            "GLOB", "MATCH", "REGEXP", "AND", "OR"]
 
+    ## Name of underlying database engine
+    ENGINE = "sqlite"
+
 
     def insert(self, table, values=(), **kwargs):
         """
@@ -61,13 +64,40 @@ class Queryable(api.Queryable):
         return self.execute(sql, args).lastrowid
 
 
+    def insertmany(self, table, rows=(), **kwargs):
+        """
+        Convenience wrapper for database multiple INSERTs, returns list of inserted row IDs.
+        Keyword arguments are added to VALUES of every single row, overriding individual row values.
+        """
+
+        result = []
+        sqlcache = {}  # {tuple(col, ): "INSERT .."}
+        commons = {util.nameify(k, parent=table): v for k, v in kwargs.items()}
+        for row in rows:
+            cols, values, valueidx = [], [], {}
+            for k, v in util.keyvalues(row):
+                k = util.nameify(k, parent=table)
+                cols.append(k), values.append((k, v)), valueidx.update({k: len(valueidx)})
+            for k, v in commons.items():
+                if k in valueidx: values[valueidx[k]] = (k, v)
+                else: cols.append(k), values.append((k, v))
+            cols.sort(key=lambda x: x.lower()), values.sort(key=lambda x: x[0].lower())
+            cachekey = tuple(cols)
+
+            sql = sqlcache.get(cachekey)
+            if not sql:
+                sql, args = self.makeSQL("INSERT", table, values=values)
+                sqlcache[cachekey] = sql
+            else:
+                keys = ["%sI%s" % (re.sub(r"\W+", "_", k), i) for i, (k, _) in enumerate(values)]
+                args = {n: self._cast(k, v) for n, (k, v) in zip(keys, values)}
+            result.append(self.execute(sql, args).lastrowid)
+        return result
+
+
     def makeSQL(self, action, table, cols="*", where=(), group=(), order=(), limit=(), values=(),
                 kwargs=None):
         """Returns (SQL statement string, parameter dict)."""
-
-        def cast(col, val):
-            """Returns column value cast to correct type for use in sqlite."""
-            return tuple(val) if isinstance(val, set) else val
 
         def parse_members(i, col, op, val):
             """Returns (col, op, val, argkey)."""
@@ -95,11 +125,6 @@ class Queryable(api.Queryable):
         def keylistify(x): return x if isinstance(x, (list, tuple)) else \
                                   list(x) if isinstance(x, (dict, set)) else [x]
 
-        def column(val, sql=False):
-            """Returns column name from string/property, quoted if object and `sql`."""
-            if inspect.isdatadescriptor(val): val = util.nameify(val, quote if sql else None, table)
-            return val if isinstance(val, string_types) else text_type(val)
-
         action = action.upper()
         where, group, order, limit, values = (() if x is None else x
                                               for x in (where, group, order, limit, values))
@@ -121,17 +146,19 @@ class Queryable(api.Queryable):
         if kwargs and action in ("INSERT", ):                   values += list(kwargs.items())
 
         if "INSERT" == action:
-            keys = ["%sI%s" % (re.sub(r"\W+", "_", column(k)), i) for i, (k, _) in enumerate(values)]
-            args.update((n, cast(k, v)) for n, (k, v) in zip(keys, values))
-            cols = ", ".join(column(k, sql=True) for k, _ in values)
+            keys = ["%sI%s" % (re.sub(r"\W+", "_", self._column(k, table=table)), i)
+                    for i, (k, _) in enumerate(values)]
+            args.update((n, self._cast(k, v)) for n, (k, v) in zip(keys, values))
+            cols = ", ".join(self._column(k, sql=True, table=table) for k, _ in values)
             vals = ", ".join(":%s" % n for n in keys)
             sql += " (%s) VALUES (%s)" % (cols, vals)
         if "UPDATE" == action:
             sql += " SET "
             for i, (col, val) in enumerate(values):
-                key = "%sU%s" % (re.sub(r"\W+", "_", column(col)), i)
-                sql += (", " if i else "") + "%s = :%s" % (column(col, sql=True), key)
-                args[key] = cast(col, val)
+                key = "%sU%s" % (re.sub(r"\W+", "_", self._column(col, table=table)), i)
+                sql += (", " if i else "") + \
+                       "%s = :%s" % (self._column(col, sql=True, table=table), key)
+                args[key] = self._cast(col, val)
         if where:
             sql += " WHERE "
             for i, clause in enumerate(where):
@@ -147,19 +174,19 @@ class Queryable(api.Queryable):
 
                 if op in ("IN", "NOT IN"):
                     keys = ["%s_%s" % (key, j) for j in range(len(val))]
-                    args.update({k: cast(col, v) for k, v in zip(keys, val)})
+                    args.update({k: self._cast(col, v) for k, v in zip(keys, val)})
                     sql += (" AND " if i else "") + "%s %s (%s)" % (
                             col, op, ", ".join(":" + x for x in keys))
                 elif "EXPR" == op:
                     for j in range(col.count("?")):
                         col = col.replace("?", ":%s_%s" % (key, j), 1)
-                        args["%s_%s" % (key, j)] = cast(None, val[j])
+                        args["%s_%s" % (key, j)] = self._cast(None, val[j])
                     sql += (" AND " if i else "") + "(%s)" % col
                 elif val is None:
                     op = {"=": "IS", "!=": "IS NOT", "<>": "IS NOT"}.get(op, op)
                     sql += (" AND " if i else "") + "%s %s NULL" % (col, op)
                 else:
-                    args[key] = cast(col, val)
+                    args[key] = self._cast(col, val)
                     sql += (" AND " if i else "") + "%s %s :%s" % (col, op, key)
         if group:
             sql += " GROUP BY " + group
@@ -184,7 +211,6 @@ class Queryable(api.Queryable):
         return sql, args
 
 
-
     @classmethod
     def quote(cls, value, force=False):
         """
@@ -195,6 +221,17 @@ class Queryable(api.Queryable):
         @param   force  whether to quote value even if not required
         """
         return quote(value, force)
+
+
+    def _cast(self, col, val):
+        """Returns column value cast to correct type for use in sqlite."""
+        return tuple(val) if isinstance(val, set) else val
+
+
+    def _column(self, col, sql=False, table=None):
+        """Returns column name from string/property, quoted if object and `sql`."""
+        if inspect.isdatadescriptor(col): col = util.nameify(col, quote if sql else None, table)
+        return col if isinstance(col, string_types) else text_type(col)
 
 
 
@@ -250,10 +287,21 @@ class Database(api.Database, Queryable):
         Executes the SQL statement and returns sqlite3.Cursor.
 
         @param   sql   SQL statement to execute, with SQLite-specific parameter bindings, if any
-        @param   args  dictionary for %(name)s placeholders,
-                       or a sequence for positional %s placeholders
+        @param   args  dictionary for :name placeholders,
+                       or a sequence for positional ? placeholders
         """
         return self.connection.execute(sql, args)
+
+
+    def executemany(self, sql, args):
+        """
+        Executes the SQL statement against all parameter sequences.
+
+        @param   sql   SQL statement to execute, with SQLite-specific parameter bindings
+        @param   args  iterable of query parameters, as dictionaries for :name placeholders
+                       or sequences for positional ? placeholders
+        """
+        self.connection.executemany(sql, args)
 
 
     def executescript(self, sql):
@@ -423,12 +471,24 @@ class Transaction(api.Transaction, Queryable):
         Executes the SQL statement and returns sqlite3.Cursor.
 
         @param   sql   SQL statement to execute, with SQLite-specific parameter bindings, if any
-        @param   args  dictionary for %(name)s placeholders,
-                       or a sequence for positional %s placeholders
+        @param   args  dictionary for :name placeholders,
+                       or a sequence for positional ? placeholders
         """
         if self._closed: raise RuntimeError("Transaction already closed")
         if not self._cursor: self._make_cursor()
         return self._cursor.execute(sql, args)
+
+    def executemany(self, sql, args):
+        """
+        Executes the SQL statement against all parameter sequences.
+
+        @param   sql   SQL statement to execute, with SQLite-specific parameter bindings
+        @param   args  iterable of query parameters, as dictionaries for :name placeholders
+                       or sequences for positional ? placeholders
+        """
+        if self._closed: raise RuntimeError("Transaction already closed")
+        if not self._cursor: self._make_cursor()
+        self._cursor.executemany(sql, args)
 
     def executescript(self, sql):
         """

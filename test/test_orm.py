@@ -9,13 +9,14 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     25.11.2022
-@modified    06.12.2022
+@modified    26.03.2023
 ------------------------------------------------------------------------------
 """
 import collections
 import contextlib
 import datetime
 import logging
+import random
 import unittest
 
 import dblite
@@ -187,6 +188,7 @@ class TestORM(unittest.TestCase):
                 self.verify_slotsdict(engine)
                 self.verify_namedtuple(engine)
                 self.verify_quote(engine)
+                self.verify_mixed(engine)
                 dblite.executescript(";".join(self.SCHEMA_CLEANUP))
                 dblite.close()
 
@@ -314,6 +316,39 @@ class TestORM(unittest.TestCase):
         group = (Booking.group, Booking.table, Booking.when, Booking.patron)
         for i, entry in enumerate(dblite.select(Booking, group=group, order=Booking.table)):
             self.assertEqual(entry, DATAS[i], "Unexpected value from dblite.select().")
+
+
+    def verify_mixed(self, engine):
+        """Tests using mixed types of ORM data."""
+        logger.info("Verifying insertmany() for %r.", engine)
+        TYPES = [ClassDevice, SlotDevice, SlotDictDevice, TupleDevice]
+
+        def do_verify(cls, rows, kwargs, expected):
+            ids = dblite.insertmany(cls, rows, **kwargs)
+            self.assertEqual(len(ids), len(rows), "Unexpected value from dblite.insertmany().")
+            self.assertTrue(all(isinstance(x, int) for x in ids),
+                            "Unexpected value from dblite.insertmany().")
+            expected = [dict(row, id=id, **kwargs) for row, id in zip(expected, ids)]
+            received = dblite.fetchall("devices", order="id")
+            self.assertEqual(received, expected, "Unexpected value from dblite.fetchall().")
+            dblite.delete("devices")
+
+        logger.debug("Verifying using mixed types in insertmany() for %r.", engine)
+        for cls in TYPES:
+            odata = {"id": None, "name": cls.__name__, "type": "", "description": ""}
+            rows = [{"name": "dict", "type": "", "description": ""},
+                    [("name", "kv"), ("type", ""), ("description", "")], cls(**odata)]
+            random.shuffle(rows)
+            do_verify(cls, rows, {}, [dict(odata if isinstance(x, cls) else x) for x in rows])
+
+        logger.debug("Verifying using keyword overrides in insertmany() for %r.", engine)
+        for cls in TYPES:
+            kwargs = {"type": cls.__name__, "description": "override"}
+            data = {"id": None, "name": cls.__name__, "type": "", "description": None}
+            rows = [{"name": "dict", "type": "", "description": ""},
+                    [("name", "kv"), ("description", "")], cls(**odata)]
+            random.shuffle(rows)
+            do_verify(cls, rows, kwargs, [dict(odata if isinstance(x, cls) else x) for x in rows])
 
 
 
