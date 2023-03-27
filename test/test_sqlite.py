@@ -9,7 +9,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     22.11.2022
-@modified    22.11.2022
+@modified    27.03.2023
 ------------------------------------------------------------------------------
 """
 import datetime
@@ -56,10 +56,12 @@ class TestSQLite(unittest.TestCase):
     def setUp(self):
         """Populates temporary file paths."""
         super(TestSQLite, self).setUp()
-        for _ in range(2):
+        try: import pathlib  # Py3
+        except ImportError: pathlib = None  # Py2
+        for i in range(2):
             with tempfile.NamedTemporaryFile(suffix=".sqlite") as f:
                 logger.debug("Making temporary SQLite database %s.", f.name)
-                self._paths.append(f.name)
+                self._paths.append(pathlib.Path(f.name) if i and pathlib else f.name)
 
 
     def tearDown(self):
