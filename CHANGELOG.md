@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.3.1, 2023-04-18
+-----------------
+- fix adapting JSON values in Postgres transactions
+
 1.3.0, 2023-03-26
 -----------------
 - add insertmany() and executemany()

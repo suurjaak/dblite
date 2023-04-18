@@ -11,7 +11,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     22.11.2022
-@modified    06.12.2022
+@modified    18.04.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -99,28 +99,39 @@ class TestTransformers(unittest.TestCase):
                 dblite.init(opts, **kwargs)
                 dblite.register_adapter(json.dumps, dict)
                 dblite.register_converter(json.loads, "JSON")
-                self.verify_transformers(engine)
+                self.verify_transformers(dblite, engine)
+                self.verify_transformers(dblite.init(), engine)
+                with dblite.transaction() as tx: self.verify_transformers(tx, engine)
                 dblite.close()
 
 
-    def verify_transformers(self, engine):
+    def verify_transformers(self, obj, engine):
         """Verifies adapters and converters."""
-        logger.info("Verifying adapters and converters for %s.", engine)
+        logger.info("Verifying adapters and converters for %s %s.", engine, label(obj))
         for table, cols in self.TABLES.items():
-            dblite.executescript("DROP TABLE IF EXISTS %s" % table)
+            obj.executescript("DROP TABLE IF EXISTS %s" % table)
             if "postgres" == engine:
                 cols = [dict(c, type="TIMESTAMPTZ") if "TIMESTAMP" in c["type"] else c
                         for c in cols]
-            dblite.executescript("CREATE TABLE %s (%s)" %
+            obj.executescript("CREATE TABLE %s (%s)" %
                               (table, ", ".join("%(name)s %(type)s" % c for c in cols)))
 
             for data in self.DATAS[table]:
-                dblite.insert(table, data)
-                row = dblite.fetchone(table, id=data["id"])
-                row["dt"], data["dt"] = (x["dt"].replace(tzinfo=None) for x in (row, data))
-                self.assertEqual(row, data, "Unexpected value from dblite.select().")
+                obj.insert(table, data)
+                row, data = obj.fetchone(table, id=data["id"]), dict(data)
+                row_dt, data_dt = row.pop("dt"), data.pop("dt")  # Zone handling differs in engines
+                self.assertEqual(row, data, "Unexpected value from %s.select()." % label(obj))
+                self.assertEqual(type(row_dt), type(data_dt),
+                                 "Unexpected type for timestamp from %s.select()." % label(obj))
 
-            dblite.executescript("DROP TABLE %s" % table)
+            obj.executescript("DROP TABLE %s" % table)
+
+
+def label(obj):
+    """Returns readable name for logging, for `dblite` module or class instances."""
+    if isinstance(obj, dblite.api.Queryable):
+        return "%s.%s" % (obj.__class__.__module__, obj.__class__.__name__)
+    return obj.__name__
 
 
 

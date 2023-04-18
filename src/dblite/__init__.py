@@ -5,11 +5,11 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     18.11.2022
-@modified    27.03.2023
+@modified    18.04.2023
 ------------------------------------------------------------------------------
 """
-__version__      = "1.3.0.dev2"
-__version_info__ = (1, 3, 0, "dev3")
-__version_date__ = "2023-03-27"
+__version__      = "1.3.1.dev0"
+__version_info__ = (1, 3, 1, "dev0")
+__version_date__ = "2023-04-18"
 
 from . api import *
