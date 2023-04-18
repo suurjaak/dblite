@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     08.05.2020
-@modified    26.03.2023
+@modified    18.04.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -275,7 +275,8 @@ class Queryable(api.Queryable):
         Returns value as JSON if field is a JSON type and no adapter registered for value type,
         or original value.
         """
-        if typename in ("json", "jsonb") and type(value) not in self.ADAPTERS.values():
+        ADAPTERS = self._db.ADAPTERS if isinstance(self, Transaction) else self.ADAPTERS
+        if typename in ("json", "jsonb") and type(value) not in ADAPTERS.values():
             return psycopg2.extras.Json(value, dumps=util.json_dumps)
         return value
 
