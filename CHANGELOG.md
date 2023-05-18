@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+1.3.2, 2023-05-18
+-----------------
+- fix invalid characters in README
+
 1.3.1, 2023-04-18
 -----------------
 - fix adapting JSON values in Postgres transactions
