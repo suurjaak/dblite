@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     16.11.2022
-@modified    23.03.2023
+@modified    18.05.2023
 ------------------------------------------------------------------------------
 """
 import os
@@ -21,7 +21,12 @@ PACKAGE = "dblite"
 def readfile(path):
     """Returns contents of path, relative to current file."""
     root = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(root, path)) as f: return f.read()
+    try:
+        with open(os.path.join(root, path)) as f: return f.read()
+    except UnicodeError:
+        with open(os.path.join(root, path), "rb") as f:
+            return f.read().decode(errors="backslashreplace")
+    
 
 def get_description():
     """Returns package description from README."""
