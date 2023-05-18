@@ -513,7 +513,7 @@ with Transaction(lazy=True, itersize=100) as tx:
 ```
 
 Note that `executescript()` in Postgres forces an internal reload of schema metadata,
-allowing `insert()´ to return inserted primary key value for newly created tables,
+allowing `insert()` to return inserted primary key value for newly created tables,
 and query parameters to be auto-cast to expected column types.
 
 
