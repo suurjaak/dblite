@@ -8,7 +8,7 @@ Released under the MIT License.
 
 @author      Erki Suurjaak
 @created     28.11.2022
-@modified    23.03.2023
+@modified    19.07.2023
 ------------------------------------------------------------------------------
 """
 import collections
@@ -212,9 +212,14 @@ def parse_datetime(s):
     Supports "YYYY-MM-DD[ T]HH:MM:SS(.micros)?(Z|[+-]HH(:MM)?)?".
     All returned datetimes are timezone-aware, falling back to UTC.
     """
-    if len(s) < 18: return s
+    result = s
+    if len(s) < 18: return result
     rgx = r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?(([+-]\d{2}(:?\d{2})?)|Z)?$"
-    result, match = s, re.match(rgx, s)
+    try:
+        if isinstance(s, six.binary_type): s = s.decode()
+        match = re.match(rgx, s)
+    except Exception: match = None
+
     if match:
         millis, _, offset, _ = match.groups()
         minimal = re.sub(r"\D", "", s[:match.span(2)[0]] if offset else s)
