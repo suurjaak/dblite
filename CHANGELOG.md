@@ -1,7 +1,7 @@
 CHANGELOG
 =========
 
-1.3.3, 2023-07-19
+1.3.3, 2023-07-20
 -----------------
 - fix parse_datetime() not handling bytes
 
